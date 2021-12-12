@@ -16,6 +16,8 @@ offsetSetter MACRO InputRegisters, InputRegistersOffsets                        
         mov InputRegistersOffsets[bx],ax                                              ;;
         dec cx                                                                        ;;
      loop offsetLoop                                                                  ;;
+    mov ax,offset InputRegisters                                                      ;;
+    mov InputRegistersOffsets,ax                                                      ;;
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
