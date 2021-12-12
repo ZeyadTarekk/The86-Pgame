@@ -5,6 +5,10 @@
 ;A macro that takes a string with spaces and remove all spaces from it                ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 removeSpaces MACRO string                                                             ;;
+    LOCAL loopOverAllString                                                           ;;
+    LOCAL stringEnd                                                                   ;;
+    LOCAL notSpace                                                                    ;;
+    LOCAL innerLoopString                                                             ;;
     mov bx,offset string                                                              ;;
     ;iterate over all string                                                          ;;
     loopOverAllString:                                                                ;;
