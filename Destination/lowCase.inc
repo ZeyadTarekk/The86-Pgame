@@ -1,4 +1,5 @@
 lowercase MACRO text
+    LOCAL done
     lea si,text; si-->address of string
     L1: cmp [si],24h
     jz done ;if equal to $ ---> terminate
