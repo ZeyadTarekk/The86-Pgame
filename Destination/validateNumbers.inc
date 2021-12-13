@@ -1,8 +1,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
-; parameters : - string you want to remove all spaces from it                         ;;
-; return     : - Removes all spaces from this string                                  ;;
-;A macro that takes a string with spaces and remove all spaces from it                ;;
+; parameters : - a number represented as a string you want to validate                ;;
+; return     : - flag = 1 if not valid else not affect it                             ;;
+;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 validateNumbers MACRO string,flag                                                     ;;
     LOCAL validNumber                                                                 ;;
