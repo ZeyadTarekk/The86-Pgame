@@ -25,6 +25,43 @@ printString MACRO string
     mov dx,offset string
     int 21h
 ENDM
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
+; parameters : - No parameters                                                        ;;
+; return     : - No return                                                            ;;
+;A macro that Pushs all registers                                                     ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+PUSHALL MACRO                                                                         ;;
+    push ax                                                                           ;;
+    push bx                                                                           ;;
+    push cx                                                                           ;;
+    push dx                                                                           ;;
+    push bp                                                                           ;;
+    push si                                                                           ;;
+    push di                                                                           ;;
+ENDM                                                                                  ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
+; parameters : - No parameters                                                        ;;
+; return     : - No return                                                            ;;
+;A macro that Pushs all registers                                                     ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+POPALL MACRO                                                                          ;;
+    pop di                                                                            ;;
+    pop si                                                                            ;;
+    pop bp                                                                            ;;
+    pop dx                                                                            ;;
+    pop cx                                                                            ;;
+    pop bx                                                                            ;;
+    pop ax                                                                            ;;
+ENDM                                                                                  ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - two arrays 1) input array 2) output array                            ;;
@@ -128,15 +165,15 @@ validateNumbers MACRO string,flag                                               
     LOCAL loopOverAllString                                                           ;;
     LOCAL stringEnd                                                                   ;;
     LOCAL done                                                                        ;;
-    pusha                                                                             ;;
+    PUSHALL                                                                           ;;
     removeSpaces string                                                               ;;
-    popa                                                                              ;;
+    POPALL                                                                            ;;
     mov bx,string                                                                     ;;
     ;mov bx,offset string                                                             ;;
                                                                                       ;;
     loopOverAllString:                                                                ;;
-        mov ah,'$'
-        cmp [bx],ah                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [bx],ah                                                                   ;;
         jz stringEnd                                                                  ;;
         mov ax,[bx]                                                                   ;;
         mov ah,0                                                                      ;;
@@ -166,10 +203,10 @@ ENDM                                                                            
 ;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 validateMemory MACRO string,flag,destination                                          ;;
-    pusha                                                                             ;;
+    PUSHALL                                                                           ;;
     mov bx,offset string                                                              ;;
     removeSpaces bx                                                                   ;;
-    popa                                                                              ;;
+    POPALL                                                                            ;;
     mov bx,offset string                                                              ;;
     mov si,offset string                                                              ;;
                                                                                       ;;
@@ -200,14 +237,14 @@ validateMemory MACRO string,flag,destination                                    
     inc bx                                                                            ;;
     mov ah,'$'                                                                        ;;
     mov [si],ah                                                                       ;;
-    pusha                                                                             ;;
+    PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
-    popa                                                                              ;;
+    POPALL                                                                            ;;
     jmp done                                                                          ;;
     noSqaure:                                                                         ;;
-    pusha                                                                             ;;
+    PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
-    popa                                                                              ;;
+    POPALL                                                                            ;;
     done:                                                                             ;;
     mov destination,bx                                                                ;;
 ENDM                                                                                  ;;
@@ -218,7 +255,7 @@ main proc far
     mov ax,@data
     mov ds,ax
     mov es,ax
-    validateMemory string,flag,destination
+    validateMemory string5,flag,destination
 
     mov ah,9h
     mov dx,destination
