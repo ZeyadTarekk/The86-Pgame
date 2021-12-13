@@ -24,7 +24,8 @@ validateRegister MACRO Names,offsets,reg,destination,flag                       
     cmp ax,reg                                                                        ;;      
     jnz NotFirst                                                                      ;;          
         mov ax,word ptr offsets                                                       ;;                      
-        mov destination,ax                                                            ;;                  
+        mov destination,ax                                                            ;;
+        jmp done                                                                      ;;
     NotFirst:                                                                         ;;      
     mov ax,0                                                                          ;;      
     cmp cx,ax                                                                         ;;      
