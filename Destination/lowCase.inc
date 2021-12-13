@@ -9,6 +9,5 @@ lowercase MACRO text
     inc si ;inc address of string
     jmp L1
     done: ; end if =$
-    ENDM text
-ENDM text
+ENDM 
 
