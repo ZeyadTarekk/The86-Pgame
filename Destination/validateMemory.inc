@@ -1,4 +1,3 @@
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - a number represented as a string you want to validate                ;;
@@ -13,18 +12,24 @@ pusha                                                                           
     mov si,offset string                                                              ;;
                                                                                       ;;
     GoToStringEnd:                                                                    ;;
-        cmp [si],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         inc si                                                                        ;;
-        cmp [si],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [si],ah                                                                   ;;
     jnz GoToStringEnd                                                                 ;;
     dec si                                                                            ;;
                                                                                       ;;
-    cmp [bx],'['                                                                      ;;
+    mov ah,'['                                                                        ;;
+    cmp [bx],ah                                                                       ;;
     jnz compareEnd                                                                    ;;
-        cmp [si],']'                                                                  ;;
+        mov ah,']'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         jnz notValidSquare                                                            ;;
         jmp WithSquareBracktes                                                        ;;
-        compareEnd: cmp [si],']'                                                      ;;
+        compareEnd:                                                                   ;;
+        mov ah,']'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         jz notValidSquare                                                             ;;
         jmp noSqaure                                                                  ;;
     notValidSquare: mov flag,0001h                                                    ;;
