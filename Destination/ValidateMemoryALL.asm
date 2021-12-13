@@ -8,7 +8,7 @@ registersOffsets dw 16 dup(00)
 string db '[014fe213213213cd]$'
 string2 db '[ 014f e2132aa132 13cd]$'
 string3 db '[ 01n4f e2132aa132 13cd]$'
-flag db 0ffffh
+flag db 0ffh
 destination dw 00000
 testString db 0000
 .code
