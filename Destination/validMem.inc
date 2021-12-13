@@ -5,6 +5,12 @@
 ;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 validateMemory MACRO string,flag,destination                                          ;;
+    LOCAL GoToStringEnd                                                               ;;
+    LOCAL compareEnd                                                                  ;;
+    LOCAL notValidSquare                                                              ;;
+    LOCAL WithSquareBracktes                                                          ;;
+    LOCAL noSqaure                                                                    ;;
+    LOCAL done                                                                        ;;
     PUSHALL                                                                           ;;
     mov bx,offset string                                                              ;;
     removeSpaces bx                                                                   ;;
