@@ -15,10 +15,11 @@ forbiddenChar db 'M'
 forbiddenFlag db 0            ;equal 1 when the player use that char
 
 ;the possible operations for the player to use
-operations db 'MOV','ADD','ADC','SUB','SBB','XOR'
-           db 'AND','NOP','SHR','SHL','CLC','ROR'
-           db 'ROL','RCR','RCL','INC','DEC','/'
+operations db 'mov','add','adc','sub','sbb','xor'
+           db 'and','nop','shr','shl','clc','ror'
+           db 'rol','rcr','rcl','inc','dec','/'
 
+;codes for the operation
 ;1=mov
 ;2=add
 ;3=adc
@@ -50,13 +51,6 @@ ourSource      db 4 dup('$')
 
 
 
-;functions
-
-
-
-
-
-
 .code
 main proc
     mov ax,@data
@@ -65,6 +59,7 @@ main proc
     
     
     getCommand command,ActualSize,forbiddenChar,forbiddenFlag
+    
     separate command,ActualSize,ourOperation,ourDestination,ourSource
     
     knowTheOperation operations,ourOperation,NumberOfOperation,invalidOperationFlag

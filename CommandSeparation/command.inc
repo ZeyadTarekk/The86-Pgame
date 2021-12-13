@@ -1,30 +1,48 @@
-getCommand macro command,size,forbiddenChar,forbiddenFlag    
-LOCAL EXIT           
-    ;get the player's command
-  mov ah,0AH
-  lea dx,command-2
-  int 21h
-  
-  ;check if the command contains forbidden char 
-  ;then turn on the forbidden flag   
-  
-  lea si,command      ;the command itself
-  mov al,forbiddenChar  
-  lea di,size
-  mov cl,[di]           ;the actual size      
-  repne SCASB           ;scan the command for the forbidden char
-  ;if cl!=0 then the forbidden flag will be 1
-  cmp cl,0
-  jz EXIT
-  mov forbiddenFlag,01h
-  EXIT:
-getCommand endm
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function wrote by: Beshoy Morad                                          ;;
+;; parameters: the command itself,size of the array, ....                   ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getCommand macro command,size,forbiddenChar,forbiddenFlag                   ;;
+LOCAL EXIT                                                                  ;;
+    ;get the player's command                                               ;;
+  mov ah,0AH                                                                ;;
+  lea dx,command-2                                                          ;;
+  int 21h                                                                   ;;
+                                                                            ;;
+  ;check if the command contains forbidden char                             ;;
+  ;then turn on the forbidden flag                                          ;;
+                                                                            ;;
+  lea si,command      ;the command itself                                   ;;
+  mov al,forbiddenChar                                                      ;;
+  lea di,size                                                               ;;
+  mov cl,[di]           ;the actual size                                    ;;
+  repne SCASB           ;scan the command for the forbidden char            ;;
+  ;if cl!=0 then the forbidden flag will be 1                               ;;
+  cmp cl,0                                                                  ;;
+  jz EXIT                                                                   ;;
+  mov forbiddenFlag,01h                                                     ;;
+  EXIT:                                                                     ;;
+                                                                            ;;                                                                            ;;
+  ;start to convert all the command characters to lowercase
+                   
+  lea si,command        ;si-->address of string
+  L1: cmp [si],0Dh
+  jz done               ;if equal to 'enter' ---> terminate
+  mov al,[si] 
+  cmp al,97 
+  or al,32              ;or with ascci in string
+  mov [si],al           ;lower character will be placed
+  inc si                ;inc address of string
+  jmp L1
+  done:                 ;end if = 'enter'
+                                                                           
+endm                                                                      
+                                                                            
+                                                                            
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function wrote by: Beshoy Morad, Zeyad Tarek                             ;;
+;; parameters: the command itself,size of the array, ...                    ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 separate macro command,size,operation,destination,source
 LOCAL DesCon,SouCon   
@@ -73,13 +91,16 @@ LOCAL DesCon,SouCon
     mov [bx],al
     inc bx
     inc di
-    cmp [di],0DH
+    mov al,[di]
+    cmp al,0DH
     jnz SouCon   
-separate endm
+endm
 
 
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; function wrote by: Beshoy Morad, Zeyad Tarek                                                     ;;
+;; parameters: the possible operations, our operation, the code of operation, invalid flag          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 knowTheOperation macro operations,ourOperation,NumberOfOperation,invalidOperationFlag
 LOCAL CONTINUE,EXIT1,EXIT2,FINISH,INVALID    
@@ -90,7 +111,8 @@ LOCAL CONTINUE,EXIT1,EXIT2,FINISH,INVALID
     lea di,ourOperation
     
     CONTINUE:
-    cmp [si],2FH
+    mov al,[si]
+    cmp al,2FH
     jz INVALID
     cmpsb
     jnz EXIT1
@@ -118,7 +140,5 @@ LOCAL CONTINUE,EXIT1,EXIT2,FINISH,INVALID
     mov invalidOperationFlag,1 
     mov cx,0
     
-    FINISH:
-    
-    
-knowTheOperation endm
+    FINISH:   
+endm
