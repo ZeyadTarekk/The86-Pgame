@@ -8,6 +8,8 @@ registersOffsets dw 16 dup(00)
 string db '[014fe213213213cd]$'
 string2 db '[ 014f e2132aa132 13cd]$'
 string3 db '[ 01n4f e2132aa132 13cd]$'
+string4 db 'Hello world$'
+string5 db '[000f]$'
 flag db 0ffh
 destination dw 00000
 testString db 0000
@@ -69,7 +71,6 @@ ENDM                                                                            
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - string you want to remove all spaces from it                         ;;
@@ -82,19 +83,24 @@ removeSpaces MACRO string                                                       
     LOCAL notSpace                                                                    ;;
     LOCAL innerLoopString                                                             ;;
     LOCAL DontIncBX                                                                   ;;
-    mov bx,offset string                                                              ;;
+    mov bx, string                                                                    ;;
+                                                                                      ;;
+    ;mov bx,offset string                                                             ;;
     ;iterate over all string                                                          ;;
     loopOverAllString:                                                                ;;
         ;check end of string                                                          ;;
-        cmp [bx],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [bx],ah                                                                   ;;
         jz stringEnd                                                                  ;;
         ;check if space                                                               ;;
-        cmp [bx],' '                                                                  ;;
+        mov ah,' '                                                                    ;;
+        cmp [bx],ah                                                                   ;;
         jnz notSpace                                                                  ;;
             ; if space what to do?                                                    ;;
             mov si,bx                                                                 ;;
             innerLoopString:                                                          ;;
-                cmp [si],'$'                                                          ;;
+                mov ah,'$'                                                            ;;
+                cmp [si],ah                                                           ;;
                 jz DontIncBX   ;not increament bx if space                            ;;
                 mov ax,[si+1]                                                         ;;
                 mov [si],ax                                                           ;;
@@ -110,7 +116,6 @@ removeSpaces MACRO string                                                       
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
@@ -130,7 +135,8 @@ validateNumbers MACRO string,flag                                               
     ;mov bx,offset string                                                             ;;
                                                                                       ;;
     loopOverAllString:                                                                ;;
-        cmp [bx],'$'                                                                  ;;
+        mov ah,'$'
+        cmp [bx],ah                                                                  ;;
         jz stringEnd                                                                  ;;
         mov ax,[bx]                                                                   ;;
         mov ah,0                                                                      ;;
@@ -160,32 +166,40 @@ ENDM                                                                            
 ;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 validateMemory MACRO string,flag,destination                                          ;;
-pusha                                                                                 ;;
-    removeSpaces string                                                               ;;
+    pusha                                                                             ;;
+    mov bx,offset string                                                              ;;
+    removeSpaces bx                                                                   ;;
     popa                                                                              ;;
     mov bx,offset string                                                              ;;
     mov si,offset string                                                              ;;
                                                                                       ;;
     GoToStringEnd:                                                                    ;;
-        cmp [si],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         inc si                                                                        ;;
-        cmp [si],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [si],ah                                                                   ;;
     jnz GoToStringEnd                                                                 ;;
     dec si                                                                            ;;
                                                                                       ;;
-    cmp [bx],'['                                                                      ;;
+    mov ah,'['                                                                        ;;
+    cmp [bx],ah                                                                       ;;
     jnz compareEnd                                                                    ;;
-        cmp [si],']'                                                                  ;;
+        mov ah,']'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         jnz notValidSquare                                                            ;;
         jmp WithSquareBracktes                                                        ;;
-        compareEnd: cmp [si],']'                                                      ;;
+        compareEnd:                                                                   ;;
+        mov ah,']'                                                                    ;;
+        cmp [si],ah                                                                   ;;
         jz notValidSquare                                                             ;;
         jmp noSqaure                                                                  ;;
     notValidSquare: mov flag,0001h                                                    ;;
     jmp done                                                                          ;;
     WithSquareBracktes:                                                               ;;
     inc bx                                                                            ;;
-    mov [si],'$'                                                                      ;;
+    mov ah,'$'                                                                        ;;
+    mov [si],ah                                                                       ;;
     pusha                                                                             ;;
     validateNumbers bx,flag                                                           ;;
     popa                                                                              ;;
@@ -205,7 +219,7 @@ main proc far
     mov ds,ax
     mov es,ax
     validateMemory string,flag,destination
-    ;printString string
+
     mov ah,9h
     mov dx,destination
     int 21h
