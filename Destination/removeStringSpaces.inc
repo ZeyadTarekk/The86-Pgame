@@ -9,6 +9,7 @@ removeSpaces MACRO string                                                       
     LOCAL stringEnd                                                                   ;;
     LOCAL notSpace                                                                    ;;
     LOCAL innerLoopString                                                             ;;
+    LOCAL DontIncBX                                                                   ;;
     mov bx,offset string                                                              ;;
     ;iterate over all string                                                          ;;
     loopOverAllString:                                                                ;;
