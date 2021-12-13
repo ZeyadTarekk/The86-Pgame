@@ -20,7 +20,7 @@ ENDM                                                                            
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - No parameters                                                        ;;
 ; return     : - No return                                                            ;;
-;A macro that Pushs all registers                                                     ;;
+;A macro that POPS all registers                                                      ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 POPALL MACRO                                                                          ;;
     pop di                                                                            ;;
