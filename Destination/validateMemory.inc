@@ -5,8 +5,9 @@
 ;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 validateMemory MACRO string,flag,destination                                          ;;
-pusha                                                                                 ;;
-    removeSpaces string                                                               ;;
+    pusha                                                                             ;;
+    mov bx,offset string                                                              ;;
+    removeSpaces bx                                                                   ;;
     popa                                                                              ;;
     mov bx,offset string                                                              ;;
     mov si,offset string                                                              ;;
@@ -36,7 +37,8 @@ pusha                                                                           
     jmp done                                                                          ;;
     WithSquareBracktes:                                                               ;;
     inc bx                                                                            ;;
-    mov [si],'$'                                                                      ;;
+    mov ah,'$'                                                                        ;;
+    mov [si],ah                                                                       ;;
     pusha                                                                             ;;
     validateNumbers bx,flag                                                           ;;
     popa                                                                              ;;
