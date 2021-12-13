@@ -1,10 +1,11 @@
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - a number represented as a string you want to validate                ;;
 ; return     : - flag = 1 if not valid memory else not affect it                      ;;
 ;A macro that validate a number => has spaces and 0,1,...f                            ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-validateMemory MACRO string,flag                                                      ;;
+validateMemory MACRO string,flag,destination                                          ;;
 pusha                                                                                 ;;
     removeSpaces string                                                               ;;
     popa                                                                              ;;
@@ -31,12 +32,16 @@ pusha                                                                           
     WithSquareBracktes:                                                               ;;
     inc bx                                                                            ;;
     mov [si],'$'                                                                      ;;
+    pusha                                                                             ;;
     validateNumbers bx,flag                                                           ;;
+    popa                                                                              ;;
     jmp done                                                                          ;;
     noSqaure:                                                                         ;;
+    pusha                                                                             ;;
     validateNumbers bx,flag                                                           ;;
+    popa                                                                              ;;
     done:                                                                             ;;
-                                                                                      ;;
+    mov destination,bx                                                                ;;
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
