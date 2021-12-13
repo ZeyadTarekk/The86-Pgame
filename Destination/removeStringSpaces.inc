@@ -1,4 +1,3 @@
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - string you want to remove all spaces from it                         ;;
@@ -11,7 +10,9 @@ removeSpaces MACRO string                                                       
     LOCAL notSpace                                                                    ;;
     LOCAL innerLoopString                                                             ;;
     LOCAL DontIncBX                                                                   ;;
-    mov bx,offset string                                                              ;;
+    mov bx, string                                                                    ;;
+                                                                                      ;;
+    ;mov bx,offset string                                                             ;;
     ;iterate over all string                                                          ;;
     loopOverAllString:                                                                ;;
         ;check end of string                                                          ;;
