@@ -1,3 +1,4 @@
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Written by : - Abdelrahman Hamza  12-12-2021                                        ;;
 ; parameters : - string you want to remove all spaces from it                         ;;
@@ -14,15 +15,18 @@ removeSpaces MACRO string                                                       
     ;iterate over all string                                                          ;;
     loopOverAllString:                                                                ;;
         ;check end of string                                                          ;;
-        cmp [bx],'$'                                                                  ;;
+        mov ah,'$'                                                                    ;;
+        cmp [bx],ah                                                                   ;;
         jz stringEnd                                                                  ;;
         ;check if space                                                               ;;
-        cmp [bx],' '                                                                  ;;
+        mov ah,' '                                                                    ;;
+        cmp [bx],ah                                                                   ;;
         jnz notSpace                                                                  ;;
             ; if space what to do?                                                    ;;
             mov si,bx                                                                 ;;
             innerLoopString:                                                          ;;
-                cmp [si],'$'                                                          ;;
+                mov ah,'$'                                                            ;;
+                cmp [si],ah                                                           ;;
                 jz DontIncBX   ;not increament bx if space                            ;;
                 mov ax,[si+1]                                                         ;;
                 mov [si],ax                                                           ;;
