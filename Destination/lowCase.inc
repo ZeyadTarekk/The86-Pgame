@@ -4,14 +4,19 @@ LOCAL openPract
 LOCAL closePract
 LOCAL done
     lea si,text; si-->address of string
-    L1: cmp [si],24h
+    L1:
+    mov dh,24h
+    cmp [si],dh
     jz done ;if equal to $ ---> terminate
-    cmp [si],91
+    mov dh,91
+    cmp [si],dh
     jz openPract
-    cmp [si],93
+    mov dh,93
+    cmp [si],dh
     jz closePract
-    mov al,[si] 
-    cmp al,97 
+    mov al,[si]
+    mov dh,97
+    cmp al,dh
     or al,32 ;or with ascci in string
     mov [si],al ; lower character will be placed
     closePract:

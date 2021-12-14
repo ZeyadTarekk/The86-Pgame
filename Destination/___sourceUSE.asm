@@ -6,6 +6,7 @@ include validMem.inc
 include strSpcs.inc
 include trimSpcs.inc
 include validReg.inc
+include vMemSrc.inc
 .model small
 .stack 64
 .data
@@ -13,33 +14,32 @@ include validReg.inc
 Names        dw 'ax','bx','cx','dx','si','di','bp','sp','ah','al','bh','bl','ch','cl','dh','dl'
 registers dw 8 dup(0000h)
 registersOffsets dw 16 dup(00)
-flag1112 db 0ffh
-typeOfDestination db 0fh
-destination dw 00000h
-DestStr db '  [120f] $'
+flag db 0ffh
+typeOfSource db 0fh
+source dw 00000h
+SrcStr db '  [120f] $'
 
-destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDestination
+sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource
     ; convert to lower
     LOCAL jmpDone
     LOCAL continue
     LOCAL done
-    PUSHALL
+        PUSHALL
     offsetSetter registers,registersOffsets
     POPALL
     PUSHALL
-    lowercase DestStr
+    lowercase SrcStr
     POPALL
 
     ; trim spaces => begining and start
     PUSHALL
-    trimSpaces DestStr
+    trimSpaces SrcStr
     POPALL
 
-    mov dx,word ptr DestStr
+    mov dx,word ptr SrcStr
 
     PUSHALL
-    validateRegister Names,registersOffsets,dx,destination,flag
-    mov typeOfDestination,0h
+    validateRegister Names,registersOffsets,dx,source,flag
     POPALL
 
     mov ah,1
@@ -49,8 +49,7 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
     jmpDone: jmp done
         continue:
         mov flag,0ffh
-        validateMemory DestStr,flag,destination
-        mov typeOfDestination,01h
+        validateMemorySrc SrcStr,flag,source,typeOfSource
         ;;;;; convert destination to hexa
     done:
 ENDM
@@ -60,9 +59,10 @@ main proc far
     mov ax,@data
     mov ds,ax
     mov es,ax
-    destinationCheck DestStr,Names,registersOffsets,destination,flag1112,typeOfDestination
+    sourceCheck  SrcStr,Names,registersOffsets,source,flag,typeOfSource
+
      mov ah,9h
-     mov dx,destination
+     mov dx,source
      int 21h
     hlt
 main endp
