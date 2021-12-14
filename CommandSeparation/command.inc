@@ -2,6 +2,7 @@
 ;; function wrote by: Beshoy Morad                                          ;;
 ;; parameters: the command itself,size of the array, ....                   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 getCommand macro command,size,forbiddenChar,forbiddenFlag                   ;;
 LOCAL EXIT                                                                  ;;
     ;get the player's command                                               ;;
@@ -12,7 +13,7 @@ LOCAL EXIT                                                                  ;;
   ;check if the command contains forbidden char                             ;;
   ;then turn on the forbidden flag                                          ;;
                                                                             ;;
-  lea si,command      ;the command itself                                   ;;
+  lea si,command        ;the command itself                                 ;;
   mov al,forbiddenChar                                                      ;;
   lea di,size                                                               ;;
   mov cl,[di]           ;the actual size                                    ;;
@@ -22,7 +23,7 @@ LOCAL EXIT                                                                  ;;
   jz EXIT                                                                   ;;
   mov forbiddenFlag,01h                                                     ;;
   EXIT:                                                                     ;;
-                                                                            ;;                                                                            ;;
+                                                                            ;;                                                                            
   ;start to convert all the command characters to lowercase
                    
   lea si,command        ;si-->address of string
@@ -56,19 +57,15 @@ LOCAL DesCon,SouCon
     inc si
     mov al,[si]
     mov operation+2,al
-        
-    ;first find the space to get the operation
-    lea di,command
-    mov al,20h
-    lea bx,size
-    mov cl,[bx]           ;the actual size
-    repne SCASB
+    add si,2
+
     ;now the di is on the first char of the destination
-    mov si,di
+    mov di,si
     
     ;we need to get the comma(,) so that the destination done
     mov al,2Ch
     lea bx,size
+    mov ch,0
     mov cl,[bx]           ;the actual size
     repne SCASB
     ;now the di is on the first char of the source     
@@ -92,10 +89,10 @@ LOCAL DesCon,SouCon
     inc bx
     inc di
     mov al,[di]
-    cmp al,0DH
-    jnz SouCon   
+    cmp al,24H
+    jnz SouCon  
+     
 endm
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; function wrote by: Beshoy Morad, Zeyad Tarek                                                     ;;

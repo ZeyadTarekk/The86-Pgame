@@ -7,7 +7,7 @@ include command.inc
 MyCommand LABEL BYTE
 CommandSize db 30
 ActualSize db ?
-command db 30 dup('$')
+command db 15 dup('$')
 
 ;the forbidden char for that player       (for testing it will be 'M')
 forbiddenChar db 'M'
@@ -61,8 +61,11 @@ main proc
     getCommand command,ActualSize,forbiddenChar,forbiddenFlag
     
     separate command,ActualSize,ourOperation,ourDestination,ourSource
-    
+                 
     knowTheOperation operations,ourOperation,NumberOfOperation,invalidOperationFlag
+    
+    execute NumberOfOperation,invalidOperationFlag,ourDestination,ourSource
+    
     
     
     hlt
