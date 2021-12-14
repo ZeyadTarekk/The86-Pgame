@@ -25,4 +25,15 @@ Hexaaa MACRO string
                 ;inc di
                 jmp   mainLoop
     done:
+    mov si,string
+    mov bx,10h
+    mov ax,[si]
+
+    mul bx
+    add al,[si+1]
+    mul bx
+    add al,[si+2]
+    mul bx
+    add al,[si+3]
+    mov [si],ax
 ENDM    
