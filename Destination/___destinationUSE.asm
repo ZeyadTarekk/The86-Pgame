@@ -18,7 +18,7 @@ typeOfDestination db 0fh
 destination dw 00000h
 DestStr db '  [120f] $'
 
-destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag
+destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDestination
     ; convert to lower
     LOCAL jmpDone
     LOCAL continue
@@ -38,17 +38,19 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag
     mov dx,word ptr DestStr
 
     PUSHALL
-    validateRegister Names,registersOffsets,dx,destination,flag1112
+    validateRegister Names,registersOffsets,dx,destination,flag
+    mov typeOfDestination,0h
     POPALL
 
     mov ah,1
-    cmp flag1112,ah
+    cmp flag,ah
     jnz jmpDone
         jmp continue
     jmpDone: jmp done
         continue:
-        mov flag1112,0ffh
-        validateMemory DestStr,flag1112,destination
+        mov flag,0ffh
+        validateMemory DestStr,flag,destination
+        mov typeOfDestination,01h
         ;;;;; convert destination to hexa
     done:
 ENDM
@@ -58,7 +60,7 @@ main proc far
     mov ax,@data
     mov ds,ax
     mov es,ax
-    destinationCheck DestStr,Names,registersOffsets,destination,flag
+    destinationCheck DestStr,Names,registersOffsets,destination,flag1112,typeOfDestination
      mov ah,9h
      mov dx,destination
      int 21h
