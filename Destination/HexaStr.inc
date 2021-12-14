@@ -9,9 +9,11 @@ Hexaaa MACRO string
                 ;lea   di,hexaWord    ;converted string to hexadecimal
 
     mainLoop:
-                cmp   [si],24h       ;check if char is $
+                mov ah,24h
+                cmp   [si],ah       ;check if char is $
                 jz    done           ;if ture ==>end
                 mov   dl,[si]        ;assci of current char
+                mov ah,40h
                 cmp dl,40h
                 jbe   from_zero_nine
                 sub dl,61h
