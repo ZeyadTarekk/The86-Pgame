@@ -60,10 +60,11 @@ main proc far
     mov ds,ax
     mov es,ax
     sourceCheck  SrcStr,Names,registersOffsets,source,flag,typeOfSource
-
-     mov ah,9h
-     mov dx,source
-     int 21h
+         mov bx,source
+     mov ax,[bx]
+    ;  mov ah,9h
+    ;  mov dx,source
+    ;  int 21h
     hlt
 main endp
 end main

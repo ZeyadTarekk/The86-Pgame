@@ -43,7 +43,7 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
         mov flag,0ffh                                                                    ;;
         validateMemory DestStr,flag,destination                                          ;;
         mov typeOfDestination,01h                                                        ;;
-        ;;;;; convert destination to hexa                                                ;;
+        Hexaaa destination                                                               ;;
     done:                                                                                ;;
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
