@@ -41,7 +41,7 @@ sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource        
         continue:                                                                        ;;
         mov flag,0ffh                                                                    ;;
         validateMemorySrc SrcStr,flag,source,typeOfSource                                ;;
-        ;;;;; convert destination to hexa                                                ;;
+        Hexaaa source                                                                    ;;
     done:                                                                                ;;
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

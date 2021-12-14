@@ -61,9 +61,11 @@ main proc far
     mov ds,ax
     mov es,ax
     destinationCheck DestStr,Names,registersOffsets,destination,flag1112,typeOfDestination
-     mov ah,9h
-     mov dx,destination
-     int 21h
+     mov bx,destination
+     mov ax,[bx]
+    ;  mov ah,9h
+    ;  mov dx,destination
+    ;  int 21h
     hlt
 main endp
 end main
