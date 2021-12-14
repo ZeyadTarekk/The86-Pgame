@@ -4,22 +4,14 @@ Hexaaa MACRO string
                 LOCAL done
                 LOCAL from_zero_nine
 
-                lea   si,string
+                mov si,string
+                ;lea   si,string
                 ;lea   di,hexaWord    ;converted string to hexadecimal
-  
-    mainLoop:   
+
+    mainLoop:
                 cmp   [si],24h       ;check if char is $
                 jz    done           ;if ture ==>end
                 mov   dl,[si]        ;assci of current char
-                call converter
-                mov [si],dl
-                inc si
-                ;inc di
-                jmp   mainLoop
-        
-    done:       
-                hlt
-                proc  converter 
                 cmp dl,40h
                 jbe   from_zero_nine
                 sub dl,61h
@@ -27,8 +19,10 @@ Hexaaa MACRO string
                 jmp   finish
     from_zero_nine:
                 sub dl,30h
-    
-    finish:     
-                ret
-                endp
+    finish:
+                mov [si],dl
+                inc si
+                ;inc di
+                jmp   mainLoop
+    done:
 ENDM    
