@@ -1,8 +1,14 @@
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Written by : - Ziad Sherif  14-12-2021                                              ;;
+; parameters : - String and Empty String                                               ;;
+; return     : -Hexadecimal of stirng in form of String (لعل نستفيد بيها xD)          ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 convertHexa MACRO string,hexaWord
+
                 LOCAL mainLoop
                 LOCAL done
                 LOCAL its_digit
+                LOCAL finish
 
                 lea   si,string
                 lea   di,hexaWord    ;converted string to hexadecimal
@@ -16,19 +22,23 @@ convertHexa MACRO string,hexaWord
                 div   dl
                 mov   dl,al          ;cotient
                 call  converter      ;convert char to letter or digit
+
                 mov   [di],dl
                 inc   di
                 mov   dl,ah          ;rest
+
+
                 call  converter      ;convert char to letter or digit
                 mov   [di],dl
                 inc   di
                 inc   si
+
+
                 mov   ax,0
                 jmp   mainLoop
         
     done:       
-                hlt
-
+ENDM    
                 proc  converter
                 cmp   dl,9
     
@@ -46,4 +56,6 @@ convertHexa MACRO string,hexaWord
     finish:     
                 ret
                 endp
-ENDM    
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
