@@ -30,17 +30,27 @@ Hexaaa MACRO string
                 inc si   ; points to the next digit
                 jmp   mainLoop  ;iterate till  $
     done:
-    mov si,string       ;;conctenate the final answer ==> 01 02 00 0f as exmaple ==>should be 120f
-    mov bx,10h
-    mov ax,[si]
-    mul bx
-    add al,[si+1]
-    mul bx
-    add al,[si+2]
-    mul bx
-    add al,[si+3]
+    mov si,string       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
+    mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
+    mov al,[si]
+    mov ah,0
+    mov cl,'$'
+
+    cmp al,cl
+    jz Outloop
+    inc si
+    LOOPMain:
+        mov dl,[si]
+        cmp dl,cl
+        jz Outloop
+            mul bx
+            add al,[si]
+            inc si
+    jmp LOOPMain
+    Outloop:
+    mov si,string
     mov [si],ax
-ENDM    
-                                                        ;;
+ENDM
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
