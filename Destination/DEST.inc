@@ -46,7 +46,10 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
         mov typeOfDestination,01h                                                        ;;[111] 11
         mov ah,1                                                                         ;;[ax]
         cmp flag,ah                                                                      ;;
-        jnz memt
+        jnz jmpFix
+        jmp validateRegrDt
+            jmpFix: jmp memt
+        validateRegrDt:
             mov ah,9h
             mov dx,destination
             int 21h
