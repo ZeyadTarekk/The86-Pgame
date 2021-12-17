@@ -6,22 +6,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Hexaaa MACRO string
                 LOCAL mainLoop                                                         ;;
-                LOCAL done                                                             ;;
-                LOCAL from_zero_nine                                                   ;;   
-                LOCAL skip                                                              ;;          
+                LOCAL exitHexa                                                             ;;
+                LOCAL from_zero_nine                                                   ;;
+                LOCAL skip                                                              ;;
                 mov si,string
                 ;lea   si,string
                 ;lea   di,hexaWord    ;converted string to hexadecimal
     mainLoop:
                 mov ah,24h              ;to avoid dbox khara error :3
                 cmp   [si],ah       ;check if char is $
-                jz    done           ;if ture ==>end
+                jz    exitHexa           ;if ture ==>end
                 mov   dl,[si]        ;assci of current char
-                mov ah,40h          
+                mov ah,40h
                 cmp dl,40h          ;compare if digit from 0-9
                 jbe   from_zero_nine    ;jump to get hexadecimal of digit
                 sub dl,61h  ;  get hexa of  digit (A==>F)
-                add dl,10 
+                add dl,10
                 jmp   skip  ; jump to skip (0-->9)
     from_zero_nine:
                 sub dl,30h
@@ -29,7 +29,7 @@ Hexaaa MACRO string
                 mov [si],dl ; assignment value of dl to string
                 inc si   ; points to the next digit
                 jmp   mainLoop  ;iterate till  $
-    done:
+    exitHexa:
     mov si,string       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
     mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
     mov al,[si]

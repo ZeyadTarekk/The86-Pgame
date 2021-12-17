@@ -10,7 +10,7 @@ lowercase MACRO text
 LOCAL mainLoop
 LOCAL openPract
 LOCAL closePract
-LOCAL done
+LOCAL exitLcase
 
 
     lea si,text     ;poitns to the 1st char of string
@@ -19,7 +19,7 @@ LOCAL done
     mov dh,24h  ;;check if $ or not
     cmp [si],dh
 
-    jz done         ;if equal to $ ---> terminate
+    jz exitLcase         ;if equal to $ ---> terminate
     mov dh,91       ;;to skip square brackt([)]
     cmp [si],dh
     jz openPract
@@ -42,7 +42,7 @@ LOCAL done
 
     jmp mainLoop  ;iterate till $
 
-    done: ; end if =$
+    exitLcase: ; end if =$
 ENDM                                          
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

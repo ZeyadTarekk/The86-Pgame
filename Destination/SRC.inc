@@ -14,7 +14,7 @@ sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource        
     ; convert to lower                                                                   ;;
     LOCAL jmpDone                                                                        ;;
     LOCAL continue                                                                       ;;
-    LOCAL done                                                                           ;;
+    LOCAL exitsrc                                                                           ;;
         PUSHALL                                                                          ;;
     offsetSetter registers,registersOffsets                                              ;;
     POPALL                                                                               ;;
@@ -37,12 +37,12 @@ sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource        
     cmp flag,ah                                                                          ;;
     jnz jmpDone                                                                          ;;
         jmp continue                                                                     ;;
-    jmpDone: jmp done                                                                    ;;
+    jmpDone: jmp exitsrc                                                                    ;;
         continue:                                                                        ;;
         mov flag,0ffh                                                                    ;;
         validateMemorySrc SrcStr,flag,source,typeOfSource                                ;;
         Hexaaa source                                                                    ;;
-    done:                                                                                ;;
+    exitsrc:                                                                                ;;
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
