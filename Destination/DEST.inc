@@ -7,7 +7,7 @@
 ;   registersOffsets => Marco handel its values we need it only to have 16 words      ;;;;;
 ;   destination the memory that you will recieve your result offset in it             ;;;;;
 ;   flag 1 => means not valid regardless value of destination                         ;;;;;
-;   typeOfDestination => 1h means memory , 0h => means register                       ;;;;;
+;   typeOfDestination => 1h means memory , 0h => means register,02=>register indirect ;;;;;
 ;A macro that fills registersOffsets array with offsets of registers array            ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDestination ;;
@@ -15,22 +15,23 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
     LOCAL jmpDone                                                                        ;;
     LOCAL continue                                                                       ;;
     LOCAL done                                                                           ;;
+    LOCAL exit_Dest
     PUSHALL                                                                              ;;
-    offsetSetter registers,registersOffsets                                              ;;
+    offsetSetter registers,offsets                                                       ;;
     POPALL                                                                               ;;
     PUSHALL                                                                              ;;
-    lowercase DestStr                                                                    ;;
+    lowercase regName                                                                    ;;
     POPALL                                                                               ;;
                                                                                          ;;
     ; trim spaces => begining and start                                                  ;;
     PUSHALL                                                                              ;;
-    trimSpaces DestStr                                                                   ;;
+    trimSpaces regName                                                                   ;;
     POPALL                                                                               ;;
                                                                                          ;;
-    mov dx,word ptr DestStr                                                              ;;
+    mov dx,word ptr regName                                                              ;;
                                                                                          ;;
     PUSHALL                                                                              ;;
-    validateRegister Names,registersOffsets,dx,destination,flag                          ;;
+    validateRegister Names,offsets,dx,destination,flag                          ;;
     mov typeOfDestination,0h                                                             ;;
     POPALL                                                                               ;;
                                                                                          ;;
@@ -38,13 +39,25 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
     cmp flag,ah                                                                          ;;
     jnz jmpDone                                                                          ;;
         jmp continue                                                                     ;;
-    jmpDone: jmp done                                                                    ;;
+    jmpDone: jmp exit_Dest                                                                    ;;
         continue:                                                                        ;;
         mov flag,0ffh                                                                    ;;
-        validateMemory DestStr,flag,destination                                          ;;
-        mov typeOfDestination,01h                                                        ;;
-        Hexaaa destination                                                               ;;
-    done:                                                                                ;;
+        validateMemory regName,flag,destination                                          ;;ax
+        mov typeOfDestination,01h                                                        ;;[111] 11
+        mov ah,1                                                                         ;;[ax]
+        cmp flag,ah                                                                      ;;
+        jnz memt
+            mov ah,9h
+            mov dx,destination
+            int 21h
+            mov flag,0ffh
+            validateRegisterDirect Names,offsets,regName,destination,flag
+            mov ah,1
+            cmp flag,ah
+            mov typeOfDestination,02h
+            jmp exit_Dest
+         memt: Hexaaa destination
+    exit_Dest:
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
