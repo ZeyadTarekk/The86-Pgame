@@ -10,7 +10,7 @@ validateMemory MACRO string,flag,destination                                    
     LOCAL notValidSquare                                                              ;;
     LOCAL WithSquareBracktes                                                          ;;
     LOCAL noSqaure                                                                    ;;
-    LOCAL done                                                                        ;;
+    LOCAL VmemExit                                                                        ;;
     PUSHALL                                                                           ;;
     mov bx,offset string                                                              ;;
     removeSpaces bx                                                                   ;;
@@ -40,7 +40,7 @@ validateMemory MACRO string,flag,destination                                    
         jz notValidSquare                                                             ;;
         jmp noSqaure                                                                  ;;
     notValidSquare: mov flag,0001h                                                    ;;
-    jmp done                                                                          ;;
+    jmp VmemExit                                                                          ;;
     WithSquareBracktes:                                                               ;;
     inc bx                                                                            ;;
     mov ah,'$'                                                                        ;;
@@ -48,12 +48,12 @@ validateMemory MACRO string,flag,destination                                    
     PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
     POPALL                                                                            ;;
-    jmp done                                                                          ;;
+    jmp VmemExit                                                                          ;;
     noSqaure:                                                                         ;;
     PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
     POPALL                                                                            ;;
-    done:                                                                             ;;
+    VmemExit:                                                                             ;;
     mov destination,bx                                                                ;;
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

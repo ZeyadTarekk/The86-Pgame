@@ -10,7 +10,7 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
     LOCAL notValidSquare                                                              ;;
     LOCAL WithSquareBracktes                                                          ;;
     LOCAL noSqaure                                                                    ;;
-    LOCAL done                                                                        ;;
+    LOCAL exitVmemSrc                                                                        ;;
     PUSHALL                                                                           ;;
     mov bx,offset string                                                              ;;
     removeSpaces bx                                                                   ;;
@@ -40,7 +40,7 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
         jz notValidSquare                                                             ;;
         jmp noSqaure                                                                  ;;
     notValidSquare: mov flag,0001h                                                    ;;
-    jmp done                                                                          ;;
+    jmp exitVmemSrc                                                                          ;;
     WithSquareBracktes:                                                               ;;
     mov typeOfSource,01h
     inc bx                                                                            ;;
@@ -49,13 +49,13 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
     PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
     POPALL                                                                            ;;
-    jmp done                                                                          ;;
+    jmp exitVmemSrc                                                                          ;;
     noSqaure:                                                                         ;;
     mov typeOfSource,02h
     PUSHALL                                                                           ;;
     validateNumbers bx,flag                                                           ;;
     POPALL                                                                            ;;
-    done:                                                                             ;;
+    exitVmemSrc:                                                                             ;;
     mov source,bx                                                                ;;
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
