@@ -8,15 +8,16 @@
 ;   source the memory that you will recieve your result offset in it                  ;;;;;
 ;   flag 1 => means not valid regardless value of destination                         ;;;;;
 ;   typeOfSource => 1h means memory , 0h => means register, 02 => means immediate     ;;;;;
+;                   03=> means register indirect                                      ;;;;;
 ;A macro that fills registersOffsets array with offsets of registers array            ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource                 ;;
+sourceCheck MACRO SrcStr,Names,offsets,destination,flag,typeOfSource                 ;;
     ; convert to lower                                                                   ;;
     LOCAL jmpDone                                                                        ;;
     LOCAL continue                                                                       ;;
     LOCAL exitsrc                                                                           ;;
-        PUSHALL                                                                          ;;
-    offsetSetter registers,registersOffsets                                              ;;
+    PUSHALL                                                                          ;;
+    offsetSetter registers,offsets                                              ;;
     POPALL                                                                               ;;
     PUSHALL                                                                              ;;
     lowercase SrcStr                                                                     ;;
@@ -30,7 +31,8 @@ sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource        
     mov dx,word ptr SrcStr                                                               ;;
                                                                                          ;;
     PUSHALL                                                                              ;;
-    validateRegister Names,registersOffsets,dx,source,flag                               ;;
+    validateRegister Names,offsets,dx,destination,flag                               ;;
+    mov typeOfSource,0h
     POPALL                                                                               ;;
                                                                                          ;;
     mov ah,1                                                                             ;;
@@ -40,8 +42,23 @@ sourceCheck MACRO SrcStr,Names,registersOffsets,source,flag,typeOfSource        
     jmpDone: jmp exitsrc                                                                    ;;
         continue:                                                                        ;;
         mov flag,0ffh                                                                    ;;
-        validateMemorySrc SrcStr,flag,source,typeOfSource                                ;;
-        Hexaaa source                                                                    ;;
+        validateMemorySrc SrcStr,flag,destination,typeOfSource                                ;;
+        mov ah,1                                                                         ;;[ax]
+        cmp flag,ah                                                                      ;;
+        jnz jmpFix
+        jmp validateRegrDt
+            jmpFix: jmp memt
+        validateRegrDt:
+            mov ah,9h
+            mov dx,destination
+            int 21h
+            mov flag,0ffh
+            validateRegisterDirect Names,offsets,SrcStr,destination,flag
+            mov ah,1
+            cmp flag,ah
+            mov typeOfSource,03h
+            jmp exitsrc
+         memt: Hexaaa destination
     exitsrc:                                                                                ;;
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
