@@ -1,42 +1,60 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; function wrote by: Beshoy Morad                                          ;;
+;; function wrote by: Beshoy Morad, Zeyad Tarek                              ;;
 ;; parameters: the command itself,size of the array, ....                   ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-getCommand macro command,size,forbiddenChar,forbiddenFlag                   ;;
-LOCAL EXIT                                                                  ;;
+getCommand macro command,ActualSize,forbiddenChar,forbiddenFlag                   ;;
+LOCAL EXIT, getCommandLoop                                                                 ;;
     ;get the player's command                                               ;;
-  mov ah,0AH                                                                ;;
-  lea dx,command-2                                                          ;;
-  int 21h                                                                   ;;
-                                                                            ;;
-  ;check if the command contains forbidden char                             ;;
-  ;then turn on the forbidden flag                                          ;;
-                                                                            ;;
-  lea si,command        ;the command itself                                 ;;
-  mov al,forbiddenChar                                                      ;;
-  lea di,size                                                               ;;
-  mov cl,[di]           ;the actual size                                    ;;
-  repne SCASB           ;scan the command for the forbidden char            ;;
-  ;if cl!=0 then the forbidden flag will be 1                               ;;
-  cmp cl,0                                                                  ;;
-  jz EXIT                                                                   ;;
-  mov forbiddenFlag,01h                                                     ;;
-  EXIT:                                                                     ;;
-                                                                            ;;                                                                            
-  ;start to convert all the command characters to lowercase
-                   
-  lea si,command        ;si-->address of string
-  L1: cmp [si],0Dh
-  jz done               ;if equal to 'enter' ---> terminate
-  mov al,[si] 
-  cmp al,97 
-  or al,32              ;or with ascci in string
-  mov [si],al           ;lower character will be placed
-  inc si                ;inc address of string
-  jmp L1
-  done:                 ;end if = 'enter'
-                                                                           
+    mov ah,0AH                                                                ;;
+    lea dx,command-2                                                          ;;
+    int 21h                                                                   ;;
+                                                                        ;;
+    ;check if the command contains forbidden char                             ;;
+    ;then turn on the forbidden flag                                          ;;
+                                                                                ;;
+
+    lea si,command        ;the command itself                                 ;;
+    mov al,0dh                                                      ;;
+    getCommandLoop:
+    inc si
+    mov bl,[si]
+    cmp bl,al 
+    jnz getCommandLoop
+    mov [si],24h
+
+    ; Convert forbidden Character to lowercase
+    mov al,forbiddenChar
+    or al,32              ;or with ascci in string
+    mov forbiddenChar,al           ;lower character will be placed
+
+    ;start to convert all the command characters to lowercase
+                    
+    lea si,command        ;si-->address of string
+    L1: cmp [si],24h
+    jz done               ;if equal to 'enter' ---> terminate
+    mov al,[si] 
+    cmp al,97 
+    or al,32              ;or with ascci in string
+    mov [si],al           ;lower character will be placed
+    inc si                ;inc address of string
+    jmp L1
+    done:                 ;end if = 'enter'
+
+    lea si,command        ;the command itself                                 ;;
+    mov al,forbiddenChar                                                      ;;
+    lea di,ActualSize                                                              ;;
+    mov ch,0
+    mov cl,[di]           ;the actual size                                    ;;
+    repne SCASB           ;scan the command for the forbidden char            ;;
+    ;if cl!=0 then the forbidden flag will be 1                               ;;
+    cmp cl,0                                                                  ;;
+    jz EXIT                                                                   ;;
+    mov forbiddenFlag,01h                                                     ;;
+    EXIT:                                                                     ;;
+
+
+                                                                            
 endm                                                                      
                                                                             
                                                                             
