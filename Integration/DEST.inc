@@ -10,11 +10,11 @@
 ;   typeOfDestination => 1h means memory , 0h => means register,02=>register indirect ;;;;;
 ;A macro that fills registersOffsets array with offsets of registers array            ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDestination ;;
+destinationCheck MACRO regName,Names,offsets,destination,flag,typeOfDestination,registers;;
     ; convert to lower                                                                   ;;
     LOCAL jmpDone                                                                        ;;
     LOCAL continue                                                                       ;;
-    LOCAL done                                                                           ;;
+    ;LOCAL done                                                                           ;;
     LOCAL exit_Dest
     PUSHALL                                                                              ;;
     offsetSetter registers,offsets                                                       ;;
@@ -55,12 +55,12 @@ destinationCheck MACRO DestStr,Names,registersOffsets,destination,flag,typeOfDes
             int 21h
             mov flag,0ffh
             validateRegisterDirect Names,offsets,regName,destination,flag
-            mov ah,1
-            cmp flag,ah
+            mov ah,1                                                                        
+            cmp flag,ah                                                                     
             mov typeOfDestination,02h
             jmp exit_Dest
          memt: Hexaaa destination
-    exit_Dest:
+    exit_Dest:  
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

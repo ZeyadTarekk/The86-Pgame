@@ -13,7 +13,7 @@ include validRD.inc
 include Dest.inc
 include vMemSrc.inc
 include SRC.inc
-.model small
+.model Huge
 .stack 64
 .data
 
@@ -88,10 +88,10 @@ main proc
     
     knowTheOperation operations,ourOperation,NumberOfOperation,invalidOperationFlag
     
-    destinationCheck regName,Names,offsets,destination,flag,typeOfDestination
-
-    sourceCheck SrcStr,Names,offsets,source,flag,typeOfSource
-
+    destinationCheck regName,Names,offsets,destination,flag,typeOfDestination,registers
+    PUSHALL
+    sourceCheck SrcStr,Names,offsets,source,flag,typeOfSource,registers
+    POPALL
     execute NumberOfOperation,invalidOperationFlag,regName,SrcStr,destination,source
     
     
