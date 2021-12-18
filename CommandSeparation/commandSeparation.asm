@@ -46,9 +46,9 @@ invalidOperationFlag db 0     ;equal 1 when the operation is not in the array
 
 
 ;after getting the command we need to separate it into 3 parts
-ourOperation   db 3 dup('$')
-ourDestination db 4 dup('$')
-ourSource      db 4 dup('$')
+ourOperation   db 4 dup('$')
+ourDestination db 5 dup('$')
+ourSource      db 5 dup('$')
 
 
 
