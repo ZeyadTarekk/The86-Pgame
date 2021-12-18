@@ -247,7 +247,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov al,invalidflag
         mov dl,1
         cmp al,dl
-        jnz EXIT:
+        jnz EXIT
         
         ;note we need to turn the flag back off
         mov invalidflag,0
@@ -296,7 +296,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov al,invalidflag
         mov dl,1
         cmp al,dl
-        jnz EXIT:
+        jnz EXIT
         
         ;note we need to turn the flag back off
         mov invalidflag,0
