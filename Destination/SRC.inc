@@ -11,11 +11,14 @@
 ;                   03=> means register indirect                                      ;;;;;
 ;A macro that fills registersOffsets array with offsets of registers array            ;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-sourceCheck MACRO SrcStr,Names,offsets,destination,flag,typeOfSource                 ;;
+sourceCheck MACRO SrcStr,Names,offsets,source,flag,typeOfSource,registers                 ;;
     ; convert to lower                                                                   ;;
     LOCAL jmpDone                                                                        ;;
     LOCAL continue                                                                       ;;
     LOCAL exitsrc                                                                           ;;
+    LOCAL jmpFix                                                                           ;;
+    LOCAL memt                                                                           ;;
+    LOCAL validateRegrDt                        ;;                                                                         ;;
     PUSHALL                                                                          ;;
     offsetSetter registers,offsets                                              ;;
     POPALL                                                                               ;;
@@ -31,7 +34,7 @@ sourceCheck MACRO SrcStr,Names,offsets,destination,flag,typeOfSource            
     mov dx,word ptr SrcStr                                                               ;;
                                                                                          ;;
     PUSHALL                                                                              ;;
-    validateRegister Names,offsets,dx,destination,flag                               ;;
+    validateRegister Names,offsets,dx,source,flag                               ;;
     mov typeOfSource,0h
     POPALL                                                                               ;;
                                                                                          ;;
@@ -41,24 +44,25 @@ sourceCheck MACRO SrcStr,Names,offsets,destination,flag,typeOfSource            
         jmp continue                                                                     ;;
     jmpDone: jmp exitsrc                                                                    ;;
         continue:                                                                        ;;
-        mov flag,0ffh                                                                    ;;
-        validateMemorySrc SrcStr,flag,destination,typeOfSource                                ;;
+        mov flag,0ffh
+        PUSHALL                                                                    ;;
+        validateMemorySrc SrcStr,flag,source,typeOfSource                                ;;
+        POPALL
         mov ah,1                                                                         ;;[ax]
         cmp flag,ah                                                                      ;;
         jnz jmpFix
         jmp validateRegrDt
             jmpFix: jmp memt
         validateRegrDt:
-            mov ah,9h
-            mov dx,destination
-            int 21h
             mov flag,0ffh
-            validateRegisterDirect Names,offsets,SrcStr,destination,flag
+            PUSHALL
+            validateRegisterDirect Names,offsets,SrcStr,source,flag
+            POPALL
             mov ah,1
             cmp flag,ah
             mov typeOfSource,03h
             jmp exitsrc
-         memt: Hexaaa destination
+         memt: Hexaaa source
     exitsrc:                                                                                ;;
 ENDM                                                                                     ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -12,10 +12,10 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
     LOCAL noSqaure                                                                    ;;
     LOCAL exitVmemSrc                                                                        ;;
     PUSHALL                                                                           ;;
-    mov bx,offset string                                                              ;;
-    removeSpaces bx                                                                   ;;
+    mov di,offset string                                                              ;;
+    removeSpaces di                                                                   ;;
     POPALL                                                                            ;;
-    mov bx,offset string                                                              ;;
+    mov di,offset string                                                              ;;
     mov si,offset string                                                              ;;
                                                                                       ;;
     GoToStringEnd:                                                                    ;;
@@ -28,7 +28,7 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
     dec si                                                                            ;;
                                                                                       ;;
     mov ah,'['                                                                        ;;
-    cmp [bx],ah                                                                       ;;
+    cmp [di],ah                                                                       ;;
     jnz compareEnd                                                                    ;;
         mov ah,']'                                                                    ;;
         cmp [si],ah                                                                   ;;
@@ -43,20 +43,20 @@ validateMemorySrc MACRO string,flag,source,typeOfSource                         
     jmp exitVmemSrc                                                                          ;;
     WithSquareBracktes:                                                               ;;
     mov typeOfSource,01h
-    inc bx                                                                            ;;
+    inc di                                                                            ;;
     mov ah,'$'                                                                        ;;
     mov [si],ah                                                                       ;;
     PUSHALL                                                                           ;;
-    validateNumbers bx,flag                                                           ;;
+    validateNumbers di,flag                                                           ;;
     POPALL                                                                            ;;
     jmp exitVmemSrc                                                                          ;;
     noSqaure:                                                                         ;;
     mov typeOfSource,02h
     PUSHALL                                                                           ;;
-    validateNumbers bx,flag                                                           ;;
+    validateNumbers di,flag                                                           ;;
     POPALL                                                                            ;;
     exitVmemSrc:                                                                             ;;
-    mov source,bx                                                                ;;
+    mov source,di                                                                ;;
 ENDM                                                                                  ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
