@@ -3,7 +3,7 @@
 ;; parameters:                    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-execute macro numofoper,invalidflag,destination,source,messhr,messhl,mesror,mesrol,mesrcr,mesrcl,mesinc,mesdec
+execute macro numofoper,invalidflag,destination,source
 LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT
     
     ;check if the operation is valid or no
@@ -258,11 +258,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     
     ;for the shr
     OSHR:
-
-        mov ah, 9
-        mov dx, offset messhr
-        int 21h
-
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -278,10 +273,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the shl
     OSHL:
-
-    mov ah, 9
-        mov dx, offset messhl
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -317,9 +308,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     
     ;for the ror
     OROR:
-    mov ah, 9
-        mov dx, offset mesror
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -335,9 +323,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the rol
     OROL:
-    mov ah, 9
-        mov dx, offset mesrol
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -353,9 +338,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the rcr
     ORCR:
-    mov ah, 9
-        mov dx, offset mesrcr
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -371,9 +353,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the rcl
     ORCL:
-    mov ah, 9
-        mov dx, offset mesrcl
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -389,9 +368,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the inc
     OINC:
-    mov ah, 9
-        mov dx, offset mesinc
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
@@ -407,9 +383,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the dec
     ODEC:
-    mov ah, 9
-        mov dx, offset mesdec
-        int 21h
         ;check the flag if equal 1 then invalid --> exit
         mov al,invalidflag
         mov dl,1
