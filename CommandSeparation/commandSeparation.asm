@@ -1,8 +1,16 @@
 include command.inc
+include operations.inc
 .model small
 .stack 64
 .data
-
+messhr db 'This is messageshr','$'
+messhl db 'This is messageshl','$'
+mesror db 'This is messageror','$'
+mesrcr db 'This is messagercr','$'
+mesrcl db 'This is messagercl','$'
+mesinc db 'This is messageinc','$'
+mesdec db 'This is messagedec','$'
+mesrol db 'This is messagerol','$'
 ;command that the player enters
 MyCommand LABEL BYTE
 CommandSize db 30
@@ -64,7 +72,7 @@ main proc
                  
     knowTheOperation operations,ourOperation,NumberOfOperation,invalidOperationFlag
     
-    execute NumberOfOperation,invalidOperationFlag,ourDestination,ourSource
+    execute NumberOfOperation,invalidOperationFlag,ourDestination,ourSource,messhr,messhl,mesror,mesrol,mesrcr,mesrcl,mesinc,mesdec
     
     
     

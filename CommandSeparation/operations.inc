@@ -3,8 +3,8 @@
 ;; parameters:                    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-execute macro numofoper,invalidflag,destination,source
-LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,invalid,EXIT
+execute macro numofoper,invalidflag,destination,source,messhr,messhl,mesror,mesrol,mesrcr,mesrcl,mesinc,mesdec
+LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT
     
     ;check if the operation is valid or no
     mov al,invalidOperationFlag
@@ -48,8 +48,41 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,invalid,EXIT
         
     inc dl
     cmp al,dl
+    jz OSHR              ;code=9 for shr
+
+    inc dl
+    cmp al,dl
+    jz OSHL              ;code=10 for shl
+
+    inc dl
+    cmp al,dl
     jz OCLC              ;code=11 for clc
     
+    inc dl
+    cmp al,dl
+    jz OROR              ;code=12 for ror
+
+    inc dl
+    cmp al,dl
+    jz OROL              ;code=13 for rol
+
+    inc dl
+    cmp al,dl
+    jz ORCR              ;code=14 for rcr
+
+    inc dl
+    cmp al,dl
+    jz ORCL              ;code=15 for rcl
+
+    inc dl
+    cmp al,dl
+    jz OINC              ;code=16 for inc
+
+    inc dl
+    cmp al,dl
+    jz ODEC              ;code=17 for dec
+
+
     
     ;for the mov
     OMOV:
@@ -222,7 +255,47 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,invalid,EXIT
         ;this operation do nothing
         
         jmp EXIT
+    
+    ;for the shr
+    OSHR:
+
+        mov ah, 9
+        mov dx, offset messhr
+        int 21h
+
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
         
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the shl
+    OSHL:
+
+    mov ah, 9
+        mov dx, offset messhl
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+
     ;for the clc
     OCLC:
         ;need to check that there is no destination and source
@@ -242,6 +315,115 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,invalid,EXIT
         
         jmp EXIT
     
+    ;for the ror
+    OROR:
+    mov ah, 9
+        mov dx, offset mesror
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the rol
+    OROL:
+    mov ah, 9
+        mov dx, offset mesrol
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the rcr
+    ORCR:
+    mov ah, 9
+        mov dx, offset mesrcr
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the rcl
+    ORCL:
+    mov ah, 9
+        mov dx, offset mesrcl
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the inc
+    OINC:
+    mov ah, 9
+        mov dx, offset mesinc
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+    ;for the dec
+    ODEC:
+    mov ah, 9
+        mov dx, offset mesdec
+        int 21h
+        ;check the flag if equal 1 then invalid --> exit
+        mov al,invalidflag
+        mov dl,1
+        cmp al,dl
+        jz EXIT
+        
+        ;else
+        
+        ;if yes get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
+        jmp EXIT
+
+
     checkDS:
     ;check the destination
     mov al,destination
