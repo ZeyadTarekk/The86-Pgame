@@ -7,7 +7,7 @@ execute macro numofoper,invalidflag,destination,source
 LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT
     
     ;check if the operation is valid or no
-    mov al,invalidOperationFlag
+    mov al,invalidflag
     mov dl,1
     cmp al,dl
     jz EXIT
@@ -423,7 +423,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     
     invalid:
         mov invalidflag,1
-        jmp EXIT:
+        jmp EXIT
     EXIT:
            
 endm
