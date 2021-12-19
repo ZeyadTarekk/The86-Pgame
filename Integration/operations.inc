@@ -504,6 +504,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         jmp EXIT
     ;for the rcr
     ORCR:
+    ; Not handeled yet how to save the carry
         mov dh,typeOfSource
         mov bl,0
         cmp dh,bl
@@ -559,6 +560,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         jmp EXIT
     ;for the rcl
     ORCL:
+    ; Not handeled yet how to save the carry
         mov dh,typeOfSource
         mov bl,0
         cmp dh,bl
