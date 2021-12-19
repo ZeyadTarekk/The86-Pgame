@@ -19,7 +19,7 @@ include SRC.inc
 
 
 Names        dw 'ax','bx','cx','dx','si','di','bp','sp','al','ah','bl','bh','cl','ch','dl','dh'
-registers dw 1111h,2222h,3333h,4444h,5555h,6666h,7777h,8888h
+registers dw 1111h,2222h,3303h,4444h,5555h,6666h,7777h,8888h
 offsets dw 16 dup(00)
 flagdst db 0h
 flag db 0h

@@ -4,7 +4,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
-LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper
+LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper,SHRCheckSource,SHRCheckDestination
     
     ;check if the operation is valid or no
     mov al,invalidflag
@@ -262,7 +262,35 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     
     ;for the shr
     OSHR:
-        
+        mov dh,typeOfSource
+        mov bl,0
+        cmp dh,bl
+        jz SHRCheckSource  ;If the source is register jump and check if cl
+        mov bl,2h 
+        cmp dh,bl 
+        jnz EXIT           ; here if the source is neither register nor immediate
+
+        lea bx,source       ; now check if the source is immediate it must equal 1
+        mov dl,[bx]
+        mov al,1
+        cmp al,dl
+        jz SHRCheckDestination   ; If the source equal 1 that's good check the destination 
+        jnz EXIT                 ; else exit
+
+
+        SHRCheckSource:
+        lea bx,source
+        mov dl,[bx]
+        mov al,'c'  ;Check for first letter to be c (only cl is valid)
+        cmp al,dl
+        jnz EXIT
+        inc bx       ;Move for the second letter
+        mov dl,[bx]
+        mov al,'l'  ;Check for second letter to be l (only cl is valid)
+        cmp al,dl
+        jnz EXIT
+
+        SHRCheckDestination:
         ;Check the destination 16 bit or 8 bit 
         lea bx,destination
         inc bx
