@@ -27,6 +27,9 @@ typeOfDestination db 0fh
 destination dw 0000h
 typeOfSource db 0fh
 source dw 0000h
+memory db 16 dup(0)
+offsetMemory dw ?
+carry db 0
 
 ;command that the player enters
 MyCommand LABEL BYTE
