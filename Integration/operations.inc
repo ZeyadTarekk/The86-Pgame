@@ -4,7 +4,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
-LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper,SHRCheckSource,SHRCheckDestination,SHLCheckSource,SHLCheckDestination,RORUpper,RORCheckSource,RORCheckDestination,ROLUpper,ROLCheckSource,ROLCheckDestination,RCRUpper,RCRCheckSource,RCRCheckDestination
+LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper,SHRCheckSource,SHRCheckDestination,SHLCheckSource,SHLCheckDestination,RORUpper,RORCheckSource,RORCheckDestination,ROLUpper,ROLCheckSource,ROLCheckDestination,RCRUpper,RCRCheckSource,RCRCheckDestination,RCLUpper,RCLCheckSource,RCLCheckDestination
     
     ;check if the operation is valid or no
     mov al,invalidflag
@@ -559,19 +559,59 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         jmp EXIT
     ;for the rcl
     ORCL:
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
+        mov dh,typeOfSource
+        mov bl,0
+        cmp dh,bl
+        jz RCLCheckSource  ;If the source is register jump and check if cl
+        mov bl,2h 
+        cmp dh,bl 
+        jnz EXIT           ; here if the source is neither register nor immediate (INVALID OPERATION)
+
+        lea bx,source       ; now check if the source is immediate it must equal 1
+        mov dl,[bx]
+        mov al,1
         cmp al,dl
-        jz EXIT
-        
-        ;else
-        
-        ;if yes get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
+        jz RCLCheckDestination   ; If the source equal 1 that's good check the destination 
+        jnz EXIT                 ; else exit (INVALID OPERATION)
+
+
+        RCLCheckSource:
+        lea bx,source
+        mov dl,[bx]
+        mov al,'c'  ;Check for first letter to be c (only cl is valid)
+        cmp al,dl
+        jnz EXIT  (INVALID OPERATION)
+        inc bx       ;Move for the second letter
+        mov dl,[bx]
+        mov al,'l'  ;Check for second letter to be l (only cl is valid)
+        cmp al,dl
+        jnz EXIT        (INVALID OPERATION)
+
+        RCLCheckDestination:
+        ;Check the destination 16 bit or 8 bit 
+        lea bx,destination
+        inc bx
+        mov dl,[bx]
+        mov al,'x'
+        cmp al,dl
+        jz RCLUpper         ;if 16 bit jump to SHRUpper 
+
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        rcl al,cl               ; here is the difference (work only on byte)
+        mov [bx],al
         jmp EXIT
 
+        RCLUpper:
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        rcl ax,cl               ; here is the difference (work on the whole word)
+        mov [bx],ax
+        jmp EXIT
     ;for the inc
     OINC:
         ;check the flag if equal 1 then invalid --> exit
