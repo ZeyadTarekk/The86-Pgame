@@ -25,7 +25,11 @@ playerName db 15 dup('$')
 main PROC
     mov ax,@data
     mov ds,ax
-
+    mov ah, 9
+    mov dx, offset seventhMSG
+    int 21h
+    clearScreen
+    mov bh,0
     mainScreen2 firstMSG,secondMSG,thirdMSG,selectedMode,LINE,fourthMSG,gameMSG,chatMSG,fifthMSG,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,sixthMSG,seventhMSG
 
 
