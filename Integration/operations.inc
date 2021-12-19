@@ -292,7 +292,31 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     ;for the shl
     OSHL:
 
+        ;Check the destination 16 bit or 8 bit 
+        lea bx,destination
+        inc bx
+        mov dl,[bx]
+        mov al,'x'
+        cmp al,dl
+        jz SHLUpper         ;if 16 bit jump to SHLUpper 
+
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        shl al,cl               ; here is the difference (work only on byte)
+        mov [bx],al
         jmp EXIT
+
+        SHLUpper:
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        shl ax,cl               ; here is the difference (work on the whole word)
+        mov [bx],ax
+        jmp EXIT
+
 
 
     ;for the clc
