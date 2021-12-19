@@ -263,20 +263,19 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     ;for the shr
     OSHR:
         
-        
         ;Check the destination 16 bit or 8 bit 
         lea bx,destination
         inc bx
         mov dl,[bx]
         mov al,'x'
         cmp al,dl
-        jz SHRUpper
+        jz SHRUpper         ;if 16 bit jump to SHRUpper 
 
         mov di,realSource
         mov bx,realDistination
         mov cl,[di]
         mov ax,[bx]
-        shr al,cl
+        shr al,cl               ; here is the difference (work only on byte)
         mov [bx],al
         jmp EXIT
 
@@ -285,7 +284,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov bx,realDistination
         mov cl,[di]
         mov ax,[bx]
-        shr ax,cl
+        shr ax,cl               ; here is the difference (work on the whole word)
         mov [bx],ax
         jmp EXIT
 
