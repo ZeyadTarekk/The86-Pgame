@@ -1,9 +1,10 @@
 include func.inc
 .model huge
+.stack 64
 .data
 firstMSG db 'To Start Chatting Press F2','$'
 secondMSG db 'To Start The Game Press F3','$'
-thirdMSG db 'To End the program press any except Except ESC','$'
+thirdMSG db 'To End the program press any key Except ESC','$'
 LINE db '--------------------------------------------------------------------------------','$'
 fourthMSG db 'You sent a ','$'
 fifthMSG db ' invitation to ','$'
