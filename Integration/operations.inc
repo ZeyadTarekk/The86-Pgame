@@ -272,7 +272,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz SHRCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
@@ -329,7 +329,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz SHLCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
@@ -404,7 +404,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1                ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz RORCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
@@ -459,7 +459,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz ROLCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
@@ -515,7 +515,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz RCRCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
@@ -571,7 +571,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
         lea bx,source       ; now check if the source is immediate it must equal 1
         mov dl,[bx]
-        mov al,1
+        mov al,1                ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
         cmp al,dl
         jz RCLCheckDestination   ; If the source equal 1 that's good check the destination 
         jnz EXIT                 ; else exit (INVALID OPERATION)
