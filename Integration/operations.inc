@@ -614,17 +614,12 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         jmp EXIT
     ;for the inc
     OINC:
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        
-        ;if yes get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
+        mov di,realSource   ; to check if it is empty or not to handle it later
+        mov bx,realDistination
+        ;Here no need to check if the destination is 8 or 16 bits as we only increment is value of the current offset
+        mov ax,[bx]  
+        inc ax
+        mov [bx],ax
         jmp EXIT
 
     ;for the dec
