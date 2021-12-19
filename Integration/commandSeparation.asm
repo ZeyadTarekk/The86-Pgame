@@ -18,10 +18,11 @@ include SRC.inc
 .data
 
 
-Names        dw 'ax','bx','cx','dx','si','di','bp','sp','ah','al','bh','bl','ch','cl','dh','dl'
-registers dw 0000h,0000h,0000h,0000h,5555h,6666h,7777h,8888h
+Names        dw 'ax','bx','cx','dx','si','di','bp','sp','al','ah','bl','bh','cl','ch','dl','dh'
+registers dw 1111h,2222h,3333h,4444h,5555h,6666h,7777h,8888h
 offsets dw 16 dup(00)
-flag db 0ffh
+flagdst db 0h
+flag db 0h
 typeOfDestination db 0fh
 destination dw 0000h
 typeOfSource db 0fh
@@ -88,11 +89,11 @@ main proc
     
     knowTheOperation operations,ourOperation,NumberOfOperation,invalidOperationFlag
     
-    destinationCheck regName,Names,offsets,destination,flag,typeOfDestination,registers
+    destinationCheck regName,Names,offsets,destination,flagdst,typeOfDestination,registers
     PUSHALL
     sourceCheck SrcStr,Names,offsets,source,flag,typeOfSource,registers
     POPALL
-    execute NumberOfOperation,invalidOperationFlag,regName,SrcStr,destination,source
+    execute NumberOfOperation,invalidOperationFlag,regName,SrcStr,destination,source,typeOfDestination,typeOfSource
     
     
     
