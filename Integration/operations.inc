@@ -4,7 +4,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
-LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT
+LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper
     
     ;check if the operation is valid or no
     mov al,invalidflag
@@ -291,17 +291,7 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the shl
     OSHL:
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        
-        ;if yes get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
+
         jmp EXIT
 
 
