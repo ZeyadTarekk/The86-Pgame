@@ -27,9 +27,9 @@ main PROC
                      
                      
     lea si,playerName
-    mov ax,'9'
-    cmp [si],ax;check if between 0,9
-    jbe L09
+    ; mov ax,'9'
+    ; cmp [si],ax;check if between 0,9
+    ; jbe L09
       
     mov ax,'Z'
     cmp [si],ax ;check if between A,Z
@@ -40,10 +40,10 @@ main PROC
     jbe Lza
     
     
-    L09:
-    cmp [si],'0'
-    jae exit
-    jmp mainLoop
+    ; L09:
+    ; cmp [si],'0'
+    ; jae exit
+    ; jmp mainLoop
     
     LAZ:
     mov ax,'A'
