@@ -50,9 +50,9 @@ destinationCheck MACRO regName,Names,offsets,destination,flag,typeOfDestination,
         jmp validateRegrDt
             jmpFix: jmp memt
         validateRegrDt:
-            mov ah,9h
-            mov dx,destination
-            int 21h
+            ; mov ah,9h
+            ; mov dx,destination
+            ; int 21h
             mov flag,0ffh
             validateRegisterDirect Names,offsets,regName,destination,flag
             mov ah,1                                                                        

@@ -15,9 +15,9 @@ validateRegisterDirect MACRO Names,offsets,regName,destination,flag             
     LOCAL foundRD                                                                        ;;
     LOCAL notFoundRD                                                                     ;;
     LOCAL exit_vrd                                                                       ;;
-    mov ah,9h                                                                            ;;
-    mov dx,offset regName                                                                ;;
-    int 21h                                                                              ;;
+    ; mov ah,9h                                                                            ;;
+    ; mov dx,offset regName                                                                ;;
+    ; int 21h                                                                              ;;
     mov dx,word ptr regName+1                                                            ;;
                                                                                          ;;
     validateRegister Names,offsets,dx,destination,flag                                   ;;
