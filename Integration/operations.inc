@@ -3,7 +3,7 @@
 ;; parameters:                    
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-execute macro numofoper,invalidflag,destination,source,realDistination,realSource
+execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
 LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT
     
     ;check if the operation is valid or no
@@ -262,18 +262,33 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
     
     ;for the shr
     OSHR:
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
+        
+        
+        ;Check the destination 16 bit or 8 bit 
+        lea bx,destination
+        inc bx
+        mov dl,[bx]
+        mov al,'x'
         cmp al,dl
-        jz EXIT
-        
-        ;else
-        
-        ;if yes get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
+        jz SHRUpper
+
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        shr al,cl
+        mov [bx],al
         jmp EXIT
+
+        SHRUpper:
+        mov di,realSource
+        mov bx,realDistination
+        mov cl,[di]
+        mov ax,[bx]
+        shr ax,cl
+        mov [bx],ax
+        jmp EXIT
+
 
     ;for the shl
     OSHL:
