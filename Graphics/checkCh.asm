@@ -57,6 +57,7 @@ ENDM
 
 include func.inc
 .model huge
+.stack 64
 .data
 
 myName LABEL BYTE
@@ -102,12 +103,12 @@ main PROC
 ;    cmp [si],ax;check if between 0,9
 ;    jbe L09
       
-    mov ax,'Z'
-    cmp [si],ax ;check if between A,Z
+    mov al,'Z'
+    cmp [si],al ;check if between A,Z
     jbe LAZ
     
-    mov ax,'z'
-    cmp [si],ax     ;check if between a,z
+    mov al,'z'
+    cmp [si],al     ;check if between a,z
     jbe Lza
     
   ;  
@@ -117,16 +118,16 @@ main PROC
 ;    jmp mainLoop
     
     LAZ:
-    mov ax,'A'
-    cmp [si],'A'
+    mov al,'A'
+    cmp [si],al
     jae exit
     jmp mainLoop
     
     
     
     Lza:
-    mov ax,'a'
-    cmp [si],ax
+    mov al,'a'
+    cmp [si],al
     jae exit
     jmp mainLoop
     
@@ -142,8 +143,10 @@ main PROC
     mov ch,0
     lea bx,initalPointStr
     add bx,cx
-    mov [bx],'$'
+    mov al,'$'
+    mov [bx],al
     Hexaaa initalPointStr
+
 
 
 
