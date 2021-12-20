@@ -1,10 +1,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Wrote by: Beshoy Morad                                          
-;; parameters:                    
+;; Wrote by: Beshoy Morad , Zeyad Tarek
+;; parameters:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
-LOCAL OMOV,OMOVJMP,OMOVJMP2
+execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource,carry
+LOCAL OMOV,OMOVJMP,OMOVJMP2,MOVDSMEM,MOVSONUM,MOV16BIT,MOVSODSREGL,MOVSMERR,MOVSOMEM,MOVREG8BITS
 LOCAL OADD,OADDJMP,OADDJMP2
 LOCAL OADC,OADCJMP,OADCJMP2
 LOCAL OSUB,OSUBJMP,OSUBJMP2
@@ -23,12 +23,21 @@ LOCAL OINC,OINCJMP,OINCJMP2
 LOCAL ODEC,ODECJMP,ODECJMP2
 LOCAL EXIT
     
-    ;check if the operation is valid or no
-    mov al,invalidflag
-    mov dl,1
+    ;if the operation between memory to memory then exit
+    mov al,typeOfDestination
+    mov dl,1h
     cmp al,dl
-    jz EXIT
-    
+    jnz EXECUTEOP
+    ;destination is memory now check the source
+    mov al,typeOfSource
+    mov dl,1h
+    cmp al,dl
+    jnz EXECUTEOP
+    ;they both are memory
+    mov invalidflag,1
+    jmp EXIT
+
+    EXECUTEOP:
     ;compare the code of the operation to go to the block of that command
     mov al,numofoper
     mov dl,1h            
@@ -37,112 +46,96 @@ LOCAL EXIT
     jmp OMOVJMP2
         OMOVJMP: jmp OMOV
     OMOVJMP2:
-
     inc dl
     cmp al,dl            ;code=2 for add            
     jz OADDJMP
     jmp OADDJMP2
         OADDJMP: jmp OADD
     OADDJMP2:
-
     inc dl
     cmp al,dl            ;code=3 for adc            
     jz OADCJMP
     jmp OADCJMP2
         OADCJMP: jmp OADC
     OADCJMP2:
-
     inc dl
     cmp al,dl            ;code=4 for sub
     jz OSUBJMP
     jmp OSUBJMP2
         OSUBJMP: jmp OSUB
     OSUBJMP2:
-
     inc dl
     cmp al,dl
     jz OSBBJMP              ;code=5 for sbb
     jmp OSBBJMP2
         OSBBJMP: jmp OSBB
     OSBBJMP2:
-
     inc dl
     cmp al,dl               ;code=6 for xor
     jz OXORJMP
     jmp OXORJMP2
         OXORJMP: jmp OXOR
     OXORJMP2:
-
     inc dl
     cmp al,dl              ;code=7 for and
     jz OANDJMP
     jmp OANDJMP2
         OANDJMP: jmp OAND
     OANDJMP2:
-
     inc dl
     cmp al,dl              ;code=8 for nop
     jz ONOPJMP
     jmp ONOPJMP2
         ONOPJMP: jmp ONOP
     ONOPJMP2:
-
     inc dl
     cmp al,dl              ;code=9 for shr
     jz OSHRJMP
     jmp OSHRJMP2
         OSHRJMP: jmp OSHR
     OSHRJMP2:
-
     inc dl
     cmp al,dl              ;code=10 for shl
     jz OSHLJMP
     jmp OSHLJMP2
         OSHLJMP: jmp OSHL
     OSHLJMP2:
-
     inc dl
     cmp al,dl              ;code=11 for clc
     jz OCLCJMP
     jmp OCLCJMP2
         OCLCJMP: jmp OCLC
     OCLCJMP2:
-
     inc dl
     cmp al,dl              ;code=12 for ror
     jz ORORJMP
     jmp ORORJMP2
         ORORJMP: jmp OROR
     ORORJMP2:
-
     inc dl
     cmp al,dl              ;code=13 for rol
     jz OROLJMP
     jmp OROLJMP2
         OROLJMP: jmp OROL
     OROLJMP2:
-
     inc dl
     cmp al,dl              ;code=14 for rcr
     jz ORCRJMP
     jmp ORCRJMP2
         ORCRJMP: jmp ORCR
     ORCRJMP2:
-
     inc dl
     cmp al,dl              ;code=15 for rcl
     jz ORCLJMP
     jmp ORCLJMP2
         ORCLJMP: jmp ORCL
     ORCLJMP2:
-
     inc dl
     cmp al,dl              ;code=16 for inc
     jz OINCJMP
     jmp OINCJMP2
         OINCJMP: jmp OINC
     OINCJMP2:
-
     inc dl
     cmp al,dl              ;code=17 for dec
     jz ODECJMP
@@ -153,15 +146,99 @@ LOCAL EXIT
     
     ;for the mov
     OMOV:
-        ;get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
-        mov di,realSource
+        ;check the destination
+        mov al,typeOfDestination
+        mov dl,0
+        cmp al,dl
+        jnz MOVDSMEM
+        ;start the destination is register --> now check the source
+        mov al,typeOfSource
+        mov dl,0
+        cmp al,dl
+        jnz MOVSONUM
+        ;source is register --> have to check the second char (size matching)
+        lea bx,source
+        inc bx
+        mov al,[bx]           ;al=second char in source
+        lea bx,destination
+        inc bx
+        mov ah,[bx]           ;ah=second char in destination
+        ;compare al with x
+        mov dl,'x'
+        cmp al,dl
+        jz MOV16BIT
+        mov dl,'i'
+        cmp al,dl
+        jz MOV16BIT
+        mov dl,'p'
+        cmp al,dl
+        jnz MOVSODSREGL
+        MOV16BIT:
+        ;source 16-bits
+        ;check the destination if (l,h)
+        mov dl,'h'
+        cmp ah,dl
+        jz MOVSMERR
+        mov dl,'l'
+        cmp ah,dl
+        jz MOVSMERR
+        ;source and destination are 16-bits
+        mov si,realSource
         mov bx,realDistination
-        mov ax,[di]
-        mov [bx],ax
+        mov ax,[si]                 ;source
+        mov [bx],ax                 ;mov the source into destination
+        MOVSODSREGL:  ;source 8-bits
+        ;check the destination
+        mov dl,'x'
+        cmp ah,dl
+        jz MOVSMERR
+        mov dl,'i'
+        cmp ah,dl
+        jz MOVSMERR
+        mov dl,'p'
+        cmp ah,dl
+        jz MOVSMERR
+        ;source and destination are 8-bits
+        mov si,realSource
+        mov bx,realDistination
+        mov al,[si]                 ;source
+        mov [bx],al                 ;mov the source into destination
         jmp EXIT
-        
+        MOVSMERR:
+        mov invalidflag,1
+        jmp EXIT
+        MOVSONUM: ;source is number or Memory
+        mov al,typeOfSource
+        mov dl,2
+        cmp al,dl
+        jnz MOVSOMEM
+        ;source is number --> mov the number to the destination
+        ;now check for the register if 8-bits or 16-bits
+        lea bx,destination
+        inc bx
+        mov al,[bx]
+        mov dl,'x'
+        cmp al,dl
+        jnz MOVREG8BITS
+        ;16-bit
+        mov si,realSource
+        mov bx,realDistination
+        mov ax,[si]                 ;source
+        mov [bx],ax                 ;mov the source into destination
+        ;8-bits
+        MOVREG8BITS:
+        mov si,realSource
+        mov bx,realDistination
+        mov al,[si]                 ;source
+        mov [bx],al                 ;mov the source into destination
+        jmp EXIT
+
+        MOVSOMEM: ;source is (Memory,Register Indirect)
+        ;not handeld yet
+        ;end destination is reg
+        MOVDSMEM: ;destination is not register (Memory,Register Indirect)
+        ;not handeld yet
+        jmp EXIT
     ;for the add
     OADD:
         ;get the register from the variables section 
@@ -217,7 +294,6 @@ LOCAL EXIT
     ONOP:
         ;this operation do nothing
         jmp EXIT
-    
     ;for the shr
     OSHR:
         mov dh,typeOfSource
@@ -239,14 +315,14 @@ LOCAL EXIT
         SHRCheckSource:
         lea bx,source
         mov dl,[bx]
-        mov al,'c'  ;Check for first letter to be c (only cl is valid)
+        mov al,'c'          ;Check for first letter to be c (only cl is valid)
         cmp al,dl
-        jnz EXIT  (INVALID OPERATION)
-        inc bx       ;Move for the second letter
+        jnz EXIT            ;(INVALID OPERATION)
+        inc bx              ;Move for the second letter
         mov dl,[bx]
-        mov al,'l'  ;Check for second letter to be l (only cl is valid)
+        mov al,'l'          ;Check for second letter to be l (only cl is valid)
         cmp al,dl
-        jnz EXIT        (INVALID OPERATION)
+        jnz EXIT            ;(INVALID OPERATION)
 
         SHRCheckDestination:
         ;Check the destination 16 bit or 8 bit 
@@ -273,7 +349,6 @@ LOCAL EXIT
         shr ax,cl               ; here is the difference (work on the whole word)
         mov [bx],ax
         jmp EXIT
-
 
     ;for the shl
     OSHL:
@@ -334,10 +409,8 @@ LOCAL EXIT
     ;for the clc
     OCLC:
         ;get the carry variable and set it to zero
-        
-        
+        mov carry,0
         jmp EXIT
-    
     ;for the ror
     OROR:
         mov dh,typeOfSource
