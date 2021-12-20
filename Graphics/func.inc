@@ -176,9 +176,7 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     LoopChar:
     mov ah,1
     int 16h
-    mov al,1
-    cmp ah,al
-    jz LoopChar
+    jz LoopChar   ; zero flag = 1 if no charachter is entered
     mov al,3Ch      ;if the pressed key is F2 this is chat mode
     cmp ah,al
     jz setChatMode
