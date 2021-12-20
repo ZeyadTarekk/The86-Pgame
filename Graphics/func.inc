@@ -183,13 +183,19 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov al,3Dh      ;if the pressed key is F3 this is game mode
     cmp ah,al
     jz setGameMode
+    mov ah,0    ;Clear the buffer
+    int 16h
     hlt             ; else (ESC or any another key ) hlt the program
 
     setGameMode:
         mov selectedMode,2
+        mov ah,0        ;Clear the buffer
+        int 16h
         jmp EXITFORMAINSCREEN
     setChatMode:
         mov selectedMode,1
+        mov ah,0        ;Clear the buffer
+        int 16h
         jmp EXITFORMAINSCREEN
         
     EXITFORMAINSCREEN:
