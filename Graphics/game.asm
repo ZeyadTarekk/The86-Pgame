@@ -40,7 +40,75 @@ otherBPx db 64
 otherBPy db 6
 
 ;position of memory
+myMem0x db 36
+myMem0y db 0
+myMem1x db 36
+myMem1y db 1
+myMem2x db 36
+myMem2y db 2
+myMem3x db 36
+myMem3y db 3
+myMem4x db 36
+myMem4y db 4
+myMem5x db 36
+myMem5y db 5
+myMem6x db 36
+myMem6y db 6
+myMem7x db 36
+myMem7y db 7
+myMem8x db 36
+myMem8y db 8
+myMem9x db 36
+myMem9y db 9
+myMemAx db 36
+myMemAy db 10
+myMemBx db 36
+myMemBy db 11
+myMemCx db 36
+myMemCy db 12
+myMemDx db 36
+myMemDy db 13
+myMemEx db 36
+myMemEy db 14
+myMemFx db 36
+myMemFy db 15
 
+otherMem0x db 75
+otherMem0y db 0
+otherMem1x db 75
+otherMem1y db 1
+otherMem2x db 75
+otherMem2y db 2
+otherMem3x db 75
+otherMem3y db 3
+otherMem4x db 75
+otherMem4y db 4
+otherMem5x db 75
+otherMem5y db 5
+otherMem6x db 75
+otherMem6y db 6
+otherMem7x db 75
+otherMem7y db 7
+otherMem8x db 75
+otherMem8y db 8
+otherMem9x db 75
+otherMem9y db 9
+otherMemAx db 75
+otherMemAy db 10
+otherMemBx db 75
+otherMemBy db 11
+otherMemCx db 75
+otherMemCy db 12
+otherMemDx db 75
+otherMemDy db 13
+otherMemEx db 75
+otherMemEy db 14
+otherMemFx db 75
+otherMemFy db 15
+
+;position of wanted value
+wantedx db 36
+wantedy db 17
 
 
 ;intial game graphics
@@ -60,7 +128,7 @@ gameRow db '                                   |00|0|                           
         db '                                   |00|D|                                 |00|D|'
         db '                                   |00|E|                                 |00|E|'
         db '-----------------------------------|00|F|---------------------------------|00|F|'
-        db '                                   |    |                                 |    |'      ;line for the gun  
+        db '            Wanted Value --------> |105E| <-------- Wanted Value          |    |'      ;line for the gun  
         db '                                   |    |                                 |    |'      ;this line for the command
         db '-----------------------------------|    |---------------------------------|    |'
         db '                                   |    |                                 |    |'      ;lines for the colored balls
@@ -77,6 +145,18 @@ main proc
 
     clearScreen
     displayScreen gameRow
+
+    mov dl,otherMemFx
+    mov dh,otherMemFy
+    mov ah,2
+    int 10h
+
+    mov ah,9 ;Display
+    mov bh,0 ;Page 0
+    mov al,44h ;Letter D
+    mov cx,2h ;5 times
+    mov bl,0FAh ;Green (A) on white(F) background
+    int 10h
 
     hlt
 main endp
