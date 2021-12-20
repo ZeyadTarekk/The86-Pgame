@@ -4,8 +4,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource,carry
-LOCAL OMOV,OMOVJMP,OMOVJMP2,MOVDSMEM,MOVSONUM,MOV16BIT,MOVSODSREGL,MOVSMERR,MOVSOMEM,MOVREG8BITS
-LOCAL OADD,OADDJMP,OADDJMP2
+LOCAL OMOV,OMOVJMP,OMOVJMP2,MOVDSMEM,MOVSONUM,MOV16BIT,MOVSODSREGL,MOVSMERR,MOVSOMEM,MOVREG8BITS,MOVREG16BITS
+LOCAL OADD,OADDJMP,OADDJMP2,ADDDSMEM,ADDSONUM,ADD16BIT,ADDSODSREGL,ADDSMERR,ADDNOCARRY,ADDNOCARRY2,ADDNOCARRY3,ADDNOCARRY4,ADDSOMEM,ADDREG8BITS,ADDREG16BITS
 LOCAL OADC,OADCJMP,OADCJMP2
 LOCAL OSUB,OSUBJMP,OSUBJMP2
 LOCAL OSBB,OSBBJMP,OSBBJMP2
@@ -187,6 +187,7 @@ LOCAL EXIT
         mov bx,realDistination
         mov ax,[si]                 ;source
         mov [bx],ax                 ;mov the source into destination
+        jmp EXIT
         MOVSODSREGL:  ;source 8-bits
         ;check the destination
         mov dl,'x'
@@ -219,12 +220,20 @@ LOCAL EXIT
         mov al,[bx]
         mov dl,'x'
         cmp al,dl
+        jz MOVREG16BITS
+        mov dl,'i'
+        cmp al,dl
+        jz MOVREG16BITS
+        mov dl,'p'
+        cmp al,dl
         jnz MOVREG8BITS
         ;16-bit
+        MOVREG16BITS:
         mov si,realSource
         mov bx,realDistination
         mov ax,[si]                 ;source
         mov [bx],ax                 ;mov the source into destination
+        jmp EXIT
         ;8-bits
         MOVREG8BITS:
         mov si,realSource
@@ -241,13 +250,130 @@ LOCAL EXIT
         jmp EXIT
     ;for the add
     OADD:
-        ;get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
-
-
+        ;check the destination
+        mov al,typeOfDestination
+        mov dl,0
+        cmp al,dl
+        jnz ADDDSMEM
+        ;start the destination is register --> now check the source
+        mov al,typeOfSource
+        mov dl,0
+        cmp al,dl
+        jnz ADDSONUM
+        ;source is register --> have to check the second char (size matching)
+        lea bx,source
+        inc bx
+        mov al,[bx]           ;al=second char in source
+        lea bx,destination
+        inc bx
+        mov ah,[bx]           ;ah=second char in destination
+        ;compare al with x
+        mov dl,'x'
+        cmp al,dl
+        jz ADD16BIT
+        mov dl,'i'
+        cmp al,dl
+        jz ADD16BIT
+        mov dl,'p'
+        cmp al,dl
+        jnz ADDSODSREGL
+        ADD16BIT:
+        ;source 16-bits
+        ;check the destination if (l,h)
+        mov dl,'h'
+        cmp ah,dl
+        jz ADDSMERR
+        mov dl,'l'
+        cmp ah,dl
+        jz ADDSMERR
+        ;source and destination are 16-bits
+        mov si,realSource
+        mov bx,realDistination
+        mov ax,[si]                 ;source
+        mov di,[bx]                 ;destination
+        add di,ax
+        jnc ADDNOCARRY
+        mov carry,1
+        ADDNOCARRY:
+        mov [bx],di
         jmp EXIT
-    
+        ADDSODSREGL:  ;source 8-bits
+        ;check the destination
+        mov dl,'x'
+        cmp ah,dl
+        jz ADDSMERR
+        mov dl,'i'
+        cmp ah,dl
+        jz ADDSMERR
+        mov dl,'p'
+        cmp ah,dl
+        jz ADDSMERR
+        ;source and destination are 8-bits
+        mov si,realSource
+        mov bx,realDistination
+        mov al,[si]                 ;source
+        mov ah,[bx]                 ;destination
+        add ah,al
+        jnc ADDNOCARRY2
+        mov carry,1
+        ADDNOCARRY2:
+        mov [bx],ah
+        jmp EXIT
+
+        ADDSMERR:
+        mov invalidflag,1
+        jmp EXIT
+
+        ADDSONUM: ;source is number or Memory
+        mov al,typeOfSource
+        mov dl,2
+        cmp al,dl
+        jnz ADDSOMEM
+        ;source is number --> add the number to the destination
+        ;now check for the register if 8-bits or 16-bits
+        lea bx,destination
+        inc bx
+        mov al,[bx]
+        mov dl,'x'
+        cmp al,dl
+        jz ADDREG16BITS
+        mov dl,'i'
+        cmp al,dl
+        jz ADDREG16BITS
+        mov dl,'p'
+        cmp al,dl
+        jnz ADDREG8BITS
+        ;16-bit
+        ADDREG16BITS:
+        mov si,realSource
+        mov bx,realDistination
+        mov ax,[si]                 ;source
+        mov di,[bx]                 ;destination
+        add di,ax
+        jnc ADDNOCARRY3
+        mov carry,1
+        ADDNOCARRY3:
+        mov [bx],di
+        jmp EXIT
+        ;8-bits
+        ADDREG8BITS:
+        mov si,realSource
+        mov bx,realDistination
+        mov al,[si]                 ;source
+        mov ah,[bx]                 ;destination
+        add ah,al
+        jnc ADDNOCARRY4
+        mov carry,1
+        ADDNOCARRY4:
+        mov [bx],ah
+        jmp EXIT
+
+        ADDSOMEM: ;source is (Memory,Register Indirect)
+        ;not handeld yet
+        ;end destination is reg
+        ADDDSMEM: ;destination is not register (Memory,Register Indirect)
+        ;not handeld yet
+        jmp EXIT
     ;for the adc
     OADC:
         ;get the register from the variables section 
