@@ -8,7 +8,7 @@ ENDM
 
 
 mainScreen MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,firstModifiedMSG,secondModifiedMSG,thirdModifiedMSG,fourthModifiedMSG 
-LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec,LoopChar
+LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec
     ; first display yhe first message
     mov ah,2
     mov dx,0A18h            ; set the cursor at the middle of the screen nearly
@@ -123,7 +123,7 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
 
 ENDM
 mainScreen2 MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,firstModifiedMSG,secondModifiedMSG,thirdModifiedMSG,fourthModifiedMSG
-LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec,LoopChar
+LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec,LoopChar,ClearBuffer
     ; first display yhe first message
     mov ah,2
     mov dx,0A18h            ; set the cursor at the middle of the screen nearly
@@ -171,9 +171,16 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov al,3Dh      ;if the pressed key is F3 this is game mode
     cmp ah,al
     jz setGameMode
+    mov al,1        ; check if ESC 
+    cmp al,ah 
+    jnz ClearBuffer    ; if not ESC Clear buffer and wait for more chars
     mov ah,0    ;Clear the buffer
     int 16h
-    hlt             ; else (ESC or any another key ) hlt the program
+    hlt             ;  (ESC) hlt the program
+    ClearBuffer:
+    mov ah,0    ;Clear the buffer
+    int 16h
+    jmp LoopChar
 
     setGameMode:
         mov selectedMode,2
