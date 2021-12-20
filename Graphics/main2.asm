@@ -2,16 +2,14 @@ include func.inc
 .model huge
 .stack 64
 .data
+firstModifiedMSG db 'You Sent a game inivitation to ','$'
+secondModifiedMSG db 'You Sent a chatting inivitation to ','$'
+thirdModifiedMSG db ' sent you a game invitation to accept press F2 ','$'
+fourthModifiedMSG db ' sent you a chatting invitation to accept press F2 ','$'
 firstMSG db 'To Start Chatting Press F2','$'
 secondMSG db 'To Start The Game Press F3','$'
 thirdMSG db 'To End the program press ESC','$'
 LINE db '--------------------------------------------------------------------------------','$'
-fourthMSG db 'You sent a ','$'
-fifthMSG db ' invitation to ','$'
-gameMSG db 'game','$'
-chatMSG db 'chatting','$'
-sixthMSG db ' sent you a ','$'
-seventhMSG db ' invitation to accept press F2 ','$'
 carReturn db 10,13,'$'
 nameOfTheSecondPlayer db 'zeyad','$'
 nameOfTheFirstPlayer db 'ahmed','$'
@@ -26,12 +24,9 @@ playerName db 15 dup('$')
 main PROC
     mov ax,@data
     mov ds,ax
-    mov ah, 9
-    mov dx, offset seventhMSG
-    int 21h
     clearScreen
     mov bh,0
-    mainScreen2 firstMSG,secondMSG,thirdMSG,selectedMode,LINE,fourthMSG,gameMSG,chatMSG,fifthMSG,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,sixthMSG,seventhMSG
+    mainScreen2 firstMSG,secondMSG,thirdMSG,selectedMode,LINE,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,firstModifiedMSG,secondModifiedMSG,thirdModifiedMSG,fourthModifiedMSG
 
 
     

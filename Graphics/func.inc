@@ -7,8 +7,8 @@ clearScreen MACRO
 ENDM
 
 
-mainScreen MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,fourthMSG,gameMSG,chatMSG,fifthMSG,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,sixthMSG,seventhMSG
-LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec
+mainScreen MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,firstModifiedMSG,secondModifiedMSG,thirdModifiedMSG,fourthModifiedMSG 
+LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec,LoopChar
     ; first display yhe first message
     mov ah,2
     mov dx,0A18h            ; set the cursor at the middle of the screen nearly
@@ -56,11 +56,12 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     jz setGameMode
     hlt             ; else (ESC or any another key ) hlt the program
 
-    setGameMode:
+        setGameMode:
         mov selectedMode,2
         jmp EXITFORMAINSCREEN
     setChatMode:
         mov selectedMode,1
+
         jmp EXITFORMAINSCREEN
         
     EXITFORMAINSCREEN:
@@ -69,9 +70,6 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov dx,1600h
     int 10h
 
-    mov ah, 9
-    mov dx, offset fourthMSG
-    int 21h
 
     mov al,selectedMode
     mov ah,1 
@@ -79,25 +77,22 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     jz DrawChat
 
     mov ah, 9
-    mov dx, offset gameMSG
+    mov dx, offset firstModifiedMSG
     int 21h
     jmp AfterDraw
 
 
     DrawChat:
     mov ah, 9
-    mov dx, offset chatMSG
+    mov dx, offset secondModifiedMSG
     int 21h
     
     AfterDraw:
 
     mov ah, 9
-    mov dx, offset fifthMSG
-    int 21h
-
-    mov ah, 9
     mov dx, offset nameOfTheSecondPlayer
     int 21h
+
 
     mov ah, 9
     mov dx, offset carReturn
@@ -107,9 +102,6 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov dx, offset nameOfTheFirstPlayer
     int 21h
 
-    mov ah, 9
-    mov dx, offset sixthMSG
-    int 21h
 
     mov al,selectedMode
     mov ah,1 
@@ -117,24 +109,20 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     jz DrawChatSec
 
     mov ah, 9
-    mov dx, offset gameMSG
+    mov dx, offset thirdModifiedMSG
     int 21h
     jmp AfterDrawSec
 
 
     DrawChatSec:
     mov ah, 9
-    mov dx, offset chatMSG
+    mov dx, offset fourthModifiedMSG
     int 21h
     
     AfterDrawSec:
 
-    mov ah, 9
-    mov dx, offset seventhMSG
-    int 21h
-
 ENDM
-mainScreen2 MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,fourthMSG,gameMSG,chatMSG,fifthMSG,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,sixthMSG,seventhMSG
+mainScreen2 MACRO firstMSG,secondMSG,thirdMSG,selectedMode,LINE,nameOfTheSecondPlayer,carReturn,nameOfTheFirstPlayer,firstModifiedMSG,secondModifiedMSG,thirdModifiedMSG,fourthModifiedMSG
 LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,AfterDrawSec,LoopChar
     ; first display yhe first message
     mov ah,2
@@ -204,9 +192,6 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov dx,1600h
     int 10h
 
-    mov ah, 9
-    mov dx, offset fourthMSG
-    int 21h
 
     mov al,selectedMode
     mov ah,1 
@@ -214,25 +199,22 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     jz DrawChat
 
     mov ah, 9
-    mov dx, offset gameMSG
+    mov dx, offset firstModifiedMSG
     int 21h
     jmp AfterDraw
 
 
     DrawChat:
     mov ah, 9
-    mov dx, offset chatMSG
+    mov dx, offset secondModifiedMSG
     int 21h
     
     AfterDraw:
 
     mov ah, 9
-    mov dx, offset fifthMSG
-    int 21h
-
-    mov ah, 9
     mov dx, offset nameOfTheSecondPlayer
     int 21h
+
 
     mov ah, 9
     mov dx, offset carReturn
@@ -242,9 +224,6 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     mov dx, offset nameOfTheFirstPlayer
     int 21h
 
-    mov ah, 9
-    mov dx, offset sixthMSG
-    int 21h
 
     mov al,selectedMode
     mov ah,1 
@@ -252,21 +231,18 @@ LOCAL EXITFORMAINSCREEN,setGameMode,setChatMode,DrawChat,AfterDraw,DrawChatSec,A
     jz DrawChatSec
 
     mov ah, 9
-    mov dx, offset gameMSG
+    mov dx, offset thirdModifiedMSG
     int 21h
     jmp AfterDrawSec
 
 
     DrawChatSec:
     mov ah, 9
-    mov dx, offset chatMSG
+    mov dx, offset fourthModifiedMSG
     int 21h
     
     AfterDrawSec:
 
-    mov ah, 9
-    mov dx, offset seventhMSG
-    int 21h
 
 ENDM
 
