@@ -4,260 +4,218 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 execute macro numofoper,invalidflag,destination,source,realDistination,realSource,typeOfDestination,typeOfSource
-LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,ORCR,ORCL,OINC,ODEC,invalid,EXIT,SHRUpper,SHLUpper,SHRCheckSource,SHRCheckDestination,SHLCheckSource,SHLCheckDestination,RORUpper,RORCheckSource,RORCheckDestination,ROLUpper,ROLCheckSource,ROLCheckDestination,RCRUpper,RCRCheckSource,RCRCheckDestination,RCLUpper,RCLCheckSource,RCLCheckDestination
+LOCAL OMOV,OMOVJMP,OMOVJMP2
+LOCAL OADD,OADDJMP,OADDJMP2
+LOCAL OADC,OADCJMP,OADCJMP2
+LOCAL OSUB,OSUBJMP,OSUBJMP2
+LOCAL OSBB,OSBBJMP,OSBBJMP2
+LOCAL OXOR,OXORJMP,OXORJMP2
+LOCAL OAND,OANDJMP,OANDJMP2
+LOCAL ONOP,ONOPJMP,ONOPJMP2
+LOCAL OCLC,OCLCJMP,OCLCJMP2
+LOCAL OSHR,OSHRJMP,OSHRJMP2,SHRUpper,SHRCheckSource,SHRCheckDestination
+LOCAL OSHL,OSHLJMP,OSHLJMP2,SHLUpper,SHLCheckSource,SHLCheckDestination
+LOCAL OROR,ORORJMP,ORORJMP2,RORUpper,RORCheckSource,RORCheckDestination
+LOCAL OROL,OROLJMP,OROLJMP2,ROLUpper,ROLCheckSource,ROLCheckDestination
+LOCAL ORCR,ORCRJMP,ORCRJMP2,RCRUpper,RCRCheckSource,RCRCheckDestination
+LOCAL ORCL,ORCLJMP,ORCLJMP2,RCLUpper,RCLCheckSource,RCLCheckDestination
+LOCAL OINC,OINCJMP,OINCJMP2
+LOCAL ODEC,ODECJMP,ODECJMP2
+LOCAL EXIT
     
     ;check if the operation is valid or no
     mov al,invalidflag
     mov dl,1
     cmp al,dl
     jz EXIT
-        
+    
     ;compare the code of the operation to go to the block of that command
     mov al,numofoper
     mov dl,1h            
     cmp al,dl            ;code=1 for mov
-    jz OMOV
-    
+    jz OMOVJMP
+    jmp OMOVJMP2
+        OMOVJMP: jmp OMOV
+    OMOVJMP2:
+
     inc dl
-    cmp al,dl
-    jz OADD              ;code=2 for add
-    
+    cmp al,dl            ;code=2 for add            
+    jz OADDJMP
+    jmp OADDJMP2
+        OADDJMP: jmp OADD
+    OADDJMP2:
+
     inc dl
-    cmp al,dl
-    jz OADC              ;code=3 for adc
-    
+    cmp al,dl            ;code=3 for adc            
+    jz OADCJMP
+    jmp OADCJMP2
+        OADCJMP: jmp OADC
+    OADCJMP2:
+
     inc dl
-    cmp al,dl
-    jz OSUB              ;code=4 for sub
-    
-    inc dl
-    cmp al,dl
-    jz OSBB              ;code=5 for sbb
-    
-    inc dl
-    cmp al,dl
-    jz OXOR              ;code=6 for xor
-        
-    inc dl
-    cmp al,dl
-    jz OAND              ;code=7 for and
-        
-    inc dl
-    cmp al,dl
-    jz ONOP              ;code=8 for nop
-        
-    inc dl
-    cmp al,dl
-    jz OSHR              ;code=9 for shr
+    cmp al,dl            ;code=4 for sub
+    jz OSUBJMP
+    jmp OSUBJMP2
+        OSUBJMP: jmp OSUB
+    OSUBJMP2:
 
     inc dl
     cmp al,dl
-    jz OSHL              ;code=10 for shl
+    jz OSBBJMP              ;code=5 for sbb
+    jmp OSBBJMP2
+        OSBBJMP: jmp OSBB
+    OSBBJMP2:
 
     inc dl
-    cmp al,dl
-    jz OCLC              ;code=11 for clc
-    
-    inc dl
-    cmp al,dl
-    jz OROR              ;code=12 for ror
+    cmp al,dl               ;code=6 for xor
+    jz OXORJMP
+    jmp OXORJMP2
+        OXORJMP: jmp OXOR
+    OXORJMP2:
 
     inc dl
-    cmp al,dl
-    jz OROL              ;code=13 for rol
+    cmp al,dl              ;code=7 for and
+    jz OANDJMP
+    jmp OANDJMP2
+        OANDJMP: jmp OAND
+    OANDJMP2:
 
     inc dl
-    cmp al,dl
-    jz ORCR              ;code=14 for rcr
+    cmp al,dl              ;code=8 for nop
+    jz ONOPJMP
+    jmp ONOPJMP2
+        ONOPJMP: jmp ONOP
+    ONOPJMP2:
 
     inc dl
-    cmp al,dl
-    jz ORCL              ;code=15 for rcl
+    cmp al,dl              ;code=9 for shr
+    jz OSHRJMP
+    jmp OSHRJMP2
+        OSHRJMP: jmp OSHR
+    OSHRJMP2:
 
     inc dl
-    cmp al,dl
-    jz OINC              ;code=16 for inc
+    cmp al,dl              ;code=10 for shl
+    jz OSHLJMP
+    jmp OSHLJMP2
+        OSHLJMP: jmp OSHL
+    OSHLJMP2:
 
     inc dl
-    cmp al,dl
-    jz ODEC              ;code=17 for dec
+    cmp al,dl              ;code=11 for clc
+    jz OCLCJMP
+    jmp OCLCJMP2
+        OCLCJMP: jmp OCLC
+    OCLCJMP2:
 
+    inc dl
+    cmp al,dl              ;code=12 for ror
+    jz ORORJMP
+    jmp ORORJMP2
+        ORORJMP: jmp OROR
+    ORORJMP2:
+
+    inc dl
+    cmp al,dl              ;code=13 for rol
+    jz OROLJMP
+    jmp OROLJMP2
+        OROLJMP: jmp OROL
+    OROLJMP2:
+
+    inc dl
+    cmp al,dl              ;code=14 for rcr
+    jz ORCRJMP
+    jmp ORCRJMP2
+        ORCRJMP: jmp ORCR
+    ORCRJMP2:
+
+    inc dl
+    cmp al,dl              ;code=15 for rcl
+    jz ORCLJMP
+    jmp ORCLJMP2
+        ORCLJMP: jmp ORCL
+    ORCLJMP2:
+
+    inc dl
+    cmp al,dl              ;code=16 for inc
+    jz OINCJMP
+    jmp OINCJMP2
+        OINCJMP: jmp OINC
+    OINCJMP2:
+
+    inc dl
+    cmp al,dl              ;code=17 for dec
+    jz ODECJMP
+    jmp ODECJMP2
+        ODECJMP: jmp ODEC
+    ODECJMP2:
 
     
     ;for the mov
     OMOV:
-        ;need to check if there is destination and source first
-        
+        ;get the register from the variables section 
+        ;and perform the operation on them
+        ;then put the results back to the register variables
         mov di,realSource
         mov bx,realDistination
         mov ax,[di]
         mov [bx],ax
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
-        ;and perform the operation on them
-        ;then put the results back to the register variables
         jmp EXIT
         
     ;for the add
     OADD:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+
+
         jmp EXIT
     
     ;for the adc
     OADC:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+
+
         jmp EXIT
         
     ;for the sub
     OSUB:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+
+
         jmp EXIT
     
     ;for the sbb
     OSBB:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+        
         jmp EXIT
     
     ;for the xor
     OXOR:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+        
         jmp EXIT
     
     ;for the and
     OAND:
-        ;need to check if there is destination and source first
-        jmp checkDS
-        
-        ;check the flag if equal 1 then invalid --> exit
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jz EXIT
-        
-        ;else
-        ;now we need to check the destination it self if it valid
-        
-        
-        ;if yes check the source
-        
-        ;if yes get the register from the variables section 
+        ;get the register from the variables section 
         ;and perform the operation on them
         ;then put the results back to the register variables
+
         jmp EXIT
         
     ;for the nop
     ONOP:
-        ;need to check that there is no destination and source
-        jmp checkDS
-        
-        ;check the flag if equal 1 then it is valid 
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jnz EXIT
-        
-        ;note we need to turn the flag back off
-        mov invalidflag,0
-        
         ;this operation do nothing
-        
         jmp EXIT
     
     ;for the shr
@@ -375,18 +333,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
 
     ;for the clc
     OCLC:
-        ;need to check that there is no destination and source
-        jmp checkDS
-        
-        ;check the flag if equal 1 then it is valid 
-        mov al,invalidflag
-        mov dl,1
-        cmp al,dl
-        jnz EXIT
-        
-        ;note we need to turn the flag back off
-        mov invalidflag,0
-        
         ;get the carry variable and set it to zero
         
         
@@ -503,8 +449,8 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov [bx],ax
         jmp EXIT
     ;for the rcr
-    ORCR:
     ; Not handeled yet how to save the carry
+    ORCR:
         mov dh,typeOfSource
         mov bl,0
         cmp dh,bl
@@ -559,8 +505,8 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov [bx],ax
         jmp EXIT
     ;for the rcl
-    ORCL:
     ; Not handeled yet how to save the carry
+    ORCL:
         mov dh,typeOfSource
         mov bl,0
         cmp dh,bl
@@ -632,35 +578,6 @@ LOCAL checkDS,OMOV,OADD,OADC,OSUB,OSBB,OXOR,OAND,ONOP,OCLC,OSHR,OSHL,OROR,OROL,O
         mov ax,[bx]  
         dec ax
         mov [bx],ax
-        jmp EXIT
 
-    checkDS:
-    ;check the destination
-    mov al,destination
-    mov dl,24h         ;check if the first char is $ (no destination)
-    cmp al,dl
-    jz invalid         ;invalid operation then turn on the flag and exit
-        
-    mov dl,0DH         ;check if the first char is enter (no destination)
-    cmp al,dl
-    jz invalid         ;invalid operation then turn on the flag and exit
-        
-    ;else, there is a destination
-    ;now check the source
-    mov al,source
-    mov dl,24h         ;check if the first char is $ (no source)
-    cmp al,dl
-    jz invalid         ;invalid operation then turn on the flag and exit
-        
-    mov dl,0DH         ;check if the first char is enter (no source)
-    cmp al,dl
-    jz invalid         ;invalid operation then turn on the flag and exit    
-    ;else, there is a source
-    jmp EXIT
-    
-    invalid:
-        mov invalidflag,1
-        jmp EXIT
     EXIT:
-           
 endm
