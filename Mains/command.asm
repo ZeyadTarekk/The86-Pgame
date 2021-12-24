@@ -176,7 +176,7 @@ separateCommand proc
   mov [di],al
   inc di
   inc si
-  jmp SECON:
+  jmp SECON
   SEOPEREND:
   inc si
   ;now the di is on the first char of the destination
