@@ -1585,10 +1585,216 @@ EXROL proc
 EXROL endp
 
 EXRCR proc
+  mov dh,typeOfSource
+  mov bl,0
+  cmp dh,bl
+  jz RCRCheckSource  ;If the source is register jump and check if cl
+  mov bl,2h 
+  cmp dh,bl 
+  jnz RCREXITError           ; here if the source is neither register nor immediate (INVALID OPERATION)
+
+  lea bx,SrcStr       ; now check if the source is immediate it must equal 1
+  mov dl,[bx]
+  mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
+  cmp al,dl
+  jz RCRCheckDestination   ; If the source equal 1 that's good check the destination 
+  jnz RCREXITError                 ; else exit (INVALID OPERATION)
+
+
+  RCRCheckSource:
+  lea bx,SrcStr
+  mov dl,[bx]
+  mov al,'c'  ;Check for first letter to be c (only cl is valid)
+  cmp al,dl
+  jnz RCREXITError  ;(INVALID OPERATION)
+  inc bx       ;Move for the second letter
+  mov dl,[bx]
+  mov al,'l'  ;Check for second letter to be l (only cl is valid)
+  cmp al,dl
+  jnz RCREXITError        ;(INVALID OPERATION)
+
+  RCRCheckDestination:
+  ;Check the destination 16 bit or 8 bit 
+  lea bx,regName
+  inc bx
+  mov dl,[bx]
+  mov al,'x'
+  cmp al,dl
+  jz RCRUpper         ;if 16 bit jump to SHRUpper 
+
+  mov al,carry    ; check if the carry equal to 1
+  mov ah,1
+  cmp al,ah
+  jnz RCRNOCARRY  ;if not equal jump without setting the carry
+  stc             ;else set the  carry
+  jmp RCRCARRY    ; jump to carry
+
+
+  RCRNOCARRY:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  clc
+  rcr al,cl               ; here is the difference (work only on byte)
+  mov [bx],al
+  jc RCRSetCarry
+  jmp RCREXIT
+
+  RCRCARRY:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  rcr al,cl               ; here is the difference (work only on byte)
+  mov [bx],al
+  jc RCRSetCarry
+  jmp RCREXIT
+
+  RCRUpper:
+  mov al,carry    ; check if the carry equal to 1
+  mov ah,1
+  cmp al,ah
+  jnz RCRNOCARRYUpper  ;if not equal jump without setting the carry
+  stc             ; else set the  carry
+  jmp RCRCARRYUpper ; jump to carry 
+
+  RCRNOCARRYUpper:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  clc
+  rcr ax,cl               ; here is the difference (work on the whole word)
+  mov [bx],ax
+  jnc RCREXIT
+  jc RCRSetCarry
+
+  RCRCARRYUpper:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  rcr ax,cl               ; here is the difference (work on the whole word)
+  mov [bx],ax
+  jnc RCREXIT
+
+  RCRSetCarry:
+  mov carry,1
+  jmp RCREXIT
+
+  RCREXITError:
+  call Error
+  
+  RCREXIT:
+
   ret
 EXRCR endp
 
 EXRCL proc
+  mov dh,typeOfSource
+  mov bl,0
+  cmp dh,bl
+  jz RCLCheckSource  ;If the source is register jump and check if cl
+  mov bl,2h 
+  cmp dh,bl 
+  jnz RCLEXITError           ; here if the source is neither register nor immediate (INVALID OPERATION)
+
+  lea bx,SrcStr       ; now check if the source is immediate it must equal 1
+  mov dl,[bx]
+  mov al,1            ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
+  cmp al,dl
+  jz RCLCheckDestination   ; If the source equal 1 that's good check the destination 
+  jnz RCLEXITError                 ; else exit (INVALID OPERATION)
+
+
+  RCLCheckSource:
+  lea bx,SrcStr
+  mov dl,[bx]
+  mov al,'c'  ;Check for first letter to be c (only cl is valid)
+  cmp al,dl
+  jnz RCLEXITError  ;(INVALID OPERATION)
+  inc bx       ;Move for the second letter
+  mov dl,[bx]
+  mov al,'l'  ;Check for second letter to be l (only cl is valid)
+  cmp al,dl
+  jnz RCLEXITError        ;(INVALID OPERATION)
+
+  RCLCheckDestination:
+  ;Check the destination 16 bit or 8 bit 
+  lea bx,regName
+  inc bx
+  mov dl,[bx]
+  mov al,'x'
+  cmp al,dl
+  jz RCLUpper         ;if 16 bit jump to SHRUpper 
+
+  mov al,carry    ; check if the carry equal to 1
+  mov ah,1
+  cmp al,ah
+  jnz RCLNOCARRY  ;if not equal jump without setting the carry
+  stc             ;else set the  carry
+  jmp RCLCARRY    ; jump to carry
+
+
+  RCLNOCARRY:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  clc
+  rcl al,cl               ; here is the difference (work only on byte)
+  mov [bx],al
+  jc RCLSetCarry
+  jmp RCLEXIT
+
+  RCLCARRY:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  rcl al,cl               ; here is the difference (work only on byte)
+  mov [bx],al
+  jc RCLSetCarry
+  jmp RCLEXIT
+
+  RCLUpper:
+  mov al,carry    ; check if the carry equal to 1
+  mov ah,1
+  cmp al,ah
+  jnz RCLNOCARRYUpper  ;if not equal jump without setting the carry
+  stc             ; else set the  carry
+  jmp RCLCARRYUpper ; jump to carry 
+
+  RCLNOCARRYUpper:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  clc
+  rcl ax,cl               ; here is the difference (work on the whole word)
+  mov [bx],ax
+  jnc RCLEXIT
+  jc RCLSetCarry
+
+  RCLCARRYUpper:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  rcl ax,cl               ; here is the difference (work on the whole word)
+  mov [bx],ax
+  jnc RCLEXIT
+
+  RCLSetCarry:
+  mov carry,1
+  jmp RCLEXIT
+
+  RCLEXITError:
+  call Error
+  
+  RCLEXIT:
+
   ret
 EXRCL endp
 
