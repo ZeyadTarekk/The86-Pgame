@@ -560,12 +560,12 @@ LOCAL EXIT
         mov dl,[bx]
         mov al,'c'  ;Check for first letter to be c (only cl is valid)
         cmp al,dl
-        jnz EXIT  (INVALID OPERATION)
+        jnz EXIT  ;(INVALID OPERATION)
         inc bx       ;Move for the second letter
         mov dl,[bx]
         mov al,'l'  ;Check for second letter to be l (only cl is valid)
         cmp al,dl
-        jnz EXIT        (INVALID OPERATION)
+        jnz EXIT        ;(INVALID OPERATION)
 
         RORCheckDestination:
         ;Check the destination 16 bit or 8 bit 
@@ -615,12 +615,12 @@ LOCAL EXIT
         mov dl,[bx]
         mov al,'c'  ;Check for first letter to be c (only cl is valid)
         cmp al,dl
-        jnz EXIT  (INVALID OPERATION)
+        jnz EXIT    ;(INVALID OPERATION)
         inc bx       ;Move for the second letter
         mov dl,[bx]
         mov al,'l'  ;Check for second letter to be l (only cl is valid)
         cmp al,dl
-        jnz EXIT        (INVALID OPERATION)
+        jnz EXIT        ;(INVALID OPERATION)
 
         ROLCheckDestination:
         ;Check the destination 16 bit or 8 bit 
