@@ -1449,6 +1449,70 @@ EXCLC proc
 EXCLC endp
 
 EXROR proc
+  mov dh,typeOfSource
+  mov bl,0
+  cmp dh,bl
+  jz RORCheckSource  ;If the source is register jump and check if cl
+  mov bl,2h 
+  cmp dh,bl 
+  jnz ROREXITError         ; here if the source is neither register nor immediate (INVALID OPERATION)
+
+  lea bx,SrcStr       ; now check if the source is immediate it must equal 1
+  mov dl,[bx]
+  mov al,1                ; here is 1 not '1' because the source is changed from the ascii to the real value in case of immediate
+  cmp al,dl
+  jz RORCheckDestination   ; If the source equal 1 that's good check the destination 
+  jnz ROREXITError           ; else exit (INVALID OPERATION)
+
+
+  RORCheckSource:
+  lea bx,SrcStr
+  mov dl,[bx]
+  mov al,'c'  ;Check for first letter to be c (only cl is valid)
+  cmp al,dl
+  jnz ROREXITError  ;(INVALID OPERATION)
+  inc bx       ;Move for the second letter
+  mov dl,[bx]
+  mov al,'l'  ;Check for second letter to be l (only cl is valid)
+  cmp al,dl
+  jnz ROREXITError        ;(INVALID OPERATION)
+
+  RORCheckDestination:
+  ;Check the destination 16 bit or 8 bit 
+  lea bx,regName
+  inc bx
+  mov dl,[bx]
+  mov al,'x'
+  cmp al,dl
+  jz RORUpper         ;if 16 bit jump to SHRUpper 
+
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  ror al,cl               ; here is the difference (work only on byte)
+  mov [bx],al
+  jc RORSetCarry
+  jmp ROREXIT
+
+  RORUpper:
+  mov di,source
+  mov bx,destination
+  mov cl,[di]
+  mov ax,[bx]
+  ror ax,cl               ; here is the difference (work on the whole word)
+  mov [bx],ax
+  jnc ROREXIT
+
+  RORSetCarry:
+  mov carry,1
+  jmp ROREXIT
+
+  ROREXITError:
+  call Error
+  
+  ROREXIT:
+
   ret
 EXROR endp
 
