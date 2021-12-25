@@ -56,7 +56,7 @@ sourceCheck MACRO SrcStr,Names,offsets,source,flag,typeOfSource,registers       
         validateRegrDt:
             mov flag,0ffh
             PUSHALL
-            validateRegisterDirect Names,offsets,SrcStr,source,flag
+            validateRegisterDirectSource Names,offsets,SrcStr,source,flag
             POPALL
             mov ah,1                                                                        
             cmp flag,ah                                                                     
