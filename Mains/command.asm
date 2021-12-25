@@ -1352,6 +1352,7 @@ EXSHR proc
   mov ax,[bx]
   shr al,cl               ; here is the difference (work only on byte)
   mov [bx],al
+  jc SHRSetCarry
   jmp SHREXIT
 
   SHRUpper:
@@ -1361,6 +1362,10 @@ EXSHR proc
   mov ax,[bx]
   shr ax,cl               ; here is the difference (work on the whole word)
   mov [bx],ax
+  jnc SHREXIT
+
+  SHRSetCarry:
+  mov carry,1
   jmp SHREXIT
 
   SHREXITError:
@@ -1414,6 +1419,7 @@ EXSHL proc
   mov ax,[bx]
   shl al,cl               ; here is the difference (work only on byte)
   mov [bx],al
+  jc SHLSetCarry
   jmp SHLEXIT
 
   SHLUpper:
@@ -1423,7 +1429,12 @@ EXSHL proc
   mov ax,[bx]
   shl ax,cl               ; here is the difference (work on the whole word)
   mov [bx],ax
+  jnc SHLEXIT
+
+  SHLSetCarry:
+  mov carry,1
   jmp SHLEXIT
+
 
   SHLEXITError:
   call Error

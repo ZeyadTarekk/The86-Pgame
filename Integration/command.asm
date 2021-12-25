@@ -18,7 +18,7 @@ include SRC.inc
 .data
 
 Names             dw 'ax','bx','cx','dx','si','di','bp','sp','al','ah','bl','bh','cl','ch','dl','dh'
-registers         dw 1234h,2222h,3333h,4444h,5555h,6666h,7777h,8888h
+registers         dw 1111h,0FFFFh,3333h,4444h,5555h,6666h,7777h,8888h
 offsets           dw 16 dup(00)
 flagdst           db 0h                    ;flag for wrong destination
 flag              db 0h                    ;flag for wrong source
@@ -1320,7 +1320,7 @@ EXAND proc
 EXAND endp
 
 EXSHR proc
-   mov dh,typeOfSource
+  mov dh,typeOfSource
   mov bl,0
   cmp dh,bl
   jz SHRCheckSource  ;If the source is register jump and check if cl
@@ -1363,6 +1363,7 @@ EXSHR proc
   mov ax,[bx]
   shr al,cl               ; here is the difference (work only on byte)
   mov [bx],al
+  jc SHRSetCarry
   jmp SHREXIT
 
   SHRUpper:
@@ -1372,7 +1373,10 @@ EXSHR proc
   mov ax,[bx]
   shr ax,cl               ; here is the difference (work on the whole word)
   mov [bx],ax
-  jmp SHREXIT
+  jnc SHREXIT
+
+  SHRSetCarry:
+  mov carry,1
 
   SHREXITError:
   call Error
@@ -1425,6 +1429,7 @@ EXSHL proc
   mov ax,[bx]
   shl al,cl               ; here is the difference (work only on byte)
   mov [bx],al
+  jc SHLSetCarry
   jmp SHLEXIT
 
   SHLUpper:
@@ -1434,7 +1439,12 @@ EXSHL proc
   mov ax,[bx]
   shl ax,cl               ; here is the difference (work on the whole word)
   mov [bx],ax
+  jnc SHLEXIT
+
+  SHLSetCarry:
+  mov carry,1
   jmp SHLEXIT
+
 
   SHLEXITError:
   call Error
