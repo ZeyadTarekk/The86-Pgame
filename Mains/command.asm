@@ -1558,7 +1558,7 @@ EXROL proc
   mov bx,destination
   mov cl,[di]
   mov ax,[bx]
-  ror al,cl               ; here is the difference (work only on byte)
+  rol al,cl               ; here is the difference (work only on byte)
   mov [bx],al
   jc ROLSetCarry
   jmp ROLEXIT
@@ -1568,7 +1568,7 @@ EXROL proc
   mov bx,destination
   mov cl,[di]
   mov ax,[bx]
-  ror ax,cl               ; here is the difference (work on the whole word)
+  rol ax,cl               ; here is the difference (work on the whole word)
   mov [bx],ax
   jnc ROLEXIT
 
