@@ -7,6 +7,18 @@
 ;dimensions of the screen
 row dw 0
 col dw 0
+; colors
+RED EQU 0ch
+YELLOW EQU 0EH
+
+
+
+
+; charToDraw2 db '0'
+
+charToDraw db '0'
+colorToDraw db RED    
+
 
 ;global variable for printing line
 linex dw ?
@@ -47,6 +59,268 @@ otherSPx db 20h
 otherSPy db 6h
 otherBPx db 20h
 otherBPy db 7h
+
+drawMemoryAdressesForOther MACRO 
+mov ah,2        ; 0 for memory address
+mov dl,27h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+mov charToDraw,'0'
+drawAnyChar 
+
+mov ah,2        ; 0 for memory address
+mov dl,27h   ;x
+mov dh,1      ;y
+mov bh,0
+int 10h
+mov charToDraw,'1'
+drawAnyChar
+ENDM
+
+drawAnyCharColored  MACRO 
+  mov  al, charToDraw
+  mov  bl, 0Ch  ;Color is red
+  mov  bh, 0    ;Display page
+  mov  ah, 0Eh  ;Teletype
+  int  10h
+ENDM
+
+drawAnyChar  MACRO 
+  mov  al, charToDraw
+  mov  bl, 0Ch  ;Color is red
+  mov  bh, 0    ;Display page
+  mov  ah, 0Eh  ;Teletype
+  int  10h
+ENDM
+
+
+drawZeroForMemory MACRO 
+  mov  al, '0'
+  mov  bl, 0Eh  ;Color is red
+  mov  bh, 0    ;Display page
+  mov  ah, 0Eh  ;Teletype
+  int  10h
+ENDM
+
+drawTwoCharsForMemoryColored MACRO 
+  mov  al, charToDraw
+  mov  bl, 0Ch  ;Color is red
+  mov  bh, 0    ;Display page
+  mov  ah, 0Eh  ;Teletype
+  int  10h
+  mov  al, charToDraw
+  mov  bl, 0Ch  ;Color is red
+  mov  bh, 0    ;Display page
+  mov  ah, 0Eh  ;Teletype
+  int  10h
+ENDM
+
+
+drawOtherMemoryNumbers  MACRO 
+mov ah,2
+mov dl,24h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+mov charToDraw , '0'
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,1      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,2      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,3      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,4      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,5      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,6      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,7      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,8      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,9      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,10d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,11d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,12d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,13d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,14d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,24h   ;x
+mov dh,15d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+  
+ENDM
+
+
+
+drawMyMemoryNumbers  MACRO 
+mov ah,2
+mov dl,10h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,1      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,2      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,3      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,4      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,5      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,6      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,7      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,8      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,9      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,10d     ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,11d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,12d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,13d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,14d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+mov ah,2
+mov dl,10h   ;x
+mov dh,15d      ;y
+mov bh,0
+int 10h
+drawTwoCharsForMemoryColored
+  
+ENDM
+
+
 
 drawRegName macro
 mov ah,2
@@ -423,26 +697,10 @@ int 10h
 draw
 endm
 draw macro 
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
+drawZeroForMemory
+drawZeroForMemory
+drawZeroForMemory
+drawZeroForMemory
 
 endm
 
@@ -523,35 +781,16 @@ mov linex,162d
 drawLine
 
 
-mov ah,2
-mov dl,10h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
+drawMemoryAdressesForOther
 
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
 
 mov ah,2
 mov dl,13h   ;x
 mov dh,0      ;y
 mov bh,0
 int 10h
-
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
+mov charToDraw,'0'
+drawZeroForMemory
 
 
 
@@ -561,35 +800,15 @@ drawLine
 mov linex,307d
 drawLine
 
+mov charToDraw,'0'
+drawMyMemoryNumbers
+drawOtherMemoryNumbers
 
-mov ah,2
-mov dl,24h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
 
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
 
-mov ah,2
-mov dl,27h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
 
-mov  al, '0'
-mov  bl, 0Eh  ;Color is red
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
+
+
 
 
 
