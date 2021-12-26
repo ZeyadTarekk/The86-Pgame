@@ -7,20 +7,26 @@
 ;dimensions of the screen
 row dw 0
 col dw 0
+
+
 ; colors
-RED EQU 0ch
+WHITE EQU 0FH
+RED EQU 0CH
 YELLOW EQU 0EH
+BLACK EQU 0H
+GRAY EQU 7H
+LBLUE EQU 9H
+DBLUE EQU 1H
 
 
+;data for the char to draw (x,y,char,color)
+charToDraw db ?
+charToDrawColor db ?
+charToDrawx db ?
+charToDrawy db ?
 
 
-; charToDraw2 db '0'
-
-charToDraw db '0'
-colorToDraw db RED    
-
-
-;global variable for printing line
+;global variable for printing line (x)
 linex dw ?
 
 ;position of my registers
@@ -40,7 +46,6 @@ mySPx db 0Bh
 mySPy db 6h
 myBPx db 0Bh
 myBPy db 7h
-
 ;other's register positions
 otherAXx db 18h
 otherAXy db 3h
@@ -50,7 +55,6 @@ otherCXx db 18h
 otherCXy db 6h
 otherDXx db 18h
 otherDXy db 7h
-
 otherSIx db 20h
 otherSIy db 3h
 otherDIx db 20h
@@ -60,659 +64,71 @@ otherSPy db 6h
 otherBPx db 20h
 otherBPy db 7h
 
-drawMemoryAdressesForOther MACRO 
-mov ah,2        ; 0 for memory address
-mov dl,27h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
-mov charToDraw,'0'
-drawAnyChar 
 
-mov ah,2        ; 0 for memory address
-mov dl,27h   ;x
-mov dh,1      ;y
-mov bh,0
-int 10h
-mov charToDraw,'1'
-drawAnyChar
+;function to draw the background color of the main screen
+drawBackGround MACRO
+LOCAL rowLoop 
+  rowLoop:
+  mov ah, 0ch    ;write pixels on screen
+  mov bh, 0      ;page
+  mov dx, row    ;row
+  mov cx, col    ;column
+  mov al, GRAY   ;colour
+  int 10h
+  ;need to mov the row 
+  inc col
+  mov ax,col
+  mov dx,320d
+  cmp ax,dx
+  jnz rowLoop
+  mov col,0
+  inc row
+  mov ax,row
+  mov dx,200d
+  cmp ax,dx
+  jnz rowLoop
 ENDM
 
-drawAnyCharColored  MACRO 
+
+;function to draw a given char at given location with given color
+drawCharWithGivenVar  MACRO
+  ;set the cursur
+  mov ah,2
+  mov dl,charToDrawx      ;x
+  mov dh,charToDrawy      ;y
+  mov bh,0
+  int 10h
+  ;draw the char
   mov  al, charToDraw
-  mov  bl, 0Ch  ;Color is red
-  mov  bh, 0    ;Display page
-  mov  ah, 0Eh  ;Teletype
+  mov  bl, charToDrawColor
+  mov  bh, 0                ;Display page
+  mov  ah, 0Eh              ;Teletype
   int  10h
 ENDM
 
-drawAnyChar  MACRO 
-  mov  al, charToDraw
-  mov  bl, 0Ch  ;Color is red
-  mov  bh, 0    ;Display page
-  mov  ah, 0Eh  ;Teletype
-  int  10h
+;function to draw memory lines (called once at the begining)
+drawMemoryLines MACRO
+  ;draw the memory lines
+  mov linex,125d
+  drawLine
+  mov linex,147d
+  drawLine
+  mov linex,162d
+  drawLine
+  mov linex,287d
+  drawLine
+  mov linex,307d
+  drawLine
 ENDM
-
-
-drawZeroForMemory MACRO 
-  mov  al, '0'
-  mov  bl, 0Eh  ;Color is red
-  mov  bh, 0    ;Display page
-  mov  ah, 0Eh  ;Teletype
-  int  10h
-ENDM
-
-drawTwoCharsForMemoryColored MACRO 
-  mov  al, charToDraw
-  mov  bl, 0Ch  ;Color is red
-  mov  bh, 0    ;Display page
-  mov  ah, 0Eh  ;Teletype
-  int  10h
-  mov  al, charToDraw
-  mov  bl, 0Ch  ;Color is red
-  mov  bh, 0    ;Display page
-  mov  ah, 0Eh  ;Teletype
-  int  10h
-ENDM
-
-
-drawOtherMemoryNumbers  MACRO 
-mov ah,2
-mov dl,24h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
-mov charToDraw , '0'
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,1      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,2      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,3      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,4      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,5      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,6      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,7      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,8      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,9      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,10d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,11d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,12d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,13d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,14d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,24h   ;x
-mov dh,15d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-  
-ENDM
-
-
-
-drawMyMemoryNumbers  MACRO 
-mov ah,2
-mov dl,10h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,1      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,2      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,3      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,4      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,5      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,6      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,7      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,8      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,9      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,10d     ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,11d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,12d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,13d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,14d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-mov ah,2
-mov dl,10h   ;x
-mov dh,15d      ;y
-mov bh,0
-int 10h
-drawTwoCharsForMemoryColored
-  
-ENDM
-
-
-
-drawRegName macro
-mov ah,2
-mov dl,0
-mov dh,myAXy
-mov bh,0
-int 10h
-mov  al, 'A'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,0
-mov dh,myBXy
-mov bh,0
-int 10h
-mov  al, 'B'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,0
-mov dh,myCXy
-mov bh,0
-int 10h
-mov  al, 'C'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,0
-mov dh,myDXy
-mov bh,0
-int 10h
-mov  al, 'D'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,8
-mov dh,mySIy
-mov bh,0
-int 10h
-mov  al, 'S'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'I'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,8
-mov dh,myDIy
-mov bh,0
-int 10h
-mov  al, 'D'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'I'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,8
-mov dh,mySPy
-mov bh,0
-int 10h
-mov  al, 'S'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'P'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,8
-mov dh,myBPy
-mov bh,0
-int 10h
-mov  al, 'B'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'P'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-endm
-drawZero MACRO 
-  ;draw the ax
-mov ah,2
-mov dl,myAXx
-mov dh,myAXy
-mov bh,0
-int 10h
-draw
-;draw the bx
-mov ah,2
-mov dl,myBXx
-mov dh,myBXy
-mov bh,0
-int 10h
-draw
-mov ah,2
-mov dl,myCXx
-mov dh,myCXy
-mov bh,0
-int 10h
-draw
-mov ah,2
-mov dl,myDXx
-mov dh,myDXy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,mySIx
-mov dh,mySIy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,myDIx
-mov dh,myDIy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,mySPx
-mov dh,mySPy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,myBPx
-mov dh,myBPy
-mov bh,0
-int 10h
-draw
-ENDM
-
-
-drawOtherRegName macro
-mov ah,2
-mov dl,15h
-mov dh,otherAXy
-mov bh,0
-int 10h
-mov  al, 'A'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,15h
-mov dh,otherBXy
-mov bh,0
-int 10h
-mov  al, 'B'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,15h
-mov dh,otherCXy
-mov bh,0
-int 10h
-mov  al, 'C'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,15h
-mov dh,otherDXy
-mov bh,0
-int 10h
-mov  al, 'D'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'X'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,1Dh
-mov dh,otherSIy
-mov bh,0
-int 10h
-mov  al, 'S'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'I'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,1Dh
-mov dh,otherDIy
-mov bh,0
-int 10h
-mov  al, 'D'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'I'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,1Dh
-mov dh,otherSPy
-mov bh,0
-int 10h
-mov  al, 'S'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'P'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-
-mov ah,2
-mov dl,1Dh
-mov dh,otherBPy
-mov bh,0
-int 10h
-mov  al, 'B'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-mov  al, 'P'
-mov  bl, 0Fh
-mov  bh, 0    ;Display page
-mov  ah, 0Eh  ;Teletype
-int  10h
-endm
-drawOtherZero macro
-  ;draw the ax
-mov ah,2
-mov dl,otherAXx
-mov dh,otherAXy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherBXx
-mov dh,otherBXy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherCXx
-mov dh,otherCXy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherDXx
-mov dh,otherDXy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherSIx
-mov dh,otherSIy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherDIx
-mov dh,otherDIy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherSPx
-mov dh,otherSPy
-mov bh,0
-int 10h
-draw
-
-mov ah,2
-mov dl,otherBPx
-mov dh,otherBPy
-mov bh,0
-int 10h
-draw
-endm
-draw macro 
-drawZeroForMemory
-drawZeroForMemory
-drawZeroForMemory
-drawZeroForMemory
-
-endm
-
 drawLine macro
 LOCAL LineLoop
   mov di,0
   LineLoop:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, di    ;row
-  mov cx, linex    ;column
-  mov al, 0     ;colour
+  mov ah, 0ch     ;write pixels on screen
+  mov bh, 0       ;page
+  mov dx, di      ;row
+  mov cx, linex   ;column
+  mov al, BLACK   ;colour
   int 10h
   inc di
   mov ax,200d
@@ -720,99 +136,512 @@ LOCAL LineLoop
   jnz LineLoop
 endm
 
+;function to draw the register names (AX,BX,..etc)
+drawRegNames MACRO
+  ;draw my
+  mov charToDraw,'A'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,0
+  mov al,myAXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,15h
+  drawCharWithGivenVar
+  mov charToDraw,'X'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,1
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'B'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,0
+  mov al,myBXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,15h
+  drawCharWithGivenVar
+  mov charToDraw,'X'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,1
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'C'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,0
+  mov al,myCXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,15h
+  drawCharWithGivenVar
+  mov charToDraw,'X'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,1
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'D'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,0
+  mov al,myDXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,15h
+  drawCharWithGivenVar
+  mov charToDraw,'X'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,1
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'S'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,8
+  mov al,mySIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,1Dh
+  drawCharWithGivenVar
+  mov charToDraw,'I'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,9
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'D'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,8
+  mov al,myDIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,1Dh
+  drawCharWithGivenVar
+  mov charToDraw,'I'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,9
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'S'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,8
+  mov al,mySPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,1Dh
+  drawCharWithGivenVar
+  mov charToDraw,'P'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,9
+  drawCharWithGivenVar
+
+  ;draw my
+  mov charToDraw,'B'
+  mov charToDrawColor,WHITE
+  mov charToDrawx,8
+  mov al,myBPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,1Dh
+  drawCharWithGivenVar
+  mov charToDraw,'P'
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov charToDrawx,9
+  drawCharWithGivenVar
+ENDM
+
+;function to draw the memory adresses
+drawMemoryAdresses MACRO 
+mov charToDraw,'0'
+mov charToDrawColor, LBLUE
+mov charToDrawx,27h
+mov charToDrawy,0
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'1'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'2'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'3'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'4'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'5'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'6'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'7'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'8'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'9'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'A'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'B'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'C'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'D'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'E'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+
+mov charToDrawx,27h
+mov charToDraw,'F'
+inc charToDrawy
+drawCharWithGivenVar
+mov charToDrawx,13h
+drawCharWithGivenVar
+ENDM
+
+;function to draw the intial '0' of memory
+;my memory postion (10h,0h),  other memory postion (24h,0h)
+drawMemoryIntial macro
+LOCAL MEMINTIALLOOP,MEMINTIALLOOPH,MEMINTIALEXIT
+  ;draw my
+  mov charToDraw,'0'
+  mov charToDrawx,10h
+  mov charToDrawy,0
+  mov charToDrawColor,RED
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,24h
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  MEMINTIALLOOP:
+  inc charToDrawy
+  ;draw my
+  mov charToDrawx,10h
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  ;draw other
+  mov charToDrawx,24h
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  mov al,charToDrawy
+  mov dl,15d
+  cmp al,dl
+  jnz MEMINTIALLOOPH
+  jmp MEMINTIALEXIT
+  MEMINTIALLOOPH: jmp MEMINTIALLOOP
+  MEMINTIALEXIT:
+ENDM
+
+;function to draw intial '0' of registers
+drawRegIntial MACRO
+  ;draw the ax zeros
+  mov charToDraw,'0'
+  mov charToDrawColor,YELLOW
+  mov al,myAXx
+  mov charToDrawx,al
+  mov al,myAXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherAXx
+  mov charToDrawx,al
+  mov al,otherAXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,myBXx
+  mov charToDrawx,al
+  mov al,myBXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherBXx
+  mov charToDrawx,al
+  mov al,otherBXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,myCXx
+  mov charToDrawx,al
+  mov al,myCXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherCXx
+  mov charToDrawx,al
+  mov al,otherCXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,myDXx
+  mov charToDrawx,al
+  mov al,myDXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherDXx
+  mov charToDrawx,al
+  mov al,otherDXy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,mySIx
+  mov charToDrawx,al
+  mov al,mySIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherSIx
+  mov charToDrawx,al
+  mov al,otherSIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,myDIx
+  mov charToDrawx,al
+  mov al,myDIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherDIx
+  mov charToDrawx,al
+  mov al,otherDIy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,mySPx
+  mov charToDrawx,al
+  mov al,mySPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherSPx
+  mov charToDrawx,al
+  mov al,otherSPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,myBPx
+  mov charToDrawx,al
+  mov al,myBPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+  mov al,otherBPx
+  mov charToDrawx,al
+  mov al,otherBPy
+  mov charToDrawy,al
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+  inc charToDrawx
+  drawCharWithGivenVar
+
+
+ENDM
+
 .code
 main proc
   mov ax,@data
   mov ds,ax
   mov es,ax
 
-  ;call drawBG
-
-
-  ;set video mode
+  ;set video mode   (320x200)
   mov ah, 00h
-  mov al, 13h     ;320x200
+  mov al, 13h     
   int 10h 
 
-  rowLoop:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, row    ;row
-  mov cx, col    ;column
-  mov al, 7h     ;colour
-  int 10h
+  drawBackGround
+  drawRegNames
+  drawRegIntial
+  drawMemoryAdresses
+  drawMemoryLines
+  drawMemoryIntial
 
-  ;need to mov the row 
-  inc col
-  mov ax,col
-  mov dx,320d
-  cmp ax,dx
-  jnz rowLoop
-
-  mov col,0
-  inc row
-  mov ax,row
-  mov dx,200d
-  cmp ax,dx
-  jnz rowLoop
-
-
-;for the main loop
-home:
-
-
-drawRegName
-;draw the zeros of reg
-drawZero
-
-
-drawOtherRegName
-;draw other zeros
-drawOtherZero
-
-
-
-;draw the memory lines
-mov linex,125d
-drawLine
-mov linex,147d
-drawLine
-mov linex,162d
-drawLine
-
-
-drawMemoryAdressesForOther
-
-
-mov ah,2
-mov dl,13h   ;x
-mov dh,0      ;y
-mov bh,0
-int 10h
-mov charToDraw,'0'
-drawZeroForMemory
-
-
-
-
-mov linex,287d
-drawLine
-mov linex,307d
-drawLine
-
-mov charToDraw,'0'
-drawMyMemoryNumbers
-drawOtherMemoryNumbers
-
-
-
-
-
-
-
-
-
-
+  ;for the main loop,   note: outside the loop called one time
+  home:
 
   jmp home
   hlt
