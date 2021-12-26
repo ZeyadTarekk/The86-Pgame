@@ -7,6 +7,9 @@ ENDM
 .model small
  .stack 64
  .data
+ ;MyCommand LABEL BYTE
+CommandSize db 20
+ActualSize db ?
 newStr db 20 dup('$')
 .code
 main proc far
@@ -18,9 +21,11 @@ main proc far
     mainLoop:
     getChar
     mov dl,al
-    cmp dl,0Dh
+    mov bh,0Dh
+    cmp dl,bh
     jz exit
-    cmp dl,08h
+    mov bh,08h
+    cmp dl,bh
     jz Backspace
     
                                
@@ -39,7 +44,8 @@ main proc far
       
     Backspace: ;if user enter backspace 
     dec di
-    mov [di],'$'
+    mov bl,'$'
+    mov [di],bl
     mov ah,3h
     mov bh,0h  ;get cursor
     int 10h
@@ -60,6 +66,5 @@ main proc far
     
     exit:
     hlt
-
-          
-          
+main endp
+end main
