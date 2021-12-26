@@ -29,6 +29,24 @@ mySPy db 6h
 myBPx db 0Bh
 myBPy db 7h
 
+;other's register positions
+otherAXx db 18h
+otherAXy db 3h
+otherBXx db 18h
+otherBXy db 4h
+otherCXx db 18h
+otherCXy db 6h
+otherDXx db 18h
+otherDXy db 7h
+
+otherSIx db 20h
+otherSIy db 3h
+otherDIx db 20h
+otherDIy db 4h
+otherSPx db 20h
+otherSPy db 6h
+otherBPx db 20h
+otherBPy db 7h
 
 drawRegName macro
 mov ah,2
@@ -215,6 +233,195 @@ mov bh,0
 int 10h
 draw
 ENDM
+
+
+drawOtherRegName macro
+mov ah,2
+mov dl,15h
+mov dh,otherAXy
+mov bh,0
+int 10h
+mov  al, 'A'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'X'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,15h
+mov dh,otherBXy
+mov bh,0
+int 10h
+mov  al, 'B'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'X'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,15h
+mov dh,otherCXy
+mov bh,0
+int 10h
+mov  al, 'C'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'X'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,15h
+mov dh,otherDXy
+mov bh,0
+int 10h
+mov  al, 'D'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'X'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,1Dh
+mov dh,otherSIy
+mov bh,0
+int 10h
+mov  al, 'S'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'I'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,1Dh
+mov dh,otherDIy
+mov bh,0
+int 10h
+mov  al, 'D'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'I'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,1Dh
+mov dh,otherSPy
+mov bh,0
+int 10h
+mov  al, 'S'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'P'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,1Dh
+mov dh,otherBPy
+mov bh,0
+int 10h
+mov  al, 'B'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, 'P'
+mov  bl, 0Fh
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+endm
+drawOtherZero macro
+  ;draw the ax
+mov ah,2
+mov dl,otherAXx
+mov dh,otherAXy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherBXx
+mov dh,otherBXy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherCXx
+mov dh,otherCXy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherDXx
+mov dh,otherDXy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherSIx
+mov dh,otherSIy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherDIx
+mov dh,otherDIy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherSPx
+mov dh,otherSPy
+mov bh,0
+int 10h
+draw
+
+mov ah,2
+mov dl,otherBPx
+mov dh,otherBPy
+mov bh,0
+int 10h
+draw
+endm
 draw macro 
 mov  al, '0'
 mov  bl, 0Eh  ;Color is red
@@ -301,6 +508,12 @@ drawRegName
 drawZero
 
 
+drawOtherRegName
+;draw other zeros
+drawOtherZero
+
+
+
 ;draw the memory lines
 mov linex,125d
 drawLine
@@ -343,7 +556,7 @@ int  10h
 
 
 
-mov linex,285d
+mov linex,287d
 drawLine
 mov linex,307d
 drawLine
