@@ -11,7 +11,7 @@ col dw 0
 ;global variable for printing line
 linex dw ?
 
-;position of registers
+;position of my registers
 myAXx db 3h
 myAXy db 3h
 myBXx db 3h
@@ -20,7 +20,6 @@ myCXx db 3h
 myCXy db 6h
 myDXx db 3h
 myDXy db 7h
-
 mySIx db 0Bh
 mySIy db 3h
 myDIx db 0Bh
@@ -303,11 +302,81 @@ drawZero
 
 
 ;draw the memory lines
-mov linex,130d
+mov linex,125d
 drawLine
-mov linex,150d
+mov linex,147d
+drawLine
+mov linex,162d
 drawLine
 
+
+mov ah,2
+mov dl,10h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,13h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+
+
+
+
+mov linex,285d
+drawLine
+mov linex,307d
+drawLine
+
+
+mov ah,2
+mov dl,24h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
+
+mov ah,2
+mov dl,27h   ;x
+mov dh,0      ;y
+mov bh,0
+int 10h
+
+mov  al, '0'
+mov  bl, 0Eh  ;Color is red
+mov  bh, 0    ;Display page
+mov  ah, 0Eh  ;Teletype
+int  10h
 
 
 
