@@ -397,9 +397,18 @@ SecondChar proc
   mov ah,[bx]
   ret
 SecondChar endp
+EditCarry proc
+  mov al,carry
+  mov dl,0
+  jnz CARRYON
+  CLC
+  jmp CARRYEXIT
+  CARRYON:
+  STC
+  CARRYEXIT:
+  ret
+EditCarry endp
 
-;regName,SrcStr,destination,source,typeOfDestination,typeOfSource,carry
-;destination,source,realDistination,realSource,typeOfDestination,typeOfSource,carry
 MOV16 proc
   mov si,source
   mov bx,destination
@@ -523,7 +532,17 @@ EXMOV proc
   MOVREGMEM16:   ;move into 16-bits register
   mov bx,offsetMemory
   mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz MOVREGMEM16IND
+  ;memory
   add bx,[di]
+  jmp MOVREGMEM16INDCON
+  MOVREGMEM16IND:
+  ;register indirect
+  add bx,di
+  MOVREGMEM16INDCON:
   mov di,destination
   mov ax,[bx]
   mov [di],ax
@@ -532,7 +551,17 @@ EXMOV proc
   MOVREGMEM8:    ;move into 8-bits register
   mov bx,offsetMemory
   mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz MOVREGMEM8IND
+  ;memory
   add bx,[di]
+  jmp MOVREGMEM8INDCON
+  MOVREGMEM8IND:
+  ;register indirect
+  add bx,di
+  MOVREGMEM8INDCON:
   mov di,destination
   mov al,[bx]
   mov [di],al
@@ -543,7 +572,15 @@ EXMOV proc
   mov al,typeOfSource
   mov dl,2h
   cmp al,dl
-  jz MOVMEMSO16
+  jnz MOVSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz MOVMEMSO16
+  jmp MOVMEMSO8
+  MOVSOREG:
   ;check the source if 8-bits or 16-bits
   lea bx,SrcStr
   inc bx
@@ -561,7 +598,17 @@ EXMOV proc
   MOVMEMSO16:
   mov bx,offsetMemory
   mov di,destination
-  add bx,[di]          ;bx=memory offset
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz MOVMEM16
+  ;memory
+  add bx,[di]
+  jmp MOVNOMEM16
+  MOVMEM16:
+  ;register indirect
+  add bx,di
+  MOVNOMEM16:
   mov di,source
   mov ax,[di]
   mov [bx],al
@@ -572,7 +619,17 @@ EXMOV proc
   MOVMEMSO8:
   mov bx,offsetMemory
   mov di,destination
-  add bx,[di]          ;bx=memory offset
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz MOVMEM8
+  ;memory
+  add bx,[di]
+  jmp MOVNOMEM8
+  MOVMEM8:
+  ;register indirect
+  add bx,di
+  MOVNOMEM8:
   mov di,source
   mov al,[di]
   mov [bx],al
@@ -583,9 +640,11 @@ EXMOV endp
 ADD16 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov ax,[si]                 ;source
   mov di,[bx]                 ;destination
   add di,ax
+  mov carry,0
   jnc ADDNOCARRY16
   mov carry,1
   ADDNOCARRY16:
@@ -595,9 +654,11 @@ ADD16 endp
 ADD8 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov al,[si]                 ;source
   mov ah,[bx]                 ;destination
   add ah,al
+  mov carry,0
   jnc ADDNOCARRY8
   mov carry,1
   ADDNOCARRY8:
@@ -668,7 +729,10 @@ EXADD proc
   mov al,typeOfSource
   mov dl,2
   cmp al,dl
-  jnz ADDSOMEM
+  jnz ADDSOMEMH
+  jmp ADDSON
+  ADDSOMEMH: jmp ADDSOMEM
+  ADDSON:
   ;source is number --> add the number to the destination
   ;now check for the register if 8-bits or 16-bits
   lea bx,regName
@@ -693,11 +757,151 @@ EXADD proc
   jmp ADDEXIT
 
   ADDSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  ADDDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ADDREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz ADDREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz ADDREGMEM8
+  
+  ADDREGMEM16:   ;add to 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ADDREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp ADDREGMEM16INDCON
+  ADDREGMEM16IND:
+  ;register indirect
+  add bx,di
+  ADDREGMEM16INDCON:
+  mov di,destination
+  call EditCarry
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  add cx,ax
+  mov carry,0
+  jnc ADDMNOCARRY16
+  mov carry,1
+  ADDMNOCARRY16:
+  mov [di],cx
+  jmp ADDEXIT
 
+  ADDREGMEM8:    ;add to 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ADDREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp ADDREGMEM8INDCON
+  ADDREGMEM8IND:
+  ;register indirect
+  add bx,di
+  ADDREGMEM8INDCON:
+  mov di,destination
+  call EditCarry
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  add ah,al
+  mov carry,0
+  jnc ADDMNOCARRY8
+  mov carry,1
+  ADDMNOCARRY8:
+  mov [di],ah
+  jmp ADDEXIT
+  
+  ;end destination is reg
+  ADDDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz ADDSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz ADDMEMSO16
+  jmp ADDMEMSO8
+  ADDSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ADDMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz ADDMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz ADDMEMSO8
+
+  ADDMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ADDMEM16
+  ;memory
+  add bx,[di]
+  jmp ADDNOMEM16
+  ADDMEM16:
+  ;register indirect
+  add bx,di
+  ADDNOMEM16:
+  mov di,source
+  call EditCarry
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  add cx,ax
+  mov carry,0
+  jnc ADDMNOCARRY216
+  mov carry,1
+  ADDMNOCARRY216:
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp ADDEXIT
+
+  ADDMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ADDMEM8
+  ;memory
+  add bx,[di]
+  jmp ADDNOMEM8
+  ADDMEM8:
+  ;register indirect
+  add bx,di
+  ADDNOMEM8:
+  mov di,source
+  call EditCarry
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  add ah,al
+  mov carry,0
+  jnc ADDMNOCARRY28
+  mov carry,1
+  ADDMNOCARRY28:
+  mov [bx],ah
   ADDEXIT:
   ret
 EXADD endp
@@ -705,10 +909,11 @@ EXADD endp
 ADC16 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov ax,[si]                 ;source
   mov di,[bx]                 ;destination
-  add al,carry
-  add di,ax
+  adc di,ax
+  mov carry,0
   jnc ADCNOCARRY16
   mov carry,1
   ADCNOCARRY16:
@@ -718,10 +923,11 @@ ADC16 endp
 ADC8 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov al,[si]                 ;source
   mov ah,[bx]                 ;destination
-  add al,carry
-  add ah,al
+  adc ah,al
+  mov carry,0
   jnc ADCNOCARRY8
   mov carry,1
   ADCNOCARRY8:
@@ -792,7 +998,10 @@ EXADC proc
   mov al,typeOfSource
   mov dl,2
   cmp al,dl
-  jnz ADCSOMEM
+  jnz ADCSOMEMH
+  jmp ADCSON
+  ADCSOMEMH: jmp ADCSOMEM
+  ADCSON:
   ;source is number --> add the number to the destination
   ;now check for the register if 8-bits or 16-bits
   lea bx,regName
@@ -817,11 +1026,151 @@ EXADC proc
   jmp ADCEXIT
 
   ADCSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  ADCDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ADCREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz ADCREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz ADCREGMEM8
+  
+  ADCREGMEM16:   ;add to 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ADCREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp ADCREGMEM16INDCON
+  ADCREGMEM16IND:
+  ;register indirect
+  add bx,di
+  ADCREGMEM16INDCON:
+  mov di,destination
+  call EditCarry
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  adc cx,ax
+  mov carry,0
+  jnc ADCMNOCARRY16
+  mov carry,1
+  ADCMNOCARRY16:
+  mov [di],cx
+  jmp ADCEXIT
 
+  ADCREGMEM8:    ;add to 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ADCREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp ADCREGMEM8INDCON
+  ADCREGMEM8IND:
+  ;register indirect
+  add bx,di
+  ADCREGMEM8INDCON:
+  mov di,destination
+  call EditCarry
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  adc ah,al
+  mov carry,0
+  jnc ADCMNOCARRY8
+  mov carry,1
+  ADCMNOCARRY8:
+  mov [di],ah
+  jmp ADCEXIT
+  
+  ;end destination is reg
+  ADCDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz ADCSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz ADCMEMSO16
+  jmp ADCMEMSO8
+  ADCSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ADCMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz ADCMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz ADCMEMSO8
+
+  ADCMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ADCMEM16
+  ;memory
+  add bx,[di]
+  jmp ADCNOMEM16
+  ADCMEM16:
+  ;register indirect
+  add bx,di
+  ADCNOMEM16:
+  mov di,source
+  call EditCarry
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  adc cx,ax
+  mov carry,0
+  jnc ADCMNOCARRY216
+  mov carry,1
+  ADCMNOCARRY216:
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp ADCEXIT
+
+  ADCMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ADCMEM8
+  ;memory
+  add bx,[di]
+  jmp ADCNOMEM8
+  ADCMEM8:
+  ;register indirect
+  add bx,di
+  ADCNOMEM8:
+  mov di,source
+  call EditCarry
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  adc ah,al
+  mov carry,0
+  jnc ADCMNOCARRY28
+  mov carry,1
+  ADCMNOCARRY28:
+  mov [bx],ah
   ADCEXIT:
   ret
 EXADC endp
@@ -829,9 +1178,11 @@ EXADC endp
 SUB16 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov ax,[si]                 ;source
   mov di,[bx]                 ;destination
   sub di,ax
+  mov carry,0
   jnc SUBNOCARRY16
   mov carry,1
   SUBNOCARRY16:
@@ -841,9 +1192,11 @@ SUB16 endp
 SUB8 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov al,[si]                 ;source
   mov ah,[bx]                 ;destination
   sub ah,al
+  mov carry,0
   jnc SUBNOCARRY8
   mov carry,1
   SUBNOCARRY8:
@@ -939,11 +1292,151 @@ EXSUB proc
   jmp SUBEXIT
 
   SUBSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  SUBDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz SUBREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz SUBREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz SUBREGMEM8
+  
+  SUBREGMEM16:   ;sub from 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz SUBREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp SUBREGMEM16INDCON
+  SUBREGMEM16IND:
+  ;register indirect
+  add bx,di
+  SUBREGMEM16INDCON:
+  mov di,destination
+  call EditCarry
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  sub cx,ax
+  mov carry,0
+  jnc SUBMNOCARRY16
+  mov carry,1
+  SUBMNOCARRY16:
+  mov [di],cx
+  jmp SUBEXIT
 
+  SUBREGMEM8:    ;sub from 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz SUBREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp SUBREGMEM8INDCON
+  SUBREGMEM8IND:
+  ;register indirect
+  add bx,di
+  SUBREGMEM8INDCON:
+  mov di,destination
+  call EditCarry
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  sub ah,al
+  mov carry,0
+  jnc SUBMNOCARRY8
+  mov carry,1
+  SUBMNOCARRY8:
+  mov [di],ah
+  jmp SUBEXIT
+  
+  ;end destination is reg
+  SUBDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz SUBSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz SUBMEMSO16
+  jmp SUBMEMSO8
+  SUBSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz SUBMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz SUBMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz SUBMEMSO8
+
+  SUBMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz SUBMEM16
+  ;memory
+  add bx,[di]
+  jmp SUBNOMEM16
+  SUBMEM16:
+  ;register indirect
+  add bx,di
+  SUBNOMEM16:
+  mov di,source
+  call EditCarry
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  sub cx,ax
+  mov carry,0
+  jnc SUBMNOCARRY216
+  mov carry,1
+  SUBMNOCARRY216:
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp SUBEXIT
+
+  SUBMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz SUBMEM8
+  ;memory
+  add bx,[di]
+  jmp SUBNOMEM8
+  SUBMEM8:
+  ;register indirect
+  add bx,di
+  SUBNOMEM8:
+  mov di,source
+  call EditCarry
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  sub ah,al
+  mov carry,0
+  jnc SUBMNOCARRY28
+  mov carry,1
+  SUBMNOCARRY28:
+  mov [bx],ah
   SUBEXIT:
   ret
 EXSUB endp
@@ -951,10 +1444,11 @@ EXSUB endp
 SBB16 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov ax,[si]                 ;source
   mov di,[bx]                 ;destination
-  sub al,carry
-  sub di,ax
+  sbb di,ax
+  mov carry,0
   jnc SBBNOCARRY16
   mov carry,1
   SBBNOCARRY16:
@@ -964,10 +1458,11 @@ SBB16 endp
 SBB8 proc
   mov si,source
   mov bx,destination
+  call EditCarry
   mov al,[si]                 ;source
   mov ah,[bx]                 ;destination
-  sub al,carry
-  sub ah,al
+  sbb ah,al
+  mov carry,0
   jnc SBBNOCARRY8
   mov carry,1
   SBBNOCARRY8:
@@ -1063,11 +1558,151 @@ EXSBB proc
   jmp SBBEXIT
 
   SBBSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  SBBDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz SBBREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz SBBREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz SBBREGMEM8
+  
+  SBBREGMEM16:   ;sub from 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz SBBREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp SBBREGMEM16INDCON
+  SBBREGMEM16IND:
+  ;register indirect
+  add bx,di
+  SBBREGMEM16INDCON:
+  mov di,destination
+  call EditCarry
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  sbb cx,ax
+  mov carry,0
+  jnc SBBMNOCARRY16
+  mov carry,1
+  SBBMNOCARRY16:
+  mov [di],cx
+  jmp SBBEXIT
 
+  SBBREGMEM8:    ;sub from 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz SBBREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp SBBREGMEM8INDCON
+  SBBREGMEM8IND:
+  ;register indirect
+  add bx,di
+  SBBREGMEM8INDCON:
+  mov di,destination
+  call EditCarry
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  sbb ah,al
+  mov carry,0
+  jnc SBBMNOCARRY8
+  mov carry,1
+  SBBMNOCARRY8:
+  mov [di],ah
+  jmp SBBEXIT
+  
+  ;end destination is reg
+  SBBDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz SBBSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz SBBMEMSO16
+  jmp SBBMEMSO8
+  SBBSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz SBBMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz SBBMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz SBBMEMSO8
+
+  SBBMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz SBBMEM16
+  ;memory
+  add bx,[di]
+  jmp SBBNOMEM16
+  SBBMEM16:
+  ;register indirect
+  add bx,di
+  SBBNOMEM16:
+  mov di,source
+  call EditCarry
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  sbb cx,ax
+  mov carry,0
+  jnc SBBMNOCARRY216
+  mov carry,1
+  SBBMNOCARRY216:
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp SBBEXIT
+
+  SBBMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz SBBMEM8
+  ;memory
+  add bx,[di]
+  jmp SBBNOMEM8
+  SBBMEM8:
+  ;register indirect
+  add bx,di
+  SBBNOMEM8:
+  mov di,source
+  call EditCarry
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  sbb ah,al
+  mov carry,0
+  jnc SBBMNOCARRY28
+  mov carry,1
+  SBBMNOCARRY28:
+  mov [bx],ah
   SBBEXIT:
   ret
 EXSBB endp
@@ -1181,11 +1816,135 @@ EXXOR proc
   jmp XOREXIT
 
   XORSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  XORDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz XORREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz XORREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz XORREGMEM8
+  
+  XORREGMEM16:   ;xor with 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz XORREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp XORREGMEM16INDCON
+  XORREGMEM16IND:
+  ;register indirect
+  add bx,di
+  XORREGMEM16INDCON:
+  mov di,destination
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  xor cx,ax
+  mov carry,0
+  mov [di],cx
+  jmp XOREXIT
 
+  XORREGMEM8:    ;xor with 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz XORREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp XORREGMEM8INDCON
+  XORREGMEM8IND:
+  ;register indirect
+  add bx,di
+  XORREGMEM8INDCON:
+  mov di,destination
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  xor ah,al
+  mov carry,0
+  mov [di],ah
+  jmp XOREXIT
+  
+  ;end destination is reg
+  XORDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz XORSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz XORMEMSO16
+  jmp XORMEMSO8
+  XORSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz XORMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz XORMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz XORMEMSO8
+
+  XORMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz XORMEM16
+  ;memory
+  add bx,[di]
+  jmp XORNOMEM16
+  XORMEM16:
+  ;register indirect
+  add bx,di
+  XORNOMEM16:
+  mov di,source
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  xor cx,ax
+  mov carry,0
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp XOREXIT
+
+  XORMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz XORMEM8
+  ;memory
+  add bx,[di]
+  jmp XORNOMEM8
+  XORMEM8:
+  ;register indirect
+  add bx,di
+  XORNOMEM8:
+  mov di,source
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  xor ah,al
+  mov carry,0
+  mov [bx],ah
   XOREXIT:
   ret
 EXXOR endp
@@ -1299,11 +2058,136 @@ EXAND proc
   jmp ANDEXIT
 
   ANDSOMEM: ;source is (Memory,Register Indirect)
-  ;not handeld yet
-  ;end destination is reg
-  ANDDSMEM: ;destination is not register (Memory,Register Indirect)
-  ;not handeld yet
+  lea bx,regName
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ANDREGMEM16
+  mov dl,'i'
+  cmp al,dl
+  jz ANDREGMEM16
+  mov dl,'p'
+  cmp al,dl
+  jnz ANDREGMEM8
+  
+  ANDREGMEM16:   ;and with 16-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ANDREGMEM16IND
+  ;memory
+  add bx,[di]
+  jmp ANDREGMEM16INDCON
+  ANDREGMEM16IND:
+  ;register indirect
+  add bx,di
+  ANDREGMEM16INDCON:
+  mov di,destination
+  call EditCarry
+  mov ax,[bx]       ;source
+  mov cx,[di]       ;destination
+  and cx,ax
+  mov carry,0
+  mov [di],cx
+  jmp ANDEXIT
 
+  ANDREGMEM8:    ;and with 8-bits register
+  mov bx,offsetMemory
+  mov di,source
+  mov al,typeOfSource
+  mov dl,1
+  cmp al,dl
+  jnz ANDREGMEM8IND
+  ;memory
+  add bx,[di]
+  jmp ANDREGMEM8INDCON
+  ANDREGMEM8IND:
+  ;register indirect
+  add bx,di
+  ANDREGMEM8INDCON:
+  mov di,destination
+  mov al,[bx]       ;source
+  mov ah,[di]       ;destination
+  and ah,al
+  mov carry,0
+  mov [di],ah
+  jmp ANDEXIT
+  
+  ;end destination is reg
+  ANDDSMEM: ;destination is not register (Memory,Register Indirect) , source may be register or number
+  mov al,typeOfSource
+  mov dl,2h
+  cmp al,dl
+  jnz ANDSOREG
+  ;check if the number bigger than FF then 16-bits else 8-bits
+  mov di,source
+  mov ax,[di]            ;if ah=0 then 8-bits
+  mov dl,0
+  cmp ah,dl
+  jnz ANDMEMSO16
+  jmp ANDMEMSO8
+  ANDSOREG:
+  ;check the source if 8-bits or 16-bits
+  lea bx,SrcStr
+  inc bx
+  mov al,[bx]
+  mov dl,'x'
+  cmp al,dl
+  jz ANDMEMSO16
+  mov dl,'i'
+  cmp al,dl
+  jz ANDMEMSO16
+  mov dl,'p'
+  cmp al,dl
+  jnz ANDMEMSO8
+
+  ANDMEMSO16:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ANDMEM16
+  ;memory
+  add bx,[di]
+  jmp ANDNOMEM16
+  ANDMEM16:
+  ;register indirect
+  add bx,di
+  ANDNOMEM16:
+  mov di,source
+  mov ax,[di]     ;source
+  mov cx,[bx]     ;destination
+  and cx,ax
+  mov carry,0
+  mov [bx],cl
+  inc bx
+  mov [bx],ch
+  jmp ANDEXIT
+
+  ANDMEMSO8:
+  mov bx,offsetMemory
+  mov di,destination
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz ANDMEM8
+  ;memory
+  add bx,[di]
+  jmp ANDNOMEM8
+  ANDMEM8:
+  ;register indirect
+  add bx,di
+  ANDNOMEM8:
+  mov di,source
+  mov al,[di]     ;source
+  mov ah,[bx]     ;destination
+  and ah,al
+  mov carry,0
+  mov [bx],ah
   ANDEXIT:
   ret
 EXAND endp
@@ -1335,7 +2219,7 @@ EXSHR proc
   mov dl,[bx]
   mov al,'l'          ;Check for second letter to be l (only cl is valid)
   cmp al,dl
-  jnz SHREXITError:   ;(INVALID OPERATION)
+  jnz SHREXITError    ;(INVALID OPERATION)
 
   SHRCheckDestination:
   ;Check the destination 16 bit or 8 bit 
@@ -1366,7 +2250,6 @@ EXSHR proc
 
   SHRSetCarry:
   mov carry,1
-  jmp SHREXIT
 
   SHREXITError:
   call Error
@@ -1801,7 +2684,7 @@ EXRCL endp
 EXINC proc
   mov di,source
   mov bx,destination
-  mov ax,[bx] 
+  mov ax,[bx]  
   inc ax
   mov [bx],ax
   ret
