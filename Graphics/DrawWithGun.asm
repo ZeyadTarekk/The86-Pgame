@@ -28,8 +28,14 @@ colGun dw 20d
 ; gun start row and end  row are constants
 gunEndRowPosition EQU 90d
 ; gun start column is variable
-gunStartColumnPosition dw 70d
+; This variable changes the position of my gun
+gunStartColumnPosition dw 70d 
 gunWidth EQU 20d
+;Other Variables for Gun
+;iterators for draw gun
+; gun start column is variable
+; This variable changes the position of Other gun
+gunStartColumnPositionOther dw 200d
 
 
 
@@ -106,6 +112,54 @@ ENDM
 ; draw gun macro 
 drawGun MACRO
     local rowLoopGun
+    local RemoverowLoop
+
+    mov colGun,0
+    RemoverowLoop:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,125d
+    cmp ax,dx
+    jnz RemoverowLoop
+    mov colGun,0
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoop
+
+    mov rowGun,80d
+    mov colGun,163d
+    RemoverowLoopOther:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,287d
+    cmp ax,dx
+    jnz RemoverowLoopOther
+    mov colGun,163d
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopOther
+
+    mov rowGun,80d
+
+
     mov ax, gunStartColumnPosition
     mov colGun, ax
     
@@ -135,6 +189,38 @@ drawGun MACRO
 
     mov rowGun,80d
     mov colGun,0
+
+
+    mov rowGun,80d
+    mov ax, gunStartColumnPositionOther
+    mov colGun, ax
+    
+    rowLoopGunOther:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, BLUE     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,gunStartColumnPositionOther
+    add dx, gunWidth
+    cmp ax,dx
+    jnz rowLoopGunOther
+
+    mov ax,gunStartColumnPositionOther
+    mov colGun,ax
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz rowLoopGunOther
+
+    mov rowGun,80d
+    mov colGun,0
 ENDM
 
 drawTarget MACRO
@@ -144,6 +230,9 @@ drawTarget MACRO
     mov charToDrawColor,RED
     drawCharWithGivenVar
 
+    mov charToDrawx,20h
+    mov charToDrawy,0d
+    drawCharWithGivenVar
 ENDM
 
 
