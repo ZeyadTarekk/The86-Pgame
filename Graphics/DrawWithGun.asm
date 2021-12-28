@@ -43,7 +43,7 @@ colTarget dw 20d
 targetEndRowPosition EQU 7d
 ; target start column is variable
 ; This variable changes the position of my target
-targetStartColumnPosition dw 135d 
+targetStartColumnPosition dw 115d 
 targetWidth EQU 10d
 ; gun start column is variable
 ; This variable changes the position of Other target
@@ -1157,10 +1157,10 @@ main proc
     drawTarget
     dec targetStartColumnPosition       ;decreament bullet position (move up)
     mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
-    mov bx, targetWidth              ;its lower border break;
+    mov bx, 0                           ;its lower border break;
     cmp ax,bx
-    jae continueMovingTarget
-      mov targetStartColumnPosition, 135d  ; return bullet to its start position
+    jnz continueMovingTarget
+      mov targetStartColumnPosition, 115d  ; return bullet to its start position
     continueMovingTarget:
     
   jmp home
