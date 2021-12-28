@@ -25,7 +25,8 @@ charToDrawColor db ?
 charToDrawx db ?
 charToDrawy db ?
 
-
+myName db 'Zeyad$'
+otherName db 'Beshoy$'
 ;global variable for printing line (x)
 linex dw ?
 
@@ -728,6 +729,32 @@ LOCAL OtherMemLoop,OtherMemLoopH,otherMemExit
   printMemWithGivenVar
 endm
 
+; Function to print the two names
+printTwoNames MACRO 
+  ;set cursor
+  mov ah,2
+  mov dl,3h
+  mov dh,0Dh 
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,myName
+  mov ah,9
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,18h
+  mov dh,0Dh 
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,otherName
+  mov ah,9
+  int 21h
+  
+ENDM
+
+
 .code
 main proc
   mov ax,@data
@@ -744,6 +771,8 @@ main proc
   drawRegNames
   drawMemoryAdresses
   drawMemoryLines
+  printTwoNames
+
 
   ;for the main loop,   note: outside the loop called one time
   home:
@@ -752,6 +781,7 @@ main proc
   drawOtherRegisters
   drawMyMemory
   drawOtherMemory
+
   
   jmp home
   hlt
