@@ -1089,6 +1089,10 @@ main proc
     cmp cl, ah   ; compare clicked key with left arrow
     jz movGunLeft
 
+    mov cl, 32d  ; ascii of space
+    cmp cl, al   ; compare clicked key with space
+    jz fire 
+    
     jmp home     ; if not pressed left or right arrow loop again
 
     movGunRight:
@@ -1110,11 +1114,17 @@ main proc
       jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
       
       dec gunStartColumnPosition     ; decreament gun position => move to left 
+      jmp gunMoved
     gunMoved:
+    jmp continuePlaying
+    
+    fire:
+      drawBullet
+    
+    continuePlaying:
     
     drawGun
     drawTarget
-    drawBullet
 
   jmp home
   hlt
