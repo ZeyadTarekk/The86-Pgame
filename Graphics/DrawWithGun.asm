@@ -53,8 +53,8 @@ targetStartColumnPositionOther dw 200d
 rowBullet dw 80d                    ; iterator for row of bullet always starts at 80d
 colBullet dw 20d                    ; iterator for columns of bullet
 ; target start row and end  row are constants
-bulletStartRowPosition dw 70d          ; changes and it equals start row + bullet height
-bulletStartRowPositionOther dw 70d          ; changes and it equals start row + bullet height
+bulletStartRowPosition dw 80d          ; changes and it equals start row + bullet height
+bulletStartRowPositionOther dw 80d          ; changes and it equals start row + bullet height
 bulletEndRowPosition dw 5d          ; changes and it equals start row + bullet height
 bulletEndRowPositionOther dw 5d          ; changes and it equals start row + bullet height
 ; target start column is variable   
@@ -1074,13 +1074,15 @@ main proc
   drawTarget
   ;for the main loop,   note: outside the loop called one time
   home:
+
     mov ah,1 ; check if key is clicked
     int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
-    jz home  ; if no button is clicked loop again
+    jz NoClickedKey  ; if no button is clicked DontRead it
 
     mov ah,0 ; read the pressed key
     int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
 
+    continueToMoveOrFire:
     mov cl, 04Dh ; scan code of right arrow
     cmp cl, ah   ; compare clicked key with right arrow
     jz movGunRight
@@ -1094,9 +1096,23 @@ main proc
     jz fire 
     
     jmp home     ; if not pressed left or right arrow loop again
+    
+    NoClickedKey:
+
+    mov bx,80d
+    mov ax, bulletStartRowPosition
+    cmp ax, bx
+    jz home
+    jmp fire
 
     movGunRight:
-      
+      mov bx,80d                    ; if bullet is not at its start position stop moving the Gun
+      mov ax, bulletStartRowPosition
+      cmp ax, bx
+      jz ContinueToMoveRight
+      jmp fire
+      ContinueToMoveRight:
+      ;Move the gun
       mov dx, gunStartColumnPosition ; check if gun reached end of screen
       add dx, gunWidth               ; add gun width to gun start position 
       mov cx, 125d                   ; 125d is the position of the first line
@@ -1108,6 +1124,13 @@ main proc
       jmp gunMoved
 
     movGunLeft:
+      mov bx,80d                     ; if bullet is not at its start position stop moving the Gun
+      mov ax, bulletStartRowPosition
+      cmp ax, bx
+      jz ContinueToMoveLeft
+      jmp fire
+      ContinueToMoveLeft:
+      ; Move the Gun
       mov dx, gunStartColumnPosition ; check if gun reached start of screen
       mov cx, 0d                     ; 0d is the start of the screen
       cmp dx, cx                     ; compare position of screen start to start of gun
@@ -1119,23 +1142,13 @@ main proc
     jmp continuePlaying
     
     fire:
-    mov bx, 0
-    moveBullet:
-      drawBullet
-      ; loop to delay bullet
-      mov cx,10000d
-      DelayBulletLoop:
-      loop DelayBulletLoop
-      
+      drawBullet 
       dec bulletStartRowPosition       ;decreament bullet position (move up)
       mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
       mov bx, bulletWidth              ;its lower border break;
       cmp ax,bx
-    jae HelpJmp
+    jae continuePlaying
       mov bulletStartRowPosition, 80d  ; return bullet to its start position
-      jmp DontMoveBullet
-    HelpJmp: jmp moveBullet
-      DontMoveBullet:
     continuePlaying:
     drawGun
     drawTarget
