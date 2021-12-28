@@ -1163,6 +1163,47 @@ main proc
       mov targetStartColumnPosition, 115d  ; return bullet to its start position
     continueMovingTarget:
     
+
+    mov ax, bulletStartRowPosition
+    add ax, bulletWidth
+    mov cx, 20d
+    cmp ax, cx
+    ja EndCompare
+
+    mov ah,2  ;case1 is true
+    mov dl,'a'
+    int 21h
+    
+    ; Check if 
+    mov ax, bulletStartColumnPosition
+    mov cx, bulletEndColumnPosition
+
+    mov bx, targetStartColumnPosition
+    mov dx, targetStartColumnPosition
+    add dx, targetWidth
+    
+    cmp ax,bx
+    jb case2
+      cmp cx, dx    ;case1 
+      ja case2
+          mov ah,2  ;case1 is true
+          mov dl,'1'
+          int 21h
+    case2:
+    cmp cx, dx
+    jb case3
+        mov ah,2  ;case2 is true
+        mov dl,'2'
+        int 21h
+    case3:
+    cmp ax,bx
+    ja EndCompare
+        cmp cx,dx
+        jbe EndCompare
+        mov ah,2  ;case3 is true
+        mov dl,'3'
+        int 21h
+    EndCompare:
   jmp home
   hlt
 main endp
