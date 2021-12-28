@@ -1119,8 +1119,17 @@ main proc
     jmp continuePlaying
     
     fire:
+    moveBullet:
       drawBullet
-    
+      dec bulletStartRowPosition
+      mov ax, bulletStartRowPosition
+      mov bx, bulletWidth
+      cmp ax,bx
+    jae HelpJmp
+      mov bulletStartRowPosition, 80d
+      jmp DontMoveBullet
+    HelpJmp: jmp moveBullet
+      DontMoveBullet:
     continuePlaying:
     
     drawGun
