@@ -905,7 +905,44 @@ main proc
   drawTarget
   ;for the main loop,   note: outside the loop called one time
   home:
+    mov ah,1 ; check if key is clicked
+    int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
+    jz home  ; if no button is clicked loop again
 
+    mov ah,0 ; read the pressed key
+    int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
+
+    mov cl, 04Dh ; scan code of right arrow
+    cmp cl, ah   ; compare clicked key with right arrow
+    jz movGunRight
+
+    mov cl, 04Bh ; Scan code of left arrow
+    cmp cl, ah   ; compare clicked key with left arrow
+    jz movGunLeft
+
+    jmp home     ; if not pressed left or right arrow loop again
+
+    movGunRight:
+      
+      mov dx, gunStartColumnPosition ; check if gun reached end of screen
+      add dx, gunWidth               ; add gun width to gun start position 
+      mov cx, 125d                   ; 125d is the position of the first line
+      cmp dx, cx                     ; compare position of first line to end of gun
+      jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+      
+      inc gunStartColumnPosition     ; increament gun position => move to right
+      
+      jmp gunMoved
+
+    movGunLeft:
+      mov dx, gunStartColumnPosition ; check if gun reached start of screen
+      mov cx, 0d                     ; 0d is the start of the screen
+      cmp dx, cx                     ; compare position of screen start to start of gun
+      jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+      
+      dec gunStartColumnPosition     ; decreament gun position => move to left 
+    gunMoved:
+    
     drawGun
     drawTarget
   
