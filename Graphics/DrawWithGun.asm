@@ -1119,19 +1119,24 @@ main proc
     jmp continuePlaying
     
     fire:
+    mov bx, 0
     moveBullet:
       drawBullet
-      dec bulletStartRowPosition
-      mov ax, bulletStartRowPosition
-      mov bx, bulletWidth
+      ; loop to delay bullet
+      mov cx,10000d
+      DelayBulletLoop:
+      loop DelayBulletLoop
+      
+      dec bulletStartRowPosition       ;decreament bullet position (move up)
+      mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
+      mov bx, bulletWidth              ;its lower border break;
       cmp ax,bx
     jae HelpJmp
-      mov bulletStartRowPosition, 80d
+      mov bulletStartRowPosition, 80d  ; return bullet to its start position
       jmp DontMoveBullet
     HelpJmp: jmp moveBullet
       DontMoveBullet:
     continuePlaying:
-    
     drawGun
     drawTarget
 
