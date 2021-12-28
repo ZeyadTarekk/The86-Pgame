@@ -46,6 +46,8 @@ mySPx db 0Bh
 mySPy db 6h
 myBPx db 0Bh
 myBPy db 7h
+;position of my memory
+myMemx db 10h
 ;other's register positions
 otherAXx db 18h
 otherAXy db 3h
@@ -63,12 +65,17 @@ otherSPx db 20h
 otherSPy db 6h
 otherBPx db 20h
 otherBPy db 7h
+;position of other memory
+otherMemx db 24h
 
 ;variables for postioning
 printX db ?
 printY db ?
 
 ;my registers data needed
+;dummy variable to help printing
+RegStringToPrint db 4 dup(?)
+MemStringToPring db 2 dup(?)
 ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
         DB   'A','B','C','D','E','F'
 
@@ -77,7 +84,10 @@ myRegisters dw 0F4FEH, 1034h, 154Fh, 57FEh, 5ADFh, 1254h, 0010h, 1000h
 ;                 AX   , BX   , CX   , DX   , SI   , DI   , BP    , SP
 otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
 
-RegStringToPrint db 4 dup(?)
+myMemory db 12h,54h,43h,56h,88h,75h,54h,0FDh,75h,13h,57h,86h,11h,58h,0FFh,5Fh
+
+otherMemory db 13h,66h,43h,56h,88h,0FFh,54h,33h,75h,13h,57h,86h,11h,0FDh,77h,5Fh
+
 
 ;function to draw the background color of the main screen
 drawBackGround MACRO
@@ -397,246 +407,6 @@ mov charToDrawx,13h
 drawCharWithGivenVar
 ENDM
 
-;function to draw the intial '0' of memory
-;my memory postion (10h,0h),  other memory postion (24h,0h)
-drawMemoryIntial macro
-LOCAL MEMINTIALLOOP,MEMINTIALLOOPH,MEMINTIALEXIT
-  ;draw my
-  mov charToDraw,'0'
-  mov charToDrawx,10h
-  mov charToDrawy,0
-  mov charToDrawColor,RED
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  ;draw other
-  mov charToDrawx,24h
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  MEMINTIALLOOP:
-  inc charToDrawy
-  ;draw my
-  mov charToDrawx,10h
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  ;draw other
-  mov charToDrawx,24h
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  mov al,charToDrawy
-  mov dl,15d
-  cmp al,dl
-  jnz MEMINTIALLOOPH
-  jmp MEMINTIALEXIT
-  MEMINTIALLOOPH: jmp MEMINTIALLOOP
-  MEMINTIALEXIT:
-ENDM
-
-;function to draw intial '0' of registers
-drawRegIntial MACRO
-  ;draw the ax zeros
-  mov charToDraw,'0'
-  mov charToDrawColor,YELLOW
-  mov al,myAXx
-  mov charToDrawx,al
-  mov al,myAXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherAXx
-  mov charToDrawx,al
-  mov al,otherAXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,myBXx
-  mov charToDrawx,al
-  mov al,myBXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherBXx
-  mov charToDrawx,al
-  mov al,otherBXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,myCXx
-  mov charToDrawx,al
-  mov al,myCXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherCXx
-  mov charToDrawx,al
-  mov al,otherCXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,myDXx
-  mov charToDrawx,al
-  mov al,myDXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherDXx
-  mov charToDrawx,al
-  mov al,otherDXy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,mySIx
-  mov charToDrawx,al
-  mov al,mySIy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherSIx
-  mov charToDrawx,al
-  mov al,otherSIy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,myDIx
-  mov charToDrawx,al
-  mov al,myDIy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherDIx
-  mov charToDrawx,al
-  mov al,otherDIy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,mySPx
-  mov charToDrawx,al
-  mov al,mySPy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherSPx
-  mov charToDrawx,al
-  mov al,otherSPy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,myBPx
-  mov charToDrawx,al
-  mov al,myBPy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-  mov al,otherBPx
-  mov charToDrawx,al
-  mov al,otherBPy
-  mov charToDrawy,al
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-  inc charToDrawx
-  drawCharWithGivenVar
-
-
-ENDM
-
-
 ;function to convert the hexa number to string to display (need ax=num)
 convertRegToStr macro
   lea si,RegStringToPrint
@@ -670,6 +440,22 @@ convertRegToStr macro
   inc si
 
   mov al,dl
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+endm
+
+;function to convert the hexa number to string to display (need al=num, ah=0)
+convertMemToStr macro
+  lea si,MemStringToPring
+  mov bl,16d
+  div bl
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+  inc si
+  mov al,ah
   lea bx, ASC_TBL
   XLAT
   mov [si],al
@@ -862,8 +648,85 @@ printRegWithGivenVar MACRO
   drawCharWithGivenVar
 ENDM
 
-;functions to draw my memory data
+printMemWithGivenVar macro
+  mov al,printX
+  mov charToDrawx,al
+  mov al,printY
+  mov charToDrawy,al
+  mov charToDrawColor,RED
 
+  lea si,MemStringToPring
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+endm
+
+;functions to draw my memory data
+drawMyMemory macro
+LOCAL MyMemLoop,MyMemLoopH,myMemExit
+  lea di,myMemory
+  mov cx,15d
+  add di,cx
+  MyMemLoop:
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
+  mov al,myMemx
+  mov printX,al
+  mov al,cl
+  mov printY,al
+  printMemWithGivenVar
+  dec di
+  LOOP MyMemLoopH
+  jmp myMemExit
+  MyMemLoopH: jmp MyMemLoop
+  myMemExit:
+
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
+  mov al,myMemx
+  mov printX,al
+  mov al,0
+  mov printY,al
+  printMemWithGivenVar
+endm
+;functions to draw other memory data
+drawOtherMemory macro
+LOCAL OtherMemLoop,OtherMemLoopH,otherMemExit
+  lea di,otherMemory
+  mov cx,15d
+  add di,cx
+  OtherMemLoop:
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
+  mov al,otherMemx
+  mov printX,al
+  mov al,cl
+  mov printY,al
+  printMemWithGivenVar
+  dec di
+  LOOP OtherMemLoopH
+  jmp otherMemExit
+  OtherMemLoopH: jmp OtherMemLoop
+  otherMemExit:
+
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
+  mov al,otherMemx
+  mov printX,al
+  mov al,0
+  mov printY,al
+  printMemWithGivenVar
+endm
 
 .code
 main proc
@@ -881,13 +744,15 @@ main proc
   drawRegNames
   drawMemoryAdresses
   drawMemoryLines
-  drawMemoryIntial
 
   ;for the main loop,   note: outside the loop called one time
   home:
 
   drawMyRegisters
   drawOtherRegisters
+  drawMyMemory
+  drawOtherMemory
+  
   jmp home
   hlt
 main endp
