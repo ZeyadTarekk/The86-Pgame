@@ -110,7 +110,7 @@ LOCAL rowLoop
   mov bh, 0      ;page
   mov dx, row    ;row
   mov cx, col    ;column
-  mov al, GRAY   ;colour
+  mov al, BLACK   ;colour
   int 10h
   ;need to mov the row 
   inc col
@@ -171,7 +171,7 @@ LOCAL LineLoop
   mov bh, 0       ;page
   mov dx, di      ;row
   mov cx, linex   ;column
-  mov al, BLACK   ;colour
+  mov al, WHITE   ;colour
   int 10h
   inc di
   mov ax,130d
@@ -188,7 +188,7 @@ LOCAL HLineLoop
   mov bh, 0       ;page
   mov dx, liney      ;row
   mov cx, di   ;column
-  mov al, BLACK   ;colour
+  mov al, WHITE   ;colour
   int 10h
   inc di
   mov ax,320d
@@ -849,7 +849,6 @@ main proc
 
   drawBackGround
   
-  drawRegNames
   drawMemoryAdresses
   drawMemoryLines
   printTwoNames
@@ -879,7 +878,7 @@ main proc
 
   ;for the main loop,   note: outside the loop called one time
   home:
-
+  drawRegNames
   drawMyRegisters
   drawOtherRegisters
   drawMyMemory
