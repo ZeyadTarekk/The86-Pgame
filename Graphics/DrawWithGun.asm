@@ -37,7 +37,17 @@ gunWidth EQU 20d
 ; This variable changes the position of Other gun
 gunStartColumnPositionOther dw 200d
 
-
+rowTarget dw 0d
+colTarget dw 20d
+; target start row and end  row are constants
+targetEndRowPosition EQU 7d
+; target start column is variable
+; This variable changes the position of my target
+targetStartColumnPosition dw 10d 
+targetWidth EQU 10d
+; gun start column is variable
+; This variable changes the position of Other target
+targetStartColumnPositionOther dw 200d
 
 ;data for the char to draw (x,y,char,color)
 charToDraw db ?
@@ -224,15 +234,118 @@ drawGun MACRO
 ENDM
 
 drawTarget MACRO
-    mov charToDrawx,0
-    mov charToDrawy,0
-    mov charToDraw,0Fh
-    mov charToDrawColor,RED
-    drawCharWithGivenVar
 
-    mov charToDrawx,20h
-    mov charToDrawy,0d
-    drawCharWithGivenVar
+  
+
+    local rowLoopGun
+    local RemoverowLoopTarget
+
+    mov colTarget,0
+    RemoverowLoopTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,125d
+    cmp ax,dx
+    jnz RemoverowLoopTarget
+    mov colTarget,0
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopTarget
+
+    mov rowTarget,0d
+    mov colTarget,163d
+    RemoverowLoopOtherTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,287d
+    cmp ax,dx
+    jnz RemoverowLoopOtherTarget
+    mov colTarget,163d
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopOtherTarget
+
+    mov rowTarget,0d
+
+
+
+
+  ;Draw my target
+    mov ax, targetStartColumnPosition
+    mov colTarget, ax
+    
+    rowLoopMyTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, YELLOW     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,targetStartColumnPosition
+    add dx, targetWidth
+    cmp ax,dx
+    jnz rowLoopMyTarget
+
+    mov ax,targetStartColumnPosition
+    mov colTarget,ax
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz rowLoopMyTarget
+
+
+
+    ;Draw other player target
+    mov rowTarget,0d
+    mov ax, targetStartColumnPositionOther
+    mov colTarget, ax
+
+    rowLoopOtherTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, YELLOW     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,targetStartColumnPositionOther
+    add dx, targetWidth
+    cmp ax,dx
+    jnz rowLoopOtherTarget
+
+    mov ax,targetStartColumnPositionOther
+    mov colTarget,ax
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz rowLoopOtherTarget
 ENDM
 
 
