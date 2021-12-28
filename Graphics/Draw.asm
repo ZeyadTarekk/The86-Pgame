@@ -72,8 +72,10 @@ printY db ?
 ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
         DB   'A','B','C','D','E','F'
 
-;              AX   , BX   , CX   , DX   , SI   , DI   , BP   , SP
+;              AX    , BX   , CX   , DX   , SI   , DI   , BP   , SP
 myRegisters dw 0F4FEH, 1034h, 154Fh, 57FEh, 5ADFh, 1254h, 0010h, 1000h
+;                 AX   , BX   , CX   , DX   , SI   , DI   , BP    , SP
+otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
 
 RegStringToPrint db 4 dup(?)
 
@@ -750,9 +752,79 @@ drawMyRegisters macro
   mov printY,al
   printRegWithGivenVar
 endm
-
+;functions to draw other registers data
 drawOtherRegisters macro
+;print AX
+  mov ax,OtherRegisters
+  convertRegToStr
+  mov al,otherAXx
+  mov printX,al
+  mov al,otherAXy
+  mov printY,al
+  printRegWithGivenVar
 
+  ;print BX
+  mov ax,otherRegisters+2
+  convertRegToStr
+  mov al,otherBXx
+  mov printX,al
+  mov al,otherBXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print CX
+  mov ax,otherRegisters+4
+  convertRegToStr
+  mov al,otherCXx
+  mov printX,al
+  mov al,otherCXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print DX
+  mov ax,otherRegisters+6
+  convertRegToStr
+  mov al,otherDXx
+  mov printX,al
+  mov al,otherDXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print SI
+  mov ax,otherRegisters+8
+  convertRegToStr
+  mov al,otherSIx
+  mov printX,al
+  mov al,otherSIy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print DI
+  mov ax,otherRegisters+10d
+  convertRegToStr
+  mov al,otherDIx
+  mov printX,al
+  mov al,otherDIy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print BP
+  mov ax,otherRegisters+12d
+  convertRegToStr
+  mov al,otherBPx
+  mov printX,al
+  mov al,otherBPy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print SP
+  mov ax,otherRegisters+14d
+  convertRegToStr
+  mov al,otherSPx
+  mov printX,al
+  mov al,otherSPy
+  mov printY,al
+  printRegWithGivenVar
 endm
 
 printRegWithGivenVar MACRO
@@ -790,6 +862,7 @@ printRegWithGivenVar MACRO
   drawCharWithGivenVar
 ENDM
 
+;functions to draw my memory data
 
 
 .code
@@ -814,6 +887,7 @@ main proc
   home:
 
   drawMyRegisters
+  drawOtherRegisters
   jmp home
   hlt
 main endp
