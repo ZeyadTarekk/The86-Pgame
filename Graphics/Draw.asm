@@ -17,7 +17,9 @@ BLACK EQU 0H
 GRAY EQU 7H
 LBLUE EQU 9H
 DBLUE EQU 1H
-
+PURPLE EQU 0DH
+LGREEN EQU 0AH
+DGREEN EQU 2H
 
 ;data for the char to draw (x,y,char,color)
 charToDraw db ?
@@ -29,6 +31,14 @@ myName db 'Zeyad$'
 otherName db 'Beshoy$'
 ;global variable for printing line (x)
 linex dw ?
+liney dw ?
+;the values of hitted balls with a given color
+;               1     2       3     4         5
+              ;red, Yellow , blue, Green , PURPLE 
+coloredPoints db 5h,3h,8h,2h,1h
+
+firstPointX db 3d
+; firstPointY db 21d
 
 ;position of my registers
 myAXx db 3h
@@ -89,6 +99,8 @@ myMemory db 12h,54h,43h,56h,88h,75h,54h,0FDh,75h,13h,57h,86h,11h,58h,0FFh,5Fh
 
 otherMemory db 13h,66h,43h,56h,88h,0FFh,54h,33h,75h,13h,57h,86h,11h,0FDh,77h,5Fh
 
+firstMessage db 'Hello from first$'
+secondMessage db 'Hello from second$'
 
 ;function to draw the background color of the main screen
 drawBackGround MACRO
@@ -98,7 +110,7 @@ LOCAL rowLoop
   mov bh, 0      ;page
   mov dx, row    ;row
   mov cx, col    ;column
-  mov al, GRAY   ;colour
+  mov al, BLACK   ;colour
   int 10h
   ;need to mov the row 
   inc col
@@ -133,6 +145,7 @@ ENDM
 
 ;function to draw memory lines (called once at the begining)
 drawMemoryLines MACRO
+  LOCAL HLineLoop
   ;draw the memory lines
   mov linex,125d
   drawLine
@@ -144,6 +157,11 @@ drawMemoryLines MACRO
   drawLine
   mov linex,307d
   drawLine
+  mov liney,130d
+  drawLineHorizontal
+  mov liney,180d
+  drawLineHorizontal
+
 ENDM
 drawLine macro
 LOCAL LineLoop
@@ -153,14 +171,30 @@ LOCAL LineLoop
   mov bh, 0       ;page
   mov dx, di      ;row
   mov cx, linex   ;column
-  mov al, BLACK   ;colour
+  mov al, WHITE   ;colour
   int 10h
   inc di
-  mov ax,200d
+  mov ax,130d
   cmp di,ax
   jnz LineLoop
 endm
 
+
+drawLineHorizontal MACRO 
+LOCAL HLineLoop
+  mov di,0
+  HLineLoop:
+  mov ah, 0ch     ;write pixels on screen
+  mov bh, 0       ;page
+  mov dx, liney      ;row
+  mov cx, di   ;column
+  mov al, WHITE   ;colour
+  int 10h
+  inc di
+  mov ax,320d
+  cmp di,ax
+  jnz HLineLoop
+ENDM
 ;function to draw the register names (AX,BX,..etc)
 drawRegNames MACRO
   ;draw my
@@ -754,6 +788,53 @@ printTwoNames MACRO
   
 ENDM
 
+; Function to draw the points of each color 
+printPoints MACRO 
+  lea di,coloredPoints
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,RED
+  mov al,firstPointX
+  mov charToDrawX,al
+  mov al,21D
+  mov charToDrawY,al
+  drawCharWithGivenVar
+  
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,YELLOW
+  drawCharWithGivenVar
+
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,LBLUE
+  drawCharWithGivenVar
+
+
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,LGREEN
+  drawCharWithGivenVar
+
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,PURPLE
+  drawCharWithGivenVar
+  
+ENDM
 
 .code
 main proc
@@ -768,15 +849,36 @@ main proc
 
   drawBackGround
   
-  drawRegNames
   drawMemoryAdresses
   drawMemoryLines
   printTwoNames
+  printPoints
+    ;set cursor
+  mov ah,2
+  mov dl,0
+  mov dh,23d
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,firstMessage
+  mov ah,9
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,0
+  mov dh,24d
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,secondMessage
+  mov ah,9
+  int 21h
+
 
 
   ;for the main loop,   note: outside the loop called one time
   home:
-
+  drawRegNames
   drawMyRegisters
   drawOtherRegisters
   drawMyMemory
