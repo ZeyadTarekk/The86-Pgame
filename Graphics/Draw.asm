@@ -64,6 +64,18 @@ otherSPy db 6h
 otherBPx db 20h
 otherBPy db 7h
 
+;variables for postioning
+printX db ?
+printY db ?
+
+;my registers data needed
+ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
+        DB   'A','B','C','D','E','F'
+
+;              AX   , BX   , CX   , DX   , SI   , DI   , BP   , SP
+myRegisters dw 0F4FEH, 1034h, 154Fh, 57FEh, 5ADFh, 1254h, 0010h, 1000h
+
+RegStringToPrint db 4 dup(?)
 
 ;function to draw the background color of the main screen
 drawBackGround MACRO
@@ -622,6 +634,164 @@ drawRegIntial MACRO
 
 ENDM
 
+
+;function to convert the hexa number to string to display (need ax=num)
+convertRegToStr macro
+  lea si,RegStringToPrint
+  mov bx,4096
+  mov dx,0
+  div bx
+  ;dx=num
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+  inc si
+  
+  mov ax,dx
+  mov dx,0
+  mov bx,256
+  div bx
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+  inc si
+
+  mov ax,dx
+  mov dx,0
+  mov bx,16
+  div bx
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+  inc si
+
+  mov al,dl
+  lea bx, ASC_TBL
+  XLAT
+  mov [si],al
+endm
+
+;functions to draw my registers data
+drawMyRegisters macro
+  ;first we need to get the number (4-bytes) and covert it to char
+  ;then move it to charToDraw and pick a color and postions then draw
+  
+  ;print AX
+  mov ax,myRegisters
+  convertRegToStr
+  mov al,myAXx
+  mov printX,al
+  mov al,myAXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print BX
+  mov ax,myRegisters+2
+  convertRegToStr
+  mov al,myBXx
+  mov printX,al
+  mov al,myBXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print CX
+  mov ax,myRegisters+4
+  convertRegToStr
+  mov al,myCXx
+  mov printX,al
+  mov al,myCXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print DX
+  mov ax,myRegisters+6
+  convertRegToStr
+  mov al,myDXx
+  mov printX,al
+  mov al,myDXy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print SI
+  mov ax,myRegisters+8
+  convertRegToStr
+  mov al,mySIx
+  mov printX,al
+  mov al,mySIy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print DI
+  mov ax,myRegisters+10d
+  convertRegToStr
+  mov al,myDIx
+  mov printX,al
+  mov al,myDIy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print BP
+  mov ax,myRegisters+12d
+  convertRegToStr
+  mov al,myBPx
+  mov printX,al
+  mov al,myBPy
+  mov printY,al
+  printRegWithGivenVar
+
+  ;print SP
+  mov ax,myRegisters+14d
+  convertRegToStr
+  mov al,mySPx
+  mov printX,al
+  mov al,mySPy
+  mov printY,al
+  printRegWithGivenVar
+endm
+
+drawOtherRegisters macro
+
+endm
+
+printRegWithGivenVar MACRO
+
+  mov al,printX
+  mov charToDrawx,al
+  mov al,printY
+  mov charToDrawy,al
+  mov charToDrawColor,YELLOW
+
+  lea si,RegStringToPrint
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+ENDM
+
+
+
 .code
 main proc
   mov ax,@data
@@ -634,8 +804,8 @@ main proc
   int 10h 
 
   drawBackGround
+  
   drawRegNames
-  drawRegIntial
   drawMemoryAdresses
   drawMemoryLines
   drawMemoryIntial
@@ -643,6 +813,7 @@ main proc
   ;for the main loop,   note: outside the loop called one time
   home:
 
+  drawMyRegisters
   jmp home
   hlt
 main endp
