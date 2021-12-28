@@ -48,7 +48,7 @@ targetWidth EQU 10d
 ; gun start column is variable
 ; This variable changes the position of Other target
 targetStartColumnPositionOther dw 200d
-
+targetColor db 1 ; this is considered also as the score
 
 rowBullet dw 80d                    ; iterator for row of bullet always starts at 80d
 colBullet dw 20d                    ; iterator for columns of bullet
@@ -470,7 +470,7 @@ drawTarget MACRO
     mov bh, 0      ;page
     mov dx, rowTarget    ;row
     mov cx, colTarget    ;column
-    mov al, YELLOW     ;colour
+    mov al, targetColor     ;colour
     int 10h
 
     ;need to mov the row 
@@ -501,7 +501,7 @@ drawTarget MACRO
     mov bh, 0      ;page
     mov dx, rowTarget    ;row
     mov cx, colTarget    ;column
-    mov al, YELLOW     ;colour
+    mov al, targetColor     ;colour
     int 10h
 
     ;need to mov the row 
@@ -1165,6 +1165,13 @@ main proc
     cmp ax,bx
     jnz continueMovingTarget
       mov targetStartColumnPosition, 115d  ; return bullet to its start position
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz continueMovingTarget
+        mov targetColor, 1
     continueMovingTarget:
     
 
@@ -1172,8 +1179,10 @@ main proc
     add ax, bulletWidth
     mov cx, 15d
     cmp ax, cx
-    ja EndCompare
-
+    ja helpJmpEndCompare
+        jmp continueToCompare
+      helpJmpEndCompare: jmp EndCompare
+    continueToCompare:
     
     ; Check if 
     mov ax, bulletStartColumnPosition
@@ -1188,20 +1197,48 @@ main proc
       cmp cx, dx    ;case1 
       ja case2
         mov targetStartColumnPosition, 115d
-        inc MyScore
+        mov al,targetColor ; ax = 0 targetColor
+        mov ah,0           
+        add MyScore,ax ; add target color to my score the color is considered as score
+        ;change the target color
+        inc targetColor
+        mov ah,6
+        mov bh,targetColor
+        cmp bh,ah
+        jnz EndCompare
+          mov targetColor, 1
     case2:
     cmp cx, dx
     jb case3
         mov targetStartColumnPosition, 115d
-        inc MyScore
+        mov al,targetColor ; ax = 0 targetColor
+        mov ah,0           
+        add MyScore,ax ; add target color to my score the color is considered as score
+        ;change the target color
+        inc targetColor
+        mov ah,6
+        mov bh,targetColor
+        cmp bh,ah
+        jnz EndCompare
+          mov targetColor, 1
     case3:
     cmp ax,bx
     ja EndCompare
         cmp cx,dx
         jbe EndCompare
         mov targetStartColumnPosition, 115d
-        inc MyScore
+        mov al,targetColor ; ax = 0 targetColor
+        mov ah,0           
+        add MyScore,ax ; add target color to my score the color is considered as score
+        ;change the target color
+        inc targetColor
+        mov ah,6
+        mov bh,targetColor
+        cmp bh,ah
+        jnz EndCompare
+          mov targetColor, 1
     EndCompare:
+
   jmp home
   hlt
 main endp
