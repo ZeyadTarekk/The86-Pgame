@@ -123,6 +123,8 @@ ENDM
 drawGun MACRO
     local rowLoopGun
     local RemoverowLoop
+    local RemoverowLoopOther
+    local rowLoopGunOther
 
     mov colGun,0
     RemoverowLoop:
@@ -234,12 +236,10 @@ drawGun MACRO
 ENDM
 
 drawTarget MACRO
-
-  
-
-    local rowLoopGun
     local RemoverowLoopTarget
-
+    local RemoverowLoopOtherTarget
+    local rowLoopMyTarget
+    local rowLoopOtherTarget
     mov colTarget,0
     RemoverowLoopTarget:
     mov ah, 0ch    ;write pixels on screen
@@ -346,6 +346,7 @@ drawTarget MACRO
     mov dx,targetEndRowPosition
     cmp ax,dx
     jnz rowLoopOtherTarget
+    mov rowTarget, 0d
 ENDM
 
 
@@ -905,6 +906,9 @@ main proc
   ;for the main loop,   note: outside the loop called one time
   home:
 
+    drawGun
+    drawTarget
+  
   jmp home
   hlt
 main endp
