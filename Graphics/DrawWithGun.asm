@@ -153,7 +153,7 @@ drawBullet MACRO
     
     mov ax, bulletStartRowPosition
     sub ax, bulletWidth
-    mov rowBullet, 0d  
+    mov rowBullet, 07d  
 
     RemoverowLoopBullet:
     mov ah, 0ch    ;write pixels on screen
@@ -187,7 +187,7 @@ drawBullet MACRO
     
     mov ax, bulletStartRowPositionOther
     sub ax, bulletWidth
-    mov rowBullet, 0h 
+    mov rowBullet, 07d 
     
     RemoverowLoopOtherBullet:
     mov ah, 0ch    ;write pixels on screen
