@@ -67,6 +67,10 @@ bulletWidth EQU 5d
 bulletStartColumnPositionOther dw 200d
 bulletEndColumnPositionOther dw 200d
 
+;Player Score
+MyScore dw 0
+
+
 ;data for the char to draw (x,y,char,color)
 charToDraw db ?
 charToDrawColor db ?
@@ -1166,13 +1170,10 @@ main proc
 
     mov ax, bulletStartRowPosition
     add ax, bulletWidth
-    mov cx, 20d
+    mov cx, 15d
     cmp ax, cx
     ja EndCompare
 
-    mov ah,2  ;case1 is true
-    mov dl,'a'
-    int 21h
     
     ; Check if 
     mov ax, bulletStartColumnPosition
@@ -1186,23 +1187,20 @@ main proc
     jb case2
       cmp cx, dx    ;case1 
       ja case2
-          mov ah,2  ;case1 is true
-          mov dl,'1'
-          int 21h
+        mov targetStartColumnPosition, 115d
+        inc MyScore
     case2:
     cmp cx, dx
     jb case3
-        mov ah,2  ;case2 is true
-        mov dl,'2'
-        int 21h
+        mov targetStartColumnPosition, 115d
+        inc MyScore
     case3:
     cmp ax,bx
     ja EndCompare
         cmp cx,dx
         jbe EndCompare
-        mov ah,2  ;case3 is true
-        mov dl,'3'
-        int 21h
+        mov targetStartColumnPosition, 115d
+        inc MyScore
     EndCompare:
   jmp home
   hlt
