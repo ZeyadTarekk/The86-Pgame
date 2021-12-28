@@ -29,6 +29,39 @@ charToDrawy db ?
 
 myName db 'Zeyad$'
 otherName db 'Beshoy$'
+
+myNameL LABEL BYTE
+myNameSize db 15
+; myNameActualSize db ?
+myNameActualSize db 5
+; myName db 15 dup('$')
+
+otherNameL LABEL BYTE
+otherNameSize db 15
+; otherNameActualSize db ?
+otherNameActualSize db 6
+
+
+myCommand db 'MOV AX,5$'
+otherCommand db 'ADC BX,6$'
+
+myCommandL LABEL BYTE
+myCommandSize db 15
+; myCommandActualSize db ?
+myCommandActualSize db 8
+; myCommand db 15 dup('$')
+
+otherCommandL LABEL BYTE
+otherCommandSize db 15
+; otherCommandActualSize db ?
+otherCommandActualSize db 8
+; otherCommand db 15 dup('$')
+
+myPointsValue db 9d
+otherPointsValue db 5d
+myPointsX db ?
+otherPointsX db ?
+pointsY db 0dh
 ;global variable for printing line (x)
 linex dw ?
 liney dw ?
@@ -145,7 +178,7 @@ ENDM
 
 ;function to draw memory lines (called once at the begining)
 drawMemoryLines MACRO
-  LOCAL HLineLoop
+  LOCAL LineLoopSmall
   ;draw the memory lines
   mov linex,125d
   drawLine
@@ -161,8 +194,25 @@ drawMemoryLines MACRO
   drawLineHorizontal
   mov liney,180d
   drawLineHorizontal
+  mov liney,150d
+  drawLineHorizontal
+
+  mov linex,162d
+  mov di,130d
+  LineLoopSmall:
+  mov ah, 0ch     ;write pixels on screen
+  mov bh, 0       ;page
+  mov dx, di      ;row
+  mov cx, linex   ;column
+  mov al, WHITE   ;colour
+  int 10h
+  inc di
+  mov ax,150d
+  cmp di,ax
+  jnz LineLoopSmall
 
 ENDM
+
 drawLine macro
 LOCAL LineLoop
   mov di,0
@@ -785,7 +835,66 @@ printTwoNames MACRO
   lea dx,otherName
   mov ah,9
   int 21h
+
+  mov al,4h 
+  add al,myNameActualSize 
+  mov myPointsX,al
+
+  mov al,19h 
+  add al,otherNameActualSize 
+  mov otherPointsX,al
   
+  
+ENDM
+
+; Function to draw the two players points
+printTwoPoints MACRO
+
+  mov al,myPointsValue
+  add al,30h
+  mov charToDraw,al
+  mov al,myPointsX
+  mov charToDrawX,al
+  mov al,pointsY
+  mov charToDrawY,al
+  mov charToDrawColor,YELLOW
+  drawCharWithGivenVar
+
+  mov al,otherPointsValue
+  add al,30h
+  mov charToDraw,al
+  mov al,otherPointsX
+  mov charToDrawX,al
+  mov al,pointsY
+  mov charToDrawY,al
+  mov charToDrawColor,YELLOW
+  drawCharWithGivenVar
+
+
+ENDM
+
+;Function to print commands
+printCommands MACRO
+  ;set cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,myCommand
+  mov ah,9
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,otherCommand
+  mov ah,9
+  int 21h
 ENDM
 
 ; Function to draw the points of each color 
@@ -874,10 +983,11 @@ main proc
   mov ah,9
   int 21h
 
-
+  printCommands
 
   ;for the main loop,   note: outside the loop called one time
   home:
+  printTwoPoints
   drawRegNames
   drawMyRegisters
   drawOtherRegisters
