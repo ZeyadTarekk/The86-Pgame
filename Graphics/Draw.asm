@@ -29,6 +29,46 @@ charToDrawy db ?
 
 myName db 'Zeyad$'
 otherName db 'Beshoy$'
+
+myNameL LABEL BYTE
+myNameSize db 15
+; myNameActualSize db ?
+myNameActualSize db 5
+; myName db 15 dup('$')
+
+otherNameL LABEL BYTE
+otherNameSize db 15
+; otherNameActualSize db ?
+otherNameActualSize db 6
+
+wantedValue dw 105Eh        ; number not string to compare it with other
+; wantedValueL LABEL BYTE
+; wantedValueSize db 5
+; wantedValueActualSize db ?
+; wantedValueActualSize db 4
+; wantedValue db 15 dup('$')
+
+
+myCommand db 'MOV AX,5$'
+otherCommand db 'ADC BX,6$'
+
+myCommandL LABEL BYTE
+myCommandSize db 15
+; myCommandActualSize db ?
+myCommandActualSize db 8
+; myCommand db 15 dup('$')
+
+otherCommandL LABEL BYTE
+otherCommandSize db 15
+; otherCommandActualSize db ?
+otherCommandActualSize db 8
+; otherCommand db 15 dup('$')
+
+myPointsValue db 9d
+otherPointsValue db 5d
+myPointsX db ?
+otherPointsX db ?
+pointsY db 0dh
 ;global variable for printing line (x)
 linex dw ?
 liney dw ?
@@ -145,7 +185,7 @@ ENDM
 
 ;function to draw memory lines (called once at the begining)
 drawMemoryLines MACRO
-  LOCAL HLineLoop
+  LOCAL LineLoopSmall
   ;draw the memory lines
   mov linex,125d
   drawLine
@@ -161,8 +201,25 @@ drawMemoryLines MACRO
   drawLineHorizontal
   mov liney,180d
   drawLineHorizontal
+  mov liney,150d
+  drawLineHorizontal
+
+  mov linex,162d
+  mov di,130d
+  LineLoopSmall:
+  mov ah, 0ch     ;write pixels on screen
+  mov bh, 0       ;page
+  mov dx, di      ;row
+  mov cx, linex   ;column
+  mov al, WHITE   ;colour
+  int 10h
+  inc di
+  mov ax,150d
+  cmp di,ax
+  jnz LineLoopSmall
 
 ENDM
+
 drawLine macro
 LOCAL LineLoop
   mov di,0
@@ -443,7 +500,7 @@ drawCharWithGivenVar
 ENDM
 
 ;function to convert the hexa number to string to display (need ax=num)
-convertRegToStr macro
+convertRegToStr MACRO
   lea si,RegStringToPrint
   mov bx,4096
   mov dx,0
@@ -478,10 +535,10 @@ convertRegToStr macro
   lea bx, ASC_TBL
   XLAT
   mov [si],al
-endm
+ENDM
 
 ;function to convert the hexa number to string to display (need al=num, ah=0)
-convertMemToStr macro
+convertMemToStr MACRO
   lea si,MemStringToPring
   mov bl,16d
   div bl
@@ -494,10 +551,10 @@ convertMemToStr macro
   lea bx, ASC_TBL
   XLAT
   mov [si],al
-endm
+ENDM
 
 ;functions to draw my registers data
-drawMyRegisters macro
+drawMyRegisters MACRO
   ;first we need to get the number (4-bytes) and covert it to char
   ;then move it to charToDraw and pick a color and postions then draw
   
@@ -572,9 +629,9 @@ drawMyRegisters macro
   mov al,mySPy
   mov printY,al
   printRegWithGivenVar
-endm
+ENDM
 ;functions to draw other registers data
-drawOtherRegisters macro
+drawOtherRegisters MACRO
 ;print AX
   mov ax,OtherRegisters
   convertRegToStr
@@ -646,7 +703,7 @@ drawOtherRegisters macro
   mov al,otherSPy
   mov printY,al
   printRegWithGivenVar
-endm
+ENDM
 
 printRegWithGivenVar MACRO
 
@@ -785,7 +842,66 @@ printTwoNames MACRO
   lea dx,otherName
   mov ah,9
   int 21h
+
+  mov al,4h 
+  add al,myNameActualSize 
+  mov myPointsX,al
+
+  mov al,19h 
+  add al,otherNameActualSize 
+  mov otherPointsX,al
   
+  
+ENDM
+
+; Function to draw the two players points
+printTwoPoints MACRO
+
+  mov al,myPointsValue
+  add al,30h
+  mov charToDraw,al
+  mov al,myPointsX
+  mov charToDrawX,al
+  mov al,pointsY
+  mov charToDrawY,al
+  mov charToDrawColor,YELLOW
+  drawCharWithGivenVar
+
+  mov al,otherPointsValue
+  add al,30h
+  mov charToDraw,al
+  mov al,otherPointsX
+  mov charToDrawX,al
+  mov al,pointsY
+  mov charToDrawY,al
+  mov charToDrawColor,YELLOW
+  drawCharWithGivenVar
+
+
+ENDM
+
+;Function to print commands
+printCommands MACRO
+  ;set cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,myCommand
+  mov ah,9
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  ; print name
+  lea dx,otherCommand
+  mov ah,9
+  int 21h
 ENDM
 
 ; Function to draw the points of each color 
@@ -797,8 +913,7 @@ printPoints MACRO
   mov charToDrawColor,RED
   mov al,firstPointX
   mov charToDrawX,al
-  mov al,21D
-  mov charToDrawY,al
+  mov charToDrawY,21d
   drawCharWithGivenVar
   
   add charToDrawX,2
@@ -836,24 +951,9 @@ printPoints MACRO
   
 ENDM
 
-.code
-main proc
-  mov ax,@data
-  mov ds,ax
-  mov es,ax
-
-  ;set video mode   (320x200)
-  mov ah, 00h
-  mov al, 13h     
-  int 10h 
-
-  drawBackGround
-  
-  drawMemoryAdresses
-  drawMemoryLines
-  printTwoNames
-  printPoints
-    ;set cursor
+; Function print two messages of chatting 
+printTwoMessage MACRO 
+   ;set cursor
   mov ah,2
   mov dl,0
   mov dh,23d
@@ -873,11 +973,70 @@ main proc
   lea dx,secondMessage
   mov ah,9
   int 21h
+ENDM
+
+; Function to print wanted value
+printWantedValue MACRO
+
+  mov charToDrawx,1Dh
+  mov charToDrawy,20d
+  mov charToDrawColor,LGREEN
+
+  mov ax,wantedValue
+  convertRegToStr
+
+  lea si,RegStringToPrint
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
 
 
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
 
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+
+  inc charToDrawx
+  inc si
+  mov al,[si]
+  mov charToDraw,al
+  drawCharWithGivenVar
+
+
+ENDM
+
+.code
+main proc
+  mov ax,@data
+  mov ds,ax
+  mov es,ax
+
+  ;set video mode   (320x200)
+  mov ah, 00h
+  mov al, 13h     
+  int 10h 
+
+  drawBackGround
+  
+  drawMemoryAdresses
+  drawMemoryLines
+  printTwoNames
+  printPoints
+  printTwoMessage
+  printCommands
+  printWantedValue
   ;for the main loop,   note: outside the loop called one time
   home:
+  printTwoPoints
   drawRegNames
   drawMyRegisters
   drawOtherRegisters
