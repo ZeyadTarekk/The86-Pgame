@@ -1,13 +1,11 @@
 .286
 .model huge
 .stack 64
-
 .data
 
 ;dimensions of the screen
 row dw 0
 col dw 0
-
 
 ; colors
 WHITE EQU 0FH
@@ -42,11 +40,6 @@ otherNameSize db 15
 otherNameActualSize db 6
 
 wantedValue dw 105Eh        ; number not string to compare it with other
-; wantedValueL LABEL BYTE
-; wantedValueSize db 5
-; wantedValueActualSize db ?
-; wantedValueActualSize db 4
-; wantedValue db 15 dup('$')
 
 
 myCommand db 'MOV AX,5$'
@@ -142,6 +135,59 @@ otherMemory db 13h,66h,43h,56h,88h,0FFh,54h,33h,75h,13h,57h,86h,11h,0FDh,77h,5Fh
 firstMessage db 'Hello from first$'
 secondMessage db 'Hello from second$'
 
+
+
+; Variables for Gun
+;iterators for draw gun
+; gun starts at row 80d 
+rowGun dw 80d
+colGun dw 20d
+; gun start row and end  row are constants
+gunEndRowPosition EQU 90d
+; gun start column is variable
+; This variable changes the position of my gun
+gunStartColumnPosition dw 70d 
+gunWidth EQU 20d
+;Other Variables for Gun
+;iterators for draw gun
+; gun start column is variable
+; This variable changes the position of Other gun
+gunStartColumnPositionOther dw 200d
+
+rowTarget dw 0d
+colTarget dw 20d
+; target start row and end  row are constants
+targetEndRowPosition EQU 7d
+; target start column is variable
+; This variable changes the position of my target
+targetStartColumnPosition dw 115d 
+targetWidth EQU 10d
+; gun start column is variable
+; This variable changes the position of Other target
+targetStartColumnPositionOther dw 200d
+targetColor db 1 ; this is considered also as the score
+
+rowBullet dw 80d                    ; iterator for row of bullet always starts at 80d
+colBullet dw 20d                    ; iterator for columns of bullet
+; target start row and end  row are constants
+bulletStartRowPosition dw 80d          ; changes and it equals start row + bullet height
+bulletStartRowPositionOther dw 80d          ; changes and it equals start row + bullet height
+bulletEndRowPosition dw 5d          ; changes and it equals start row + bullet height
+bulletEndRowPositionOther dw 5d          ; changes and it equals start row + bullet height
+; target start column is variable   
+; This variable changes the position of my target
+bulletStartColumnPosition dw 10d    ; equals to midpoint of gun
+bulletEndColumnPosition dw 10d
+bulletWidth EQU 5d
+; gun start column is variable
+; This variable changes the position of Other target
+bulletStartColumnPositionOther dw 200d
+bulletEndColumnPositionOther dw 200d
+
+;Player Score
+MyScore dw 0
+
+
 ;function to draw the background color of the main screen
 drawBackGround MACRO
 LOCAL rowLoop 
@@ -164,6 +210,384 @@ LOCAL rowLoop
   mov dx,200d
   cmp ax,dx
   jnz rowLoop
+ENDM
+
+; draw gun macro 
+drawBullet MACRO
+    local rowLoopBullet
+    local RemoverowLoopBullet
+    local RemoverowLoopOtherBullet
+    local rowLoopBulletOther
+
+    mov cx, gunStartColumnPosition  ; column iterator starts at gunStartColumnPositionOther
+    add cx, 10d                     ; half width of gun
+    mov bulletStartColumnPosition, cx
+    mov colBullet, cx
+    add cx, bulletWidth
+    mov bulletEndColumnPosition, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
+    
+    mov ax, bulletStartRowPosition
+    sub ax, bulletWidth
+    mov rowBullet, 07d  
+
+    RemoverowLoopBullet:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowBullet    ;row
+    mov cx, colBullet    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colBullet
+    mov ax,colBullet
+    mov dx,bulletEndColumnPosition
+    cmp ax,dx
+    jnz RemoverowLoopBullet  
+    mov ax, bulletStartColumnPosition  ; column iterator starts at gunStartColumnPositionOther
+    mov colBullet, ax
+    inc rowBullet
+    mov ax,rowBullet
+    mov dx,80d
+    cmp ax,dx
+    jnz RemoverowLoopBullet
+
+
+    ;intialization of other iterators
+    mov cx, gunStartColumnPositionOther  ; column iterator starts at gunStartColumnPositionOther
+    add cx, 10d                     ; half width of gun
+    mov bulletStartColumnPositionOther, cx
+    mov colBullet, cx
+    add cx, bulletWidth
+    mov bulletEndColumnPositionOther, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
+    
+    mov ax, bulletStartRowPositionOther
+    sub ax, bulletWidth
+    mov rowBullet, 07d 
+    
+    RemoverowLoopOtherBullet:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowBullet    ;row
+    mov cx, colBullet    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colBullet
+    mov ax,colBullet
+    mov dx,bulletEndColumnPositionOther
+    cmp ax,dx
+    jnz RemoverowLoopOtherBullet
+    mov ax, bulletStartColumnPositionOther  ; column iterator starts at gunStartColumnPositionOther
+    mov colBullet, ax
+    inc rowBullet
+    mov ax,rowBullet
+    mov dx,80d
+    cmp ax,dx
+    jnz RemoverowLoopOtherBullet
+
+
+    ;Intialization of my iterators
+    mov cx, gunStartColumnPosition  ; column iterator starts at gunStartColumnPositionOther
+    add cx, 10d                     ; half width of gun
+    mov bulletStartColumnPosition, cx
+    mov colBullet, cx
+    add cx, bulletWidth
+    mov bulletEndColumnPosition, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
+    
+    mov ax, bulletStartRowPosition
+    sub ax, bulletWidth
+    mov rowBullet, ax 
+    ;start drawing of my bullet
+    rowLoopBullet:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowBullet    ;row
+    mov cx, colBullet    ;column
+    mov al, WHITE     ;colour
+    int 10h
+    ;need to mov the row 
+    inc colBullet
+    mov ax,colBullet
+    mov dx,bulletEndColumnPosition
+    ; add dx, gunWidth
+    cmp ax,dx
+    jnz rowLoopBullet
+
+    mov ax,bulletStartColumnPosition
+    mov colBullet,ax
+    inc rowBullet
+    mov ax,rowBullet
+    mov dx,bulletStartRowPosition
+    cmp ax,dx
+    jnz rowLoopBullet
+
+    ; Draw other bullet
+    ;Intialization of other iterators
+    mov cx, gunStartColumnPositionOther  ; column iterator starts at gunStartColumnPositionOther
+    add cx, 10d                     ; half width of gun
+    mov bulletStartColumnPositionOther, cx
+    mov colBullet, cx
+    add cx, bulletWidth
+    mov bulletEndColumnPositionOther, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
+    
+    mov ax, bulletStartRowPositionOther
+    sub ax, bulletWidth
+    mov rowBullet, ax 
+    ; Start drawing
+    rowLoopBulletOther:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowBullet    ;row
+    mov cx, colBullet    ;column
+    mov al, WHITE     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colBullet
+    mov ax,colBullet
+    mov dx,bulletEndColumnPositionOther
+    ; add dx, gunWidth
+    cmp ax,dx
+    jnz rowLoopBulletOther
+
+    mov ax,bulletStartColumnPositionOther
+    mov colBullet,ax
+    inc rowBullet
+    mov ax,rowBullet
+    mov dx,bulletStartRowPositionOther
+    cmp ax,dx
+    jnz rowLoopBulletOther
+
+ENDM
+
+; draw gun macro 
+drawGun MACRO
+    local rowLoopGun
+    local RemoverowLoop
+    local RemoverowLoopOther
+    local rowLoopGunOther
+
+    mov colGun,0
+    RemoverowLoop:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,125d
+    cmp ax,dx
+    jnz RemoverowLoop
+    mov colGun,0
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoop
+
+    mov rowGun,80d
+    mov colGun,163d
+    RemoverowLoopOther:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,287d
+    cmp ax,dx
+    jnz RemoverowLoopOther
+    mov colGun,163d
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopOther
+
+    mov rowGun,80d
+
+
+    mov ax, gunStartColumnPosition
+    mov colGun, ax
+    
+    rowLoopGun:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, LBLUE     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,gunStartColumnPosition
+    add dx, gunWidth
+    cmp ax,dx
+    jnz rowLoopGun
+
+    mov ax,gunStartColumnPosition
+    mov colGun,ax
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz rowLoopGun
+
+    mov rowGun,80d
+    mov colGun,0
+
+
+    mov rowGun,80d
+    mov ax, gunStartColumnPositionOther
+    mov colGun, ax
+    
+    rowLoopGunOther:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowGun    ;row
+    mov cx, colGun    ;column
+    mov al, LBLUE     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colGun
+    mov ax,colGun
+    mov dx,gunStartColumnPositionOther
+    add dx, gunWidth
+    cmp ax,dx
+    jnz rowLoopGunOther
+
+    mov ax,gunStartColumnPositionOther
+    mov colGun,ax
+    inc rowGun
+    mov ax,rowGun
+    mov dx,gunEndRowPosition
+    cmp ax,dx
+    jnz rowLoopGunOther
+
+    mov rowGun,80d
+    mov colGun,0
+ENDM
+
+drawTarget MACRO
+    local RemoverowLoopTarget
+    local RemoverowLoopOtherTarget
+    local rowLoopMyTarget
+    local rowLoopOtherTarget
+    mov colTarget,0
+    RemoverowLoopTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,125d
+    cmp ax,dx
+    jnz RemoverowLoopTarget
+    mov colTarget,0
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopTarget
+
+    mov rowTarget,0d
+    mov colTarget,163d
+    RemoverowLoopOtherTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, RED   ;colour
+    int 10h
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,287d
+    cmp ax,dx
+    jnz RemoverowLoopOtherTarget
+    mov colTarget,163d
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz RemoverowLoopOtherTarget
+
+    mov rowTarget,0d
+
+
+
+
+  ;Draw my target
+    mov ax, targetStartColumnPosition
+    mov colTarget, ax
+    
+    rowLoopMyTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, targetColor     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,targetStartColumnPosition
+    add dx, targetWidth
+    cmp ax,dx
+    jnz rowLoopMyTarget
+
+    mov ax,targetStartColumnPosition
+    mov colTarget,ax
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz rowLoopMyTarget
+
+
+
+    ;Draw other player target
+    mov rowTarget,0d
+    mov ax, targetStartColumnPositionOther
+    mov colTarget, ax
+
+    rowLoopOtherTarget:
+    mov ah, 0ch    ;write pixels on screen
+    mov bh, 0      ;page
+    mov dx, rowTarget    ;row
+    mov cx, colTarget    ;column
+    mov al, targetColor     ;colour
+    int 10h
+
+    ;need to mov the row 
+    inc colTarget
+    mov ax,colTarget
+    mov dx,targetStartColumnPositionOther
+    add dx, targetWidth
+    cmp ax,dx
+    jnz rowLoopOtherTarget
+
+    mov ax,targetStartColumnPositionOther
+    mov colTarget,ax
+    inc rowTarget
+    mov ax,rowTarget
+    mov dx,targetEndRowPosition
+    cmp ax,dx
+    jnz rowLoopOtherTarget
+    mov rowTarget, 0d
 ENDM
 
 
@@ -219,7 +643,6 @@ drawMemoryLines MACRO
   jnz LineLoopSmall
 
 ENDM
-
 drawLine macro
 LOCAL LineLoop
   mov di,0
@@ -235,8 +658,6 @@ LOCAL LineLoop
   cmp di,ax
   jnz LineLoop
 endm
-
-
 drawLineHorizontal MACRO 
 LOCAL HLineLoop
   mov di,0
@@ -252,6 +673,7 @@ LOCAL HLineLoop
   cmp di,ax
   jnz HLineLoop
 ENDM
+
 ;function to draw the register names (AX,BX,..etc)
 drawRegNames MACRO
   ;draw my
@@ -953,7 +1375,7 @@ ENDM
 
 ; Function print two messages of chatting 
 printTwoMessage MACRO 
-   ;set cursor
+  ;set cursor
   mov ah,2
   mov dl,0
   mov dh,23d
@@ -1042,6 +1464,169 @@ main proc
   drawOtherRegisters
   drawMyMemory
   drawOtherMemory
+
+
+
+  ;get the key pressed to move the gun
+  mov ah,1 ; check if key is clicked
+  int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
+  jz NoClickedKey  ; if no button is clicked DontRead it
+
+  mov ah,0 ; read the pressed key
+  int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
+
+  continueToMoveOrFire:
+  mov cl, 04Dh ; scan code of right arrow
+  cmp cl, ah   ; compare clicked key with right arrow
+  jz movGunRight
+
+  mov cl, 04Bh ; Scan code of left arrow
+  cmp cl, ah   ; compare clicked key with left arrow
+  jz movGunLeft
+
+  mov cl, 32d  ; ascii of space
+  cmp cl, al   ; compare clicked key with space
+  jz fire 
+  
+  jmp home     ; if not pressed left or right arrow loop again
+  
+  NoClickedKey:
+
+  mov bx,80d
+  mov ax, bulletStartRowPosition
+  cmp ax, bx
+  jz jumpTocontinuePlaying
+  jmp continueToFire
+    jumpTocontinuePlaying: jmp continuePlaying
+  continueToFire: jmp fire
+
+  movGunRight:
+    mov bx,80d                    ; if bullet is not at its start position stop moving the Gun
+    mov ax, bulletStartRowPosition
+    cmp ax, bx
+    jz ContinueToMoveRight
+    jmp fire
+    ContinueToMoveRight:
+    ;Move the gun
+    mov dx, gunStartColumnPosition ; check if gun reached end of screen
+    add dx, gunWidth               ; add gun width to gun start position 
+    mov cx, 125d                   ; 125d is the position of the first line
+    cmp dx, cx                     ; compare position of first line to end of gun
+    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+    
+    inc gunStartColumnPosition     ; increament gun position => move to right
+    
+    jmp gunMoved
+
+  movGunLeft:
+    mov bx,80d                     ; if bullet is not at its start position stop moving the Gun
+    mov ax, bulletStartRowPosition
+    cmp ax, bx
+    jz ContinueToMoveLeft
+    jmp fire
+    ContinueToMoveLeft:
+    ; Move the Gun
+    mov dx, gunStartColumnPosition ; check if gun reached start of screen
+    mov cx, 0d                     ; 0d is the start of the screen
+    cmp dx, cx                     ; compare position of screen start to start of gun
+    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+    
+    dec gunStartColumnPosition     ; decreament gun position => move to left 
+    jmp gunMoved
+  gunMoved:
+  jmp continuePlaying
+  
+  fire:
+    drawBullet 
+    dec bulletStartRowPosition       ;decreament bullet position (move up)
+    mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
+    mov bx, bulletWidth              ;its lower border break;
+    cmp ax,bx
+  jae continuePlaying
+    mov bulletStartRowPosition, 80d  ; return bullet to its start position
+  continuePlaying:
+  drawGun
+  
+  drawTarget
+  dec targetStartColumnPosition       ;decreament bullet position (move up)
+  mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
+  mov bx, 0                           ;its lower border break;
+  cmp ax,bx
+  jnz continueMovingTarget
+    mov targetStartColumnPosition, 115d  ; return bullet to its start position
+    ;change the target color
+    inc targetColor
+    mov ah,6
+    mov bh,targetColor
+    cmp bh,ah
+    jnz continueMovingTarget
+      mov targetColor, 1
+  continueMovingTarget:
+  
+
+  mov ax, bulletStartRowPosition
+  add ax, bulletWidth
+  mov cx, 15d
+  cmp ax, cx
+  ja helpJmpEndCompare
+      jmp continueToCompare
+    helpJmpEndCompare: jmp EndCompare
+  continueToCompare:
+  
+  ; Check if 
+  mov ax, bulletStartColumnPosition
+  mov cx, bulletEndColumnPosition
+
+  mov bx, targetStartColumnPosition
+  mov dx, targetStartColumnPosition
+  add dx, targetWidth
+  
+  cmp ax,bx
+  jb case2
+    cmp cx, dx    ;case1 
+    ja case2
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add MyScore,ax ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  case2:
+  cmp cx, dx
+  jb case3
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add MyScore,ax ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  case3:
+  cmp ax,bx
+  ja EndCompare
+      cmp cx,dx
+      jbe EndCompare
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add MyScore,ax ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  EndCompare:
 
   
   jmp home
