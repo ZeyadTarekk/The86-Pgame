@@ -95,7 +95,7 @@ offsetMemory      dw ?
 ;our carry
 carry             db 0
 ;the chosen level
-level db 2
+level db 1
 ;after getting the command we need to separate it into 3 parts
 ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
@@ -2191,14 +2191,16 @@ getCommandLvl1 proc
   lea di,myCommand
   lea si,myCommand
   Com1mainLoop:
-  mov ah, 07h
-  int 21h
-  mov dl,al
-  mov bh,0Dh
-  cmp dl,bh
+  mov ah,0
+  int 16h
+  ; mov dl,al
+  ; mov bh,0Dh
+  ; cmp dl,bh
+  mov dl,1CH
+  cmp ah,dl
   jz Com1exit
   mov bh,08h
-  cmp dl,bh
+  cmp al,bh
   jz Com1Backspace
 
   mov bl,forbiddenChar ;forbidden Character 
@@ -2224,7 +2226,7 @@ getCommandLvl1 proc
   mov bh,0h  ;get cursor
   int 10h
   ;check if the cursor(x) = 0
-  mov al,0
+  mov al,2
   cmp al,dl
   jz NoDEC2
   dec dl
@@ -2243,6 +2245,9 @@ getCommandLvl1 proc
   jmp Com1mainLoop
   
   Com1exit:
+  sub di,si
+  mov ax,di
+  mov myCommandActualSize,al
   ret
 getCommandLvl1 endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
