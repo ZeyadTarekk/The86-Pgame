@@ -129,7 +129,7 @@ invalidOperationFlag  db 0     ;equal 1 when the operation is wrong
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-myPointsValue db 1d
+myPointsValue db 2Fh
 otherPointsValue db 5d
 myPointsX db ?
 otherPointsX db ?
@@ -1516,7 +1516,7 @@ main proc
   mov es,ax
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2260,7 +2260,16 @@ EditCarry proc
   ret
 EditCarry endp
 ClearCommand proc
-
+  lea di,myCommand
+  ClearComAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearComfinish
+  mov [di],dl
+  inc di
+  jmp ClearComAgain
+  ClearComfinish:
   ret
 ClearCommand endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
