@@ -6287,6 +6287,11 @@ printWantedValue proc
 printWantedValue endp
 ;function to print the forbidden char for level 1
 printForbiddenChar proc
+  mov al,level
+  mov dl,2
+  cmp al,dl
+  jz ForbiddenExit
+
   mov charToDrawx,16h
   mov charToDrawy,21d
   mov charToDrawColor,RED
@@ -6338,7 +6343,7 @@ printForbiddenChar proc
   mov al,forbiddenChar
   mov charToDraw,al
   call drawCharWithGivenVar
-
+  ForbiddenExit:
   ret
 printForbiddenChar endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
