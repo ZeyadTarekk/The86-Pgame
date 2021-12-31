@@ -90,7 +90,7 @@ secondMSG db 'To Start The Game Press F2','$'
 thirdMSG db 'To End the program press ESC','$'
 LINE db '--------------------------------------------------------------------------------','$'
 carReturn db 10,13,'$'
-selectedMode db ?    ; 1 for chat,,, 2 for game
+selectedMode db ?    ; 1 for chat ---- 2 for game
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -293,20 +293,33 @@ main proc
   mov es,ax
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;call GetNameAndIntialP 
+  call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call levelWindow
-  ;call WinnerScreen
-  call forbiddenWindow
-
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;call clearScreen
-  ;call mainScreen
+  MainScreenLoop:
+  call clearScreen
+  call mainScreen
+  mov al,selectedMode
+  mov dl,2
+  cmp al,dl
+  jz StartGame
+  mov dl,0
+  cmp al,dl
+  jz ProgramExit
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chat Section;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  StartChat:
+
+  jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   StartGame:
+  ;get the level and the forbidden char
+  call levelWindow
+  call forbiddenWindow
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
@@ -351,7 +364,8 @@ main proc
 
   jmp GameLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+  ProgramExit:
+  call clearScreen
   hlt
 main endp
 
@@ -416,7 +430,8 @@ mainScreen proc
   jnz ClearBuffer    ; if not ESC Clear buffer and wait for more chars
   mov ah,0    ;Clear the buffer
   int 16h
-  hlt             ;  (ESC) hlt the program
+  mov selectedMode,0
+  ret             ;  (ESC) hlt the program
   ClearBuffer:
   mov ah,0    ;Clear the buffer
   int 16h
@@ -889,6 +904,7 @@ HexaIntialPoint proc
   HIPOutloop:
   lea si,initalPointStr
   mov [si],ax
+  mov myPointsValue,al
   ret
 HexaIntialPoint endp
 GetNameAndIntialP proc
@@ -966,7 +982,7 @@ GetNameAndIntialP endp
 ;F2 ---> get the command   (scan code: 3Ch)
 ;F3 ---> enter the gun game  (scan code: 3Dh)
 ;F4 ---> exit the main loop and get back to main screen (scan code: 3Eh)
-;;;;;;PowerUps
+;    PowerUps
 ;1 ---> Executing a command on your own processor + get the command after this (5 points)
 ;2 ---> Executing a command on your processor and your opponent processor at the same time + get the command after this (3 points)
 ;3 ---> Changing the forbidden character only once (8 points) + turn on a flag
@@ -1317,6 +1333,7 @@ thirdPowerUp proc
   mov forbiddenChar,al
   mov forbiddenPowerUpFlag,1
   sub myPointsValue,8h
+  call printForbiddenChar
   TPUExit:
   ret
 thirdPowerUp endp
