@@ -78,7 +78,7 @@ otherCommandSize db 15
 otherCommandActualSize db 8
 ; otherCommand db 15 dup('$')
 
-clearBGC db '               $'
+clearBGC db '                  $'
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Names             dw 'xa','xb','xc','xd','is','id','pb','ps','la','ha','lb','hb','lc','hc','ld','hd'
@@ -102,8 +102,11 @@ regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
 forbiddenChar     db 'M'
+getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
 forbiddenFlag     db 0            ;equal 1 when the player use that char
+;forbidden flag to know if the user used the power up
+forbiddenPowerUpFlag db 0         ;equal 1 when the player use the power up
 ;the possible operations for the player to use
 operations  db 'mov','add','adc','sub','sbb','xor','and','nop','shr','shl','clc','ror','rol','rcr','rcl','inc','dec','/'
 ;codes for the operation
@@ -143,7 +146,7 @@ STRIP           db 10,13,10,13,10,13
 
 
 
-myPointsValue db 15h
+myPointsValue db 8h
 otherPointsValue db 1fh
 myPointsX db ?
 otherPointsX db ?
@@ -209,9 +212,13 @@ MemStringToPring db 2 dup(?)
 ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
         DB   'A','B','C','D','E','F'
 
-;              AX    , BX   , CX   , DX   , SI   , DI   , BP   , SP
+
+;flag to know where to run the command
+; 1 --> send the command to other and also execute it
+powerUpCommand db 0
+;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
 myRegisters dw 0000H, 0000h, 0000h, 57FEh, 5ADFh, 1254h, 0010h, 1000h
-;                 AX   , BX   , CX   , DX   , SI   , DI   , BP    , SP
+;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
 otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
 
 myMemory db 12h,54h,43h,56h,88h,75h,54h,0FDh,75h,13h,57h,86h,11h,58h,0FFh,5Fh
@@ -1565,7 +1572,6 @@ main proc
 
 
   call getKeyPressed
-  ;check for the level before the begining of the game
 
   printTwoPoints
   drawRegNames
@@ -1580,186 +1586,6 @@ main proc
 
   hlt
 main endp
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-runGun proc
-  runGunHome:
-  drawRegNames
-  drawMyRegisters
-  ;get the key pressed to move the gun
-  mov ah,1 ; check if key is clicked
-  int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
-  jz NoClickedKey  ; if no button is clicked DontRead it
-
-  mov ah,0 ; read the pressed key
-  int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
-
-  mov dl,1        ; check if ESC 
-  cmp dl,ah
-  jz gunGameExit
-
-  continueToMoveOrFire:
-  mov cl, 20h  ; ascii of space
-  cmp cl, al   ; compare clicked key with space
-  jz fire 
-  
-  mov cl, 04Dh ; scan code of right arrow
-  cmp cl, ah   ; compare clicked key with right arrow
-  jz movGunRight
-
-  mov cl, 04Bh ; Scan code of left arrow
-  cmp cl, ah   ; compare clicked key with left arrow
-  jz movGunLeft
-
-  
-  jmp runGunHome     ; if not pressed left or right arrow loop again
-  
-  NoClickedKey:
-
-  mov bx,80d
-  mov ax, bulletStartRowPosition
-  cmp ax, bx
-  jz jumpTocontinuePlaying
-  jmp continueToFire
-    jumpTocontinuePlaying: jmp continuePlaying
-  continueToFire: jmp fire
-
-  movGunRight:
-    mov bx,80d                    ; if bullet is not at its start position stop moving the Gun
-    mov ax, bulletStartRowPosition
-    cmp ax, bx
-    jz ContinueToMoveRight
-    jmp fire
-    ContinueToMoveRight:
-    ;Move the gun
-    mov dx, gunStartColumnPosition ; check if gun reached end of screen
-    add dx, gunWidth               ; add gun width to gun start position 
-    mov cx, 125d                   ; 125d is the position of the first line
-    cmp dx, cx                     ; compare position of first line to end of gun
-    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
-    
-    inc gunStartColumnPosition     ; increament gun position => move to right
-    
-    jmp gunMoved
-
-  movGunLeft:
-    mov bx,80d                     ; if bullet is not at its start position stop moving the Gun
-    mov ax, bulletStartRowPosition
-    cmp ax, bx
-    jz ContinueToMoveLeft
-    jmp fire
-    ContinueToMoveLeft:
-    ; Move the Gun
-    mov dx, gunStartColumnPosition ; check if gun reached start of screen
-    mov cx, 0d                     ; 0d is the start of the screen
-    cmp dx, cx                     ; compare position of screen start to start of gun
-    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
-    
-    dec gunStartColumnPosition     ; decreament gun position => move to left 
-    jmp gunMoved
-  gunMoved:
-  jmp continuePlaying
-  
-  fire:
-    drawBullet 
-    dec bulletStartRowPosition       ;decreament bullet position (move up)
-    mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
-    mov bx, bulletWidth              ;its lower border break;
-    cmp ax,bx
-  jae continuePlaying
-    mov bulletStartRowPosition, 80d  ; return bullet to its start position
-  continuePlaying:
-  drawGun
-  
-  drawTarget
-  dec targetStartColumnPosition       ;decreament bullet position (move up)
-  mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
-  mov bx, 0                           ;its lower border break;
-  cmp ax,bx
-  jnz continueMovingTarget
-    mov targetStartColumnPosition, 115d  ; return bullet to its start position
-    ;change the target color
-    inc targetColor
-    mov ah,6
-    mov bh,targetColor
-    cmp bh,ah
-    jnz continueMovingTarget
-      mov targetColor, 1
-  continueMovingTarget:
-  
-
-  mov ax, bulletStartRowPosition
-  add ax, bulletWidth
-  mov cx, 15d
-  cmp ax, cx
-  ja helpJmpEndCompare
-      jmp continueToCompare
-    helpJmpEndCompare: jmp EndCompare
-  continueToCompare:
-  
-  ; Check if 
-  mov ax, bulletStartColumnPosition
-  mov cx, bulletEndColumnPosition
-
-  mov bx, targetStartColumnPosition
-  mov dx, targetStartColumnPosition
-  add dx, targetWidth
-  
-  cmp ax,bx
-  jb case2
-    cmp cx, dx    ;case1 
-    ja case2
-      mov targetStartColumnPosition, 115d
-      mov al,targetColor ; ax = 0 targetColor
-      mov ah,0           
-      add myPointsValue,al ; add target color to my score the color is considered as score
-      ;change the target color
-      inc targetColor
-      mov ah,6
-      mov bh,targetColor
-      cmp bh,ah
-      jnz EndCompare
-        mov targetColor, 1
-  case2:
-  cmp cx, dx
-  jb case3
-      mov targetStartColumnPosition, 115d
-      mov al,targetColor ; ax = 0 targetColor
-      mov ah,0           
-      add myPointsValue,al ; add target color to my score the color is considered as score
-      ;change the target color
-      inc targetColor
-      mov ah,6
-      mov bh,targetColor
-      cmp bh,ah
-      jnz EndCompare
-        mov targetColor, 1
-  case3:
-  cmp ax,bx
-  ja EndCompare
-      cmp cx,dx
-      jbe EndCompare
-      mov targetStartColumnPosition, 115d
-      mov al,targetColor ; ax = 0 targetColor
-      mov ah,0           
-      add MyScore,ax ; add target color to my score the color is considered as score
-      ;change the target color
-      inc targetColor
-      mov ah,6
-      mov bh,targetColor
-      cmp bh,ah
-      jnz EndCompare
-        mov targetColor, 1
-  EndCompare:
-  jmp runGunHome
-  gunGameExit:
-  ret
-runGun endp
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 clearScreen proc
@@ -2053,22 +1879,53 @@ getKeyPressed proc
   mov ah,0
   int 16h
 
-  mov al,3Bh          ;F1
-  cmp ah,al
+  mov dl,3Bh          ;F1
+  cmp ah,dl
   jz GKPchat          ;start the chat cycle
 
-  mov al,3Ch          ;F2
-  cmp ah,al
+  mov dl,3Ch          ;F2
+  cmp ah,dl
   jz GKPcommand       ;start the command cycle
 
-  mov al,3Dh          ;F3
-  cmp ah,al
+  mov dl,3Dh          ;F3
+  cmp ah,dl
   jz GKPgunGame       ;start the gun game cycle
 
-  mov al,3Eh
-  cmp ah,al
-  jz GKPexitGame      ;exit the game and show static screen with scores
+  mov dl,31h          ;1
+  cmp al,dl
+  jz GKPfirst         ;execute the first power up
 
+  mov dl,32h          ;2
+  cmp al,dl
+  jz GKPsec           ;execute the second power up
+
+  mov dl,33h          ;3
+  cmp al,dl
+  jz GKPthird         ;execute the third power up
+
+  mov dl,34h          ;4
+  cmp al,dl
+  jz GKPforth         ;execute the forth power up
+
+  mov dl,3Eh
+  cmp ah,dl
+  jz GKPexitGame      ;exit the game and show static screen with scores
+  jmp keyPressedExit
+
+  GKPfirst:
+  call firstPowerUp
+  jmp keyPressedExit
+
+  GKPsec:
+  call secondPowerUp
+  jmp keyPressedExit
+
+  GKPthird:
+  call thirdPowerUp
+  jmp keyPressedExit
+
+  GKPforth:
+  call forthPowerUp
   jmp keyPressedExit
 
   GKPcommand:
@@ -2091,9 +1948,244 @@ getKeyPressed proc
 getKeyPressed endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+runGun proc
+  runGunHome:
+  drawRegNames
+  drawMyRegisters
+  printTwoPoints
+  ;get the key pressed to move the gun
+  mov ah,1 ; check if key is clicked
+  int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
+  jz NoClickedKey  ; if no button is clicked DontRead it
 
+  mov ah,0 ; read the pressed key
+  int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
+
+  mov dl,1        ; check if ESC 
+  cmp dl,ah
+  jz gunGameExit
+
+  continueToMoveOrFire:
+  mov cl, 20h  ; ascii of space
+  cmp cl, al   ; compare clicked key with space
+  jz fire 
+  
+  mov cl, 04Dh ; scan code of right arrow
+  cmp cl, ah   ; compare clicked key with right arrow
+  jz movGunRight
+
+  mov cl, 04Bh ; Scan code of left arrow
+  cmp cl, ah   ; compare clicked key with left arrow
+  jz movGunLeft
+
+  
+  jmp runGunHome     ; if not pressed left or right arrow loop again
+  
+  NoClickedKey:
+
+  mov bx,80d
+  mov ax, bulletStartRowPosition
+  cmp ax, bx
+  jz jumpTocontinuePlaying
+  jmp continueToFire
+    jumpTocontinuePlaying: jmp continuePlaying
+  continueToFire: jmp fire
+
+  movGunRight:
+    mov bx,80d                    ; if bullet is not at its start position stop moving the Gun
+    mov ax, bulletStartRowPosition
+    cmp ax, bx
+    jz ContinueToMoveRight
+    jmp fire
+    ContinueToMoveRight:
+    ;Move the gun
+    mov dx, gunStartColumnPosition ; check if gun reached end of screen
+    add dx, gunWidth               ; add gun width to gun start position 
+    mov cx, 125d                   ; 125d is the position of the first line
+    cmp dx, cx                     ; compare position of first line to end of gun
+    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+    
+    inc gunStartColumnPosition     ; increament gun position => move to right
+    
+    jmp gunMoved
+
+  movGunLeft:
+    mov bx,80d                     ; if bullet is not at its start position stop moving the Gun
+    mov ax, bulletStartRowPosition
+    cmp ax, bx
+    jz ContinueToMoveLeft
+    jmp fire
+    ContinueToMoveLeft:
+    ; Move the Gun
+    mov dx, gunStartColumnPosition ; check if gun reached start of screen
+    mov cx, 0d                     ; 0d is the start of the screen
+    cmp dx, cx                     ; compare position of screen start to start of gun
+    jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
+    
+    dec gunStartColumnPosition     ; decreament gun position => move to left 
+    jmp gunMoved
+  gunMoved:
+  jmp continuePlaying
+  
+  fire:
+    drawBullet 
+    dec bulletStartRowPosition       ;decreament bullet position (move up)
+    mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
+    mov bx, bulletWidth              ;its lower border break;
+    cmp ax,bx
+  jae continuePlaying
+    mov bulletStartRowPosition, 80d  ; return bullet to its start position
+  continuePlaying:
+  drawGun
+  
+  drawTarget
+  dec targetStartColumnPosition       ;decreament bullet position (move up)
+  mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
+  mov bx, 0                           ;its lower border break;
+  cmp ax,bx
+  jnz continueMovingTarget
+    mov targetStartColumnPosition, 115d  ; return bullet to its start position
+    ;change the target color
+    inc targetColor
+    mov ah,6
+    mov bh,targetColor
+    cmp bh,ah
+    jnz continueMovingTarget
+      mov targetColor, 1
+  continueMovingTarget:
+  
+
+  mov ax, bulletStartRowPosition
+  add ax, bulletWidth
+  mov cx, 15d
+  cmp ax, cx
+  ja helpJmpEndCompare
+      jmp continueToCompare
+    helpJmpEndCompare: jmp EndCompare
+  continueToCompare:
+  
+  ; Check if 
+  mov ax, bulletStartColumnPosition
+  mov cx, bulletEndColumnPosition
+
+  mov bx, targetStartColumnPosition
+  mov dx, targetStartColumnPosition
+  add dx, targetWidth
+  
+  cmp ax,bx
+  jb case2
+    cmp cx, dx    ;case1 
+    ja case2
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add myPointsValue,al ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  case2:
+  cmp cx, dx
+  jb case3
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add myPointsValue,al ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  case3:
+  cmp ax,bx
+  ja EndCompare
+      cmp cx,dx
+      jbe EndCompare
+      mov targetStartColumnPosition, 115d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add MyScore,ax ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+  EndCompare:
+  jmp runGunHome
+  gunGameExit:
+  ret
+runGun endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Power Up;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+firstPowerUp proc
+
+  ret
+firstPowerUp endp
+
+secondPowerUp proc
+
+  ret
+secondPowerUp endp
+
+thirdPowerUp proc
+  ;check if the points < 8 then exit
+  mov al,myPointsValue
+  mov dl,8h
+  cmp al,dl
+  jb TPUExit
+
+  ;check if the flag is off
+  mov al,forbiddenPowerUpFlag
+  mov dl,1
+  cmp al,dl
+  jz TPUExit
+
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  ;print get the forbidden msg
+  mov ah,9
+  lea dx,getForbiddenMsg
+  int 21h
+  ;get the forbidden char
+  mov ah,0
+  int 16h
+  ;draw the char
+  mov  bl, GRAY
+  mov  bh, 0                ;Display page
+  mov  ah, 0Eh              ;Teletype
+  int  10h 
+  mov forbiddenChar,al
+  mov forbiddenPowerUpFlag,1
+  sub myPointsValue,8h
+  TPUExit:
+  ret
+thirdPowerUp endp
+
+forthPowerUp proc
+
+  ret
+forthPowerUp endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2124,6 +2216,15 @@ commandCyle proc
 
   ;level 2
   call getCommandLvl2
+  ;check if he used forbidden char
+  mov al,forbiddenFlag
+  mov dl,1
+  cmp al,dl
+  jz EXITJMPCO
+  jmp NOEXITCO
+  EXITJMPCO: jmp CCExit
+  NOEXITCO:
+
   jmp GCcont
   CClvl1:
   call getCommandLvl1
@@ -2190,12 +2291,13 @@ clearBGcommand endp
 getCommandLvl1 proc
   lea di,myCommand
   lea si,myCommand
+  mov al,forbiddenChar
+  or al,32                           ;or with ascci in string
+  mov forbiddenChar,al               ;lower character will be placed
+
   Com1mainLoop:
   mov ah,0
   int 16h
-  ; mov dl,al
-  ; mov bh,0Dh
-  ; cmp dl,bh
   mov dl,1CH
   cmp ah,dl
   jz Com1exit
@@ -2203,12 +2305,22 @@ getCommandLvl1 proc
   cmp al,bh
   jz Com1Backspace
 
+  cmp al,5BH
+  jz GC1braketJMP
+  cmp al,5DH
+  jz GC1braketJMP
+
+  or al,32
   mov bl,forbiddenChar ;forbidden Character 
   cmp al,bl
   jz Com1found   
   
-  mov ah,0eh  ;Display a character in AL
-  int 10h    
+  GC1braketJMP:
+  ;draw the char
+  mov  bl, GRAY
+  mov  bh, 0                ;Display page
+  mov  ah, 0Eh              ;Teletype
+  int  10h 
   mov [di],al
   inc di 
   
@@ -2538,6 +2650,7 @@ SecondChar endp
 EditCarry proc
   mov al,carry
   mov dl,0
+  cmp al,dl
   jnz CARRYON
   CLC
   jmp CARRYEXIT
@@ -2596,6 +2709,7 @@ ClearCommand proc
   mov flagdst,0
   mov invalidOperationFlag,0
   mov CodeOfOperation,0
+  mov forbiddenFlag,0
   ret
 ClearCommand endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
