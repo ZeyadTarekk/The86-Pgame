@@ -76,6 +76,10 @@ otherNameSize db 15
 otherNameActualSize db ?
 otherName db 15 dup('$')
 
+; message to winner of the game
+firstWin db 'First Player is Winner:  ','$'
+secondWin db 'Second Player is Winner: ','$'
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstModifiedMSG db 'You Sent a game inivitation to ','$'
 secondModifiedMSG db 'You Sent a chatting inivitation to ','$'
@@ -270,18 +274,20 @@ main proc
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+  call WinnerScreen
+  mov ah,0
+  int 16h
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;call clearScreen
   ;call mainScreen
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  StartGame:
   ;set video mode   (320x200)
-  mov ah, 00h
-  mov al, 13h     
+  mov ah,0h
+  mov al,13h
   int 10h 
 
   call drawBackGround
@@ -305,10 +311,9 @@ main proc
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
   ;get out of the loop when (any register value = wantedValue)
   GameLoop:
-
-
   call getKeyPressed
 
+  ;update the screen
   call printTwoPoints
   call drawRegNames
   call drawMyRegisters
@@ -455,6 +460,81 @@ mainScreen proc
   AfterDrawSec:
   ret
 mainScreen endp
+WinnerScreen proc
+  mov  ah,0  ;move to winner Screen
+  mov  al,3h 
+  int  10h
+
+
+  mov ah,2
+  mov dl,20d
+  mov dh,10d
+  mov bh,0
+  int 10h
+
+  mov al,myPointsValue
+  mov bl,otherPointsValue
+  cmp al,bl
+
+  ja firstWinner
+  jb secondWiner
+  firstWinner:
+  mov ah,9
+  lea dx,firstWin
+  int 21h
+  mov bh,0
+  mov ah,2
+  mov dl,43d
+  mov dh,10d
+  int 10h
+
+  mov ah,0
+  mov al,myPointsValue
+  mov dl,10h
+  div dl
+
+  add ah,30h
+  add al,30h 
+
+  mov bx,ax
+  mov ah,2
+  mov dl,bl
+  int 21h
+
+  mov ah,2
+  mov dl,bh
+  int 21h
+
+  jmp  exitPage2
+  secondWiner:
+  mov ah,9
+  lea dx,secondWin
+  int 21h
+
+  mov ah,0
+  mov al,otherPointsValue
+  mov dl,10h
+  div dl
+
+  add ah,30h
+  add al,30h 
+
+  mov bx,ax
+  mov ah,2
+  mov dl,bl
+  int 21h
+
+  mov ah,2
+  mov dl,bh
+  int 21h
+
+
+  exitPage2:
+  ;  mov ah, 00h
+  ;  mov al, 13h     
+  ; int 10h 
+  ret
+WinnerScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
