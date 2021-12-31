@@ -5,7 +5,7 @@
 .data
 
 Names             dw 'ax','bx','cx','dx','si','di','bp','sp','al','ah','bl','bh','cl','ch','dl','dh'
-registers         dw 1111h,2222h,3333h,4444h,5555h,6666h,7777h,8888h
+myRegisters       dw 1111h,2222h,3333h,4444h,5555h,6666h,7777h,8888h
 offsets           dw 16 dup(00)
 flagdst           db 0h                    ;flag for wrong destination
 flag              db 0h                    ;flag for wrong source
@@ -15,15 +15,17 @@ destination       dw 0000h
 typeOfSource      db 0fh
 source            dw 0000h
 ;our memory variable
-memory            db 16 dup(0)
+myMemory          db 16 dup(0)
 offsetMemory      dw ?
 ;our carry
 carry             db 0
+;the chosen level
+level db 1
 ;our command
-MyCommand LABEL BYTE
-CommandSize       db 30
-ActualSize        db ?
-command           db 15 dup('$')
+myCommandL LABEL BYTE
+myCommandSize db 15
+myCommandActualSize db ?
+myCommand db 15 dup('$')
 ;after getting the command we need to separate it into 3 parts
 ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
@@ -76,7 +78,7 @@ main proc
   EXITJMPOP: jmp EXITMAIN
   NOEXITOP:
   ;set the memory offset
-  lea bx,memory
+  lea bx,myMemory
   mov offsetMemory,bx
 
   call destinationCheck
@@ -113,13 +115,72 @@ main proc
   hlt
 main endp
 ;----------------------functions----------------------;
+getCommandLVL1 proc
+  lea di,myCommand
+  lea si,myCommand
+  Com1mainLoop:
+  mov ah, 07h
+  int 21h
+  mov dl,al
+  mov bh,0Dh
+  cmp dl,bh
+  jz Com1exit
+  mov bh,08h
+  cmp dl,bh
+  jz Com1Backspace
+
+  mov bl,'F' ;;forbidden Character 
+  cmp al,bl
+  jz Com1found   
+  
+  mov ah,0eh  ;Display a character in AL
+  int 10h    
+  mov [di],al
+  inc di 
+  
+  Com1found:
+  jmp Com1mainLoop
+  
+  Com1Backspace: ;if user enter backspace
+  cmp di,si
+  jz NoDEC1
+  dec di
+  NoDEC1:
+  mov bl,'$'
+  mov [di],bl
+  mov ah,3h
+  mov bh,0h  ;get cursor
+  int 10h
+  ;check if the cursor(x) = 0
+  mov al,0
+  cmp al,dl
+  jz NoDEC2
+  dec dl
+  NoDEC2:
+  mov ah,2
+  int 10h
+  mov ah,2
+  mov dl,' '
+  int 21h
+  mov ah,3h
+  mov bh,0h 
+  int 10h
+  dec dl
+  mov ah,2
+  int 10h              
+  jmp Com1mainLoop
+  
+  Com1exit:
+  ret
+getCommandLVL1 endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 getCommandLvl2 proc
   ;get the player's command
   mov ah,0AH
-  lea dx,command-2
+  lea dx,myCommand-2
   int 21h
   ;convert the (enter) char to $
-  lea si,command
+  lea si,myCommand
   mov al,0dh
   getCommandLoop:
   inc si
@@ -132,7 +193,7 @@ getCommandLvl2 proc
   or al,32                           ;or with ascci in string
   mov forbiddenChar,al               ;lower character will be placed
   ;start to convert all the command characters to lowercase
-  lea si,command                     ;si-->address of string
+  lea si,myCommand                     ;si-->address of string
   L1: cmp [si],24h                   ;if equal to '$' ---> terminate
   jz GC2done
   ;compare with the brackets []
@@ -150,9 +211,9 @@ getCommandLvl2 proc
   jmp L1
   GC2done:                              ;end if = 'enter'
   ;search for the forbidden char in the command
-  lea si,command                     ;the command itself 
+  lea si,myCommand                     ;the command itself 
   mov al,forbiddenChar
-  lea di,ActualSize
+  lea di,myCommandActualSize
   mov ch,0
   mov cl,[di]                        ;the actual size  
   repne SCASB                        ;scan the command for the forbidden char
@@ -166,7 +227,7 @@ getCommandLvl2 endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 separateCommand proc
   ;get the operation
-  lea si,command
+  lea si,myCommand
   lea di,ourOperation
   mov dl,20h
   SECON:
@@ -183,7 +244,7 @@ separateCommand proc
   mov di,si
   ;we need to get the comma (,) so that the destination done
   mov al,2Ch
-  lea bx,ActualSize
+  lea bx,myCommandActualSize
   mov ch,0
   mov cl,[bx]           ;the actual size
   repne SCASB
@@ -2755,14 +2816,14 @@ offsetSetter proc
     ; Loop start
     offsetLoop16:
         mov bx,cx
-        mov ax,offset registers
+        mov ax,offset myRegisters
         add ax,cx
         mov offsets[bx],ax
         dec cx
     loop offsetLoop16
     
     ;next two line Handels first 16bit register
-    mov ax,offset registers
+    mov ax,offset myRegisters
     mov offsets,ax
     ;set offsets of 8bit registers
     ; cx only handels loop range
@@ -2773,7 +2834,7 @@ offsetSetter proc
     mov si,0
     ; Loop start
     offsetLoop8:
-        mov ax,offset registers
+        mov ax,offset myRegisters
         add ax,si
         mov offsets[bx],ax
         inc si
