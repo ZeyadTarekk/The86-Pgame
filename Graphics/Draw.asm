@@ -95,7 +95,7 @@ offsetMemory      dw ?
 ;our carry
 carry             db 0
 ;the chosen level
-level db 1
+level db 2
 ;after getting the command we need to separate it into 3 parts
 ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
@@ -1531,13 +1531,13 @@ main proc
   mov es,ax
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call GetNameAndIntialP 
+  ;call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call clearScreen
-  call mainScreen
+  ;call clearScreen
+  ;call mainScreen
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1583,13 +1583,13 @@ main proc
   ;check for the level before the begining of the game
 
   printTwoPoints
-
+  drawRegNames
+  drawMyRegisters
   drawOtherRegisters
   drawMyMemory
   drawOtherMemory
-  printCommands
+  printPoints
 
-  
   jmp home
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2088,6 +2088,7 @@ getKeyPressed proc
 
   GKPcommand:
   call commandCyle
+  printCommands
   jmp keyPressedExit
 
   GKPchat:
@@ -2116,12 +2117,78 @@ getKeyPressed endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 commandCyle proc
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  int 10h
 
+  ;check for the level to know how to enter the command
+  mov al,level
+  mov dl,1
+  cmp al,dl
+  jz CClvl1
+
+  ;level 2
+  call getCommandLvl2
+  jmp GCcont
+  CClvl1:
+  call getCommandLvl1
+  GCcont:
+  ;operation --> ourOperation | destination --> regName | source --> SrcStr
+  call separateCommand
+  ;get the code of the operation | get the invalid flag
+  call knowTheOperation
+  ;if the invalid flag == 1 then exit and remove some points from the player
+  mov al,invalidOperationFlag
+  mov dl,1
+  cmp al,dl
+  jz EXITJMPOP
+  jmp NOEXITOP
+  EXITJMPOP: jmp CCExit
+  NOEXITOP:
+
+  ;set the memory offset
+  lea bx,myMemory
+  mov offsetMemory,bx
+
+  pusha
+  call destinationCheck
+  popa
+  ;if the invalid flag == 1 then exit and remove some points from the player
+  mov al,flagdst
+  mov dl,1
+  cmp al,dl
+  jz EXITJMPDS
+  jmp NOEXITDS
+  EXITJMPDS: 
+  mov invalidOperationFlag,1
+  jmp CCExit
+  NOEXITDS:
+
+  pusha
+  call sourceCheck
+  popa
+
+  ;if the invalid flag == 1 then exit and remove some points from the player
+  mov al,flag
+  mov dl,1
+  cmp al,dl
+  jz EXITJMPSO
+  jmp NOEXITSO
+  EXITJMPSO: 
+  mov invalidOperationFlag,1
+  jmp CCExit
+  NOEXITSO:
+
+  call Execute
+  ;function to clear the command string (turn it back to $)
+  call ClearCommand
+  CCExit:
   ret
 commandCyle endp
-
-
-getCommandLVL1 proc
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+getCommandLvl1 proc
   lea di,myCommand
   lea si,myCommand
   Com1mainLoop:
@@ -2135,7 +2202,7 @@ getCommandLVL1 proc
   cmp dl,bh
   jz Com1Backspace
 
-  mov bl,'F' ;;forbidden Character 
+  mov bl,forbiddenChar ;forbidden Character 
   cmp al,bl
   jz Com1found   
   
@@ -2178,7 +2245,7 @@ getCommandLVL1 proc
   
   Com1exit:
   ret
-getCommandLVL1 endp
+getCommandLvl1 endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 getCommandLvl2 proc
   ;get the player's command
@@ -2486,6 +2553,45 @@ ClearCommand proc
   inc di
   jmp ClearComAgain
   ClearComfinish:
+
+  lea di,ourOperation
+  ClearComAgain2:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearComfinish2
+  mov [di],dl
+  inc di
+  jmp ClearComAgain2
+  ClearComfinish2:
+
+  lea di,regName
+  ClearComAgain3:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearComfinish3
+  mov [di],dl
+  inc di
+  jmp ClearComAgain3
+  ClearComfinish3:
+
+  lea di,SrcStr
+  ClearComAgain4:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearComfinish4
+  mov [di],dl
+  inc di
+  jmp ClearComAgain4
+  ClearComfinish4:
+
+  ;reset all the flags
+  mov flag,0
+  mov flagdst,0
+  mov invalidOperationFlag,0
+  mov CodeOfOperation,0
   ret
 ClearCommand endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
