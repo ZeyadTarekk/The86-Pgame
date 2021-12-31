@@ -52,16 +52,7 @@ LINE db '-----------------------------------------------------------------------
 carReturn db 10,13,'$'
 selectedMode db ?    ; 1 for chat,,, 2 for game
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
-
-
-
-
-
 wantedValue dw 105Eh        ; number not string to compare it with other
-
 
 ;myCommand db 'MOV AX,5$'
 otherCommand db 'ADC BX,6$'
@@ -146,7 +137,7 @@ STRIP           db 10,13,10,13,10,13
 
 
 
-myPointsValue db 8h
+myPointsValue db 61h
 otherPointsValue db 1fh
 myPointsX db ?
 otherPointsX db ?
@@ -221,6 +212,8 @@ myRegisters dw 0000H, 0000h, 0000h, 57FEh, 5ADFh, 1254h, 0010h, 1000h
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
 otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
 
+clearAllRegPowerUp db 0
+clearAllRegMsg db 'Registers Cleared$'
 myMemory db 12h,54h,43h,56h,88h,75h,54h,0FDh,75h,13h,57h,86h,11h,58h,0FFh,5Fh
 
 otherMemory db 13h,66h,43h,56h,88h,0FFh,54h,33h,75h,13h,57h,86h,11h,0FDh,77h,5Fh
@@ -1867,8 +1860,9 @@ GetNameAndIntialP endp
 
 ;1 ---> Executing a command on your own processor + get the command after this (5 points)
 ;2 ---> Executing a command on your processor and your opponent processor at the same time + get the command after this (3 points)
-;3 ---> Changing the forbidden character only once (8 points) + get the command + turn on a flag
-;4 ---> Clearing all registers at once (30 points) + get the command + turn on a flag
+;3 ---> Changing the forbidden character only once (8 points) + turn on a flag
+;4 ---> Clearing all registers at once (30 points) + turn on a flag
+;5 ---> (for level 2) change the target value + turn on a flag
 getKeyPressed proc
   ;first check if there is any key pressed
   mov ah,1
@@ -2183,7 +2177,48 @@ thirdPowerUp proc
 thirdPowerUp endp
 
 forthPowerUp proc
+  ;check if the points < 30 then exit
+  mov al,myPointsValue
+  mov dl,30h
+  cmp al,dl
+  jb FPUExit
 
+  ;check if the flag is off
+  mov al,clearAllRegPowerUp
+  mov dl,1
+  cmp al,dl
+  jz FPUExit
+
+  mov cx,8h
+  lea bx,myRegisters
+  lea di,otherRegisters
+  FPUclear:
+  mov [bx],0000H
+  mov [di],0000H
+  add bx,2
+  add di,2
+  loop FPUclear
+  mov clearAllRegPowerUp,1
+  sub myPointsValue,30h
+  
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  ;print get the forbidden msg
+  mov ah,9
+  lea dx,clearAllRegMsg
+  int 21h
+  FPUExit:
   ret
 forthPowerUp endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
