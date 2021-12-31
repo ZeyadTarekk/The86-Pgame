@@ -275,8 +275,7 @@ main proc
   ;call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call WinnerScreen
-  mov ah,0
-  int 16h
+
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;call clearScreen
@@ -530,9 +529,19 @@ WinnerScreen proc
 
 
   exitPage2:
-  ;  mov ah, 00h
-  ;  mov al, 13h     
-  ; int 10h 
+  ; delay 5 seconds
+  mov bx,5
+  DELAYWINNER:
+  MOV     CX, 0FH
+  MOV     DX, 4240H
+  MOV     AH, 86H
+  INT     15H
+  dec bx
+  jnz DELAYWINNER
+  ; return to video mode
+  mov ah, 00h
+  mov al, 13h     
+  int 10h 
   ret
 WinnerScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
