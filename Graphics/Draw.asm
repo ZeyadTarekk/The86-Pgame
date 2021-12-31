@@ -92,7 +92,7 @@ ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
-forbiddenChar     db 'M'
+forbiddenChar     db 'Z'
 getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
 forbiddenFlag     db 0            ;equal 1 when the player use that char
@@ -205,8 +205,10 @@ ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
 
 
 ;flag to know where to run the command
-; 1 --> send the command to other and also execute it
-powerUpCommand db 0
+; 0 --> execute on other Registers 
+; 1 --> execute on my Registers 
+whichRegisterToExecute db 0
+flagSecondPowerUp db 0
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
 myRegisters dw 0000H, 0000h, 0000h, 57FEh, 5ADFh, 1254h, 0010h, 1000h
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
@@ -1924,6 +1926,7 @@ getKeyPressed proc
 
   GKPcommand:
   call commandCyle
+  call ClearCommand
   printCommands
   jmp keyPressedExit
 
@@ -2123,10 +2126,40 @@ runGun endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Power Up;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstPowerUp proc
 
+    ;check if the points < 5 then exit
+  mov al,myPointsValue
+  mov dl,5h
+  cmp al,dl
+  jb FiPUExit
+
+  sub myPointsValue,5h 
+  printTwoPoints
+  mov whichRegisterToExecute,1
+  call commandCyle
+  call ClearCommand
+  mov whichRegisterToExecute,0
+  FiPUExit:
+
   ret
 firstPowerUp endp
 
 secondPowerUp proc
+  ;check if the points < 3 then exit
+  mov al,myPointsValue
+  mov dl,3h
+  cmp al,dl
+  jb SPUExit
+
+  sub myPointsValue,3h 
+  printTwoPoints
+  mov whichRegisterToExecute,1
+  call commandCyle
+  mov whichRegisterToExecute,0
+  mov flagSecondPowerUp,1
+  call commandCyle
+  call ClearCommand
+  mov flagSecondPowerUp,0
+  SPUExit:
 
   ret
 secondPowerUp endp
@@ -2229,6 +2262,12 @@ forthPowerUp endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 commandCyle proc
+  
+
+  mov al,flagSecondPowerUp
+  mov dl,1
+  cmp al,dl 
+  jz GCcont
   ;set the cursor
   mov ah,2
   mov dl,2h
@@ -2278,9 +2317,21 @@ commandCyle proc
   NOEXITOP:
 
   ;set the memory offset
-  lea bx,myMemory
-  mov offsetMemory,bx
 
+  mov al,whichRegisterToExecute
+  mov dl,0    ;other
+  cmp al,dl
+  jnz COMCycleNotEqualZero
+
+  lea bx,otherMemory
+  jmp ComEXITCHECKEXECUTE
+  
+  COMCycleNotEqualZero:
+  lea bx,myMemory
+
+  ComEXITCHECKEXECUTE:
+
+  mov offsetMemory,bx
   pusha
   call destinationCheck
   popa
@@ -2313,7 +2364,7 @@ commandCyle proc
   call Execute
   ;function to clear the command string (turn it back to $)
   CCExit:
-  call ClearCommand
+  
   ret
 commandCyle endp
 clearBGcommand proc
@@ -5039,7 +5090,18 @@ EXDEC proc
 EXDEC endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 destinationCheck proc 
+
+    mov al,whichRegisterToExecute
+    mov dl,0    ;other
+    cmp al,dl
+    jnz DSNotEqualZero
+    call otherOffsetSetter 
+    jmp DSEXITCHECKEXECUTE
+
+    DSNotEqualZero:
     call offsetSetter 
+
+    DSEXITCHECKEXECUTE:
     call lowercaseDest                              
     
     ; trim spaces => begining and start             
@@ -5117,6 +5179,41 @@ offsetSetter proc
     loop offsetLoop8
     ret
 offsetSetter endp
+
+otherOffsetSetter proc 
+    ; loop 16 times => number of registers
+    ;set offsets of 16bit registers
+    mov cx,16
+    ; Loop start
+    otherOffsetLoop16:
+        mov bx,cx
+        mov ax,offset otherRegisters
+        add ax,cx
+        mov offsets[bx],ax
+        dec cx
+    loop otherOffsetLoop16
+    
+    ;next two line Handels first 16bit register
+    mov ax,offset otherRegisters
+    mov offsets,ax
+    ;set offsets of 8bit registers
+    ; cx only handels loop range
+    mov cx,16
+    ; bx iterates over offsetArray
+    mov bx,16
+    ; si iterates over registers
+    mov si,0
+    ; Loop start
+    otherOffsetLoop8:
+        mov ax,offset otherRegisters
+        add ax,si
+        mov offsets[bx],ax
+        inc si
+        add bx,2
+        dec cx
+    loop offsetLoop8
+    ret
+otherOffsetSetter endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 lowercaseDest proc 
     lea si,regName     ;poitns to the 1st char of string
@@ -5403,7 +5500,19 @@ validateNumbers proc
 validateNumbers endp                                        
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 sourceCheck proc  
-    call offsetSetter                              
+
+    mov al,whichRegisterToExecute
+    mov dl,0    ;other
+    cmp al,dl
+    jnz SCNotEqualZero
+    call otherOffsetSetter 
+    jmp SCEXITCHECKEXECUTE
+    
+    SCNotEqualZero:
+    call offsetSetter 
+
+    SCEXITCHECKEXECUTE:
+
     call lowercaseSRC                                                 
     ; trim spaces => begining and start                              
     call trimSpacesSRC
