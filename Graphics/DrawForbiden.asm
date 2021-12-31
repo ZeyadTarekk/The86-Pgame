@@ -5,9 +5,10 @@
 
 
 ; level window data
-getLevelMSG db "Please enter the level (1-2) :$"
+getLevelMSG db "Please enter the level (1-2): $"
 
-
+; forbiden character window data
+getForbiddenMSGWindow db "Please forbidden character: $"
 
 
 
@@ -293,10 +294,8 @@ main proc
   ;call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call levelWindow
-  mov ah,07
-  int 21h
   call WinnerScreen
-
+  call forbiddenWindow
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;call clearScreen
@@ -375,11 +374,49 @@ levelWindow PROC
     ;convert to number
     sub al,30h
     mov level,al
+
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
     ret
 levelWindow ENDP
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;forbidden Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+forbiddenWindow PROC
+    ;text mode
+    mov  ah,0  
+    mov  al,3h 
+    int  10h
+    ; set cursor
+    mov ah,2
+    mov dl,20d
+    mov dh,10d
+    mov bh,0
+    int 10h
+    ; display message
+    mov ah, 9
+    mov dx, offset getForbiddenMSGWindow
+    int 21h
+    ;read one character => level
+    mov ah,07
+    int 21h
+    ; print the character
+    mov ah,2
+    mov dl,al
+    int 21h
+    ;convert to number
+    mov forbiddenChar,al
 
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
+    ret
+forbiddenWindow ENDP
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
