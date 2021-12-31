@@ -78,7 +78,7 @@ otherCommandSize db 15
 otherCommandActualSize db 8
 ; otherCommand db 15 dup('$')
 
-
+clearBGC db '               $'
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 Names             dw 'xa','xb','xc','xd','is','id','pb','ps','la','ha','lb','hb','lc','hc','ld','hd'
@@ -1541,26 +1541,11 @@ main proc
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-
-
-
-
-
-
-
-
-
-
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;set video mode   (320x200)
   mov ah, 00h
   mov al, 13h     
   int 10h 
-
-
-
-
 
   drawBackGround
   drawRegNames
@@ -2123,6 +2108,14 @@ commandCyle proc
   mov dh,11h
   int 10h
 
+  call clearBGcommand
+
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  int 10h
+
   ;check for the level to know how to enter the command
   mov al,level
   mov dl,1
@@ -2183,10 +2176,16 @@ commandCyle proc
 
   call Execute
   ;function to clear the command string (turn it back to $)
-  call ClearCommand
   CCExit:
+  call ClearCommand
   ret
 commandCyle endp
+clearBGcommand proc
+  mov ah, 9
+  lea dx,clearBGC
+  int 21h
+  ret
+clearBGcommand endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 getCommandLvl1 proc
   lea di,myCommand
