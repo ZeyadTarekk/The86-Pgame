@@ -80,7 +80,7 @@ otherCommandActualSize db 8
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-Names  dw 'ax','bx','cx','dx','si','di','bp','sp','al','ah','bl','bh','cl','ch','dl','dh'
+Names             dw 'xa','xb','xc','xd','is','id','pb','ps','la','ha','lb','hb','lc','hc','ld','hd'
 offsets           dw 16 dup(00)
 flagdst           db 0h                    ;flag for wrong destination
 flag              db 0h                    ;flag for wrong source
@@ -196,7 +196,7 @@ ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
         DB   'A','B','C','D','E','F'
 
 ;              AX    , BX   , CX   , DX   , SI   , DI   , BP   , SP
-myRegisters dw 0F4FEH, 1034h, 154Fh, 57FEh, 5ADFh, 1254h, 0010h, 1000h
+myRegisters dw 0000H, 0000h, 0000h, 57FEh, 5ADFh, 1254h, 0010h, 1000h
 ;                 AX   , BX   , CX   , DX   , SI   , DI   , BP    , SP
 otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
 
@@ -1544,15 +1544,12 @@ main proc
   int 10h 
 
 
-  
-
-
-
-
 
 
 
   drawBackGround
+  drawRegNames
+  drawMyRegisters
   drawMemoryAdresses
   drawMemoryLines
   printTwoNames
@@ -1565,23 +1562,17 @@ main proc
   ;get out of the loop when (any register value = wantedValue)
   home:
 
-  ;get the key pressed
-  ;F4 ---> exit the main loop and get back to main screen
-  ;1 ---> Executing a command on your own processor + get the command after this (5 points)
-  ;2 ---> Executing a command on your processor and your opponent processor at the same time + get the command after this (3 points)
-  ;3 ---> Changing the forbidden character only once (8 points) + get the command + turn on a flag
-  ;4 ---> Clearing all registers at once (30 points) + get the command + turn on a flag
 
+  call getKeyPressed
   ;check for the level before the begining of the game
 
   printTwoPoints
-  drawRegNames
-  drawMyRegisters
+
   drawOtherRegisters
   drawMyMemory
   drawOtherMemory
+  printCommands
 
-  call runGun
   
   jmp home
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1592,6 +1583,9 @@ main endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 runGun proc
+  runGunHome:
+  drawRegNames
+  drawMyRegisters
   ;get the key pressed to move the gun
   mov ah,1 ; check if key is clicked
   int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
@@ -1600,7 +1594,15 @@ runGun proc
   mov ah,0 ; read the pressed key
   int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
 
+  mov dl,1        ; check if ESC 
+  cmp dl,ah
+  jz gunGameExit
+
   continueToMoveOrFire:
+  mov cl, 20h  ; ascii of space
+  cmp cl, al   ; compare clicked key with space
+  jz fire 
+  
   mov cl, 04Dh ; scan code of right arrow
   cmp cl, ah   ; compare clicked key with right arrow
   jz movGunRight
@@ -1609,9 +1611,6 @@ runGun proc
   cmp cl, ah   ; compare clicked key with left arrow
   jz movGunLeft
 
-  mov cl, 32d  ; ascii of space
-  cmp cl, al   ; compare clicked key with space
-  jz fire 
   
   jmp runGunHome     ; if not pressed left or right arrow loop again
   
@@ -1752,8 +1751,8 @@ runGun proc
       jnz EndCompare
         mov targetColor, 1
   EndCompare:
-
-  runGunHome:
+  jmp runGunHome
+  gunGameExit:
   ret
 runGun endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1898,13 +1897,75 @@ mainScreen proc
 mainScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Keys handling;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;get the key pressed
+;F1 ---> chat    (scan code: 3Bh)
+;F2 ---> get the command   (scan code: 3Ch)
+;F3 ---> enter the gun game  (scan code: 3Dh)
+;F4 ---> exit the main loop and get back to main screen (scan code: 3Eh)
+
+;1 ---> Executing a command on your own processor + get the command after this (5 points)
+;2 ---> Executing a command on your processor and your opponent processor at the same time + get the command after this (3 points)
+;3 ---> Changing the forbidden character only once (8 points) + get the command + turn on a flag
+;4 ---> Clearing all registers at once (30 points) + get the command + turn on a flag
+getKeyPressed proc
+  ;first check if there is any key pressed
+  mov ah,1
+  int 16h
+  jz keyPressedExit
+
+  ;ley pressed --> get that key ah=scan code
+  mov ah,0
+  int 16h
+
+  mov al,3Bh          ;F1
+  cmp ah,al
+  jz GKPchat          ;start the chat cycle
+
+  mov al,3Ch          ;F2
+  cmp ah,al
+  jz GKPcommand       ;start the command cycle
+
+  mov al,3Dh          ;F3
+  cmp ah,al
+  jz GKPgunGame       ;start the gun game cycle
+
+  mov al,3Eh
+  cmp ah,al
+  jz GKPexitGame      ;exit the game and show static screen with scores
+
+  jmp keyPressedExit
+
+  GKPcommand:
+  call commandCyle
+  jmp keyPressedExit
+
+  GKPchat:
+  ; call chatCycle
+  jmp keyPressedExit
+
+  GKPgunGame:
+  call runGun
+  jmp keyPressedExit
+
+  GKPexitGame:
+  ;call exitGame
+  keyPressedExit:
+  ret
+getKeyPressed endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+commandCyle proc
+
+  ret
+commandCyle endp
+
+
 getCommandLVL1 proc
   lea di,myCommand
   lea si,myCommand
