@@ -53,6 +53,17 @@ carReturn db 10,13,'$'
 selectedMode db ?    ; 1 for chat,,, 2 for game
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 wantedValue dw 105Eh        ; number not string to compare it with other
+newWantedValueMessage db 'Wanted Value:$'
+
+;if set to 1 this player used it before
+flagChangeWantedValue db 0
+
+newWantedValueL LABEL BYTE
+newWantedValueSize db 5
+newWantedValueActualSize db ?
+newWantedValue db 6 dup('$')
+
+; newWantedValueNumber dw ?
 
 ;myCommand db 'MOV AX,5$'
 otherCommand db 'ADC BX,6$'
@@ -86,7 +97,7 @@ offsetMemory      dw ?
 ;our carry
 carry             db 0
 ;the chosen level
-level db 1
+level db 2
 ;after getting the command we need to separate it into 3 parts
 ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
@@ -1903,7 +1914,11 @@ getKeyPressed proc
   cmp al,dl
   jz GKPforth         ;execute the forth power up
 
-  mov dl,3Eh
+  mov dl,35h          ;5
+  cmp al,dl
+  jz levelTwoPowerUp         ;execute the forth power up
+
+  mov dl,3Eh        ;F4 pressed
   cmp ah,dl
   jz GKPexitGame      ;exit the game and show static screen with scores
   jmp keyPressedExit
@@ -1922,6 +1937,10 @@ getKeyPressed proc
 
   GKPforth:
   call forthPowerUp
+  jmp keyPressedExit
+
+  levelTwoPowerUp:
+  call changeWantedValue
   jmp keyPressedExit
 
   GKPcommand:
@@ -2247,13 +2266,75 @@ forthPowerUp proc
   mov dh,11h
   mov bh,0
   int 10h
-  ;print get the forbidden msg
+  ;print Clear all registers message
   mov ah,9
   lea dx,clearAllRegMsg
   int 21h
   FPUExit:
   ret
 forthPowerUp endp
+
+changeWantedValue proc
+
+  mov al,level
+  mov dl,1
+  cmp al,dl
+  jz ExitchangeWantedValue
+
+  mov al,flagChangeWantedValue
+  mov dl,1
+  cmp al,dl
+  jz ExitchangeWantedValue
+
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+
+  ;print Enter new wanted value
+  mov ah,9
+  lea dx,newWantedValueMessage
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax, word ptr newWantedValue 
+
+  mov cx,8d
+  lea bx,myRegisters
+  myRegisterLoop:
+  cmp [bx],ax
+  jz ExitchangeWantedValue
+  add bx,2
+  loop myRegisterLoop
+
+  mov cx,8d
+  lea bx,otherRegisters
+  otherRegisterLoop:
+  cmp [bx],ax
+  jz ExitchangeWantedValue
+  add bx,2
+  loop otherRegisterLoop
+
+  mov wantedValue,ax
+  mov flagChangeWantedValue,1
+  printWantedValue
+
+  ExitchangeWantedValue:
+ret
+changeWantedValue endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -5824,14 +5905,58 @@ Hexaaa proc
     mov [si],ax
     ret
 Hexaaa endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+WantedValueToNumber proc
+  mov cl,newWantedValueActualSize
+  mov ch,0
+  lea bx,newWantedValue
+  add bx,cx
+  mov al,'$'
+  mov [bx],al
+
+  mov si,offset newWantedValue
+;lea   si,string
+;lea   di,hexaWord    ;converted string to hexadecimal
+  mainLoopHexaWVTN:
+  mov ah,24h              ;to avoid dbox khara error :3
+  cmp   [si],ah       ;check if char is $
+  jz    exitHexaHexaWVTN           ;if ture ==>end
+  mov   dl,[si]        ;assci of current char
+  mov ah,40h
+  cmp dl,40h          ;compare if digit from 0-9
+  jbe   from_zero_nineHexaWVTN    ;jump to get hexadecimal of digit
+  sub dl,61h  ;  get hexa of  digit (A==>F)
+  add dl,10
+  jmp   skipHexaWVTN  ; jump to skip (0-->9)
+  from_zero_nineHexaWVTN:
+    sub dl,30h
+  skipHexaWVTN:
+    mov [si],dl ; assignment value of dl to string
+    inc si   ; points to the next digit
+    jmp   mainLoopHexaWVTN  ;iterate till  $
+  exitHexaHexaWVTN:
+  mov si,offset newWantedValue       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
+  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
+  mov al,[si]
+  mov ah,0
+  mov cl,'$'
+  cmp al,cl
+  jz OutloopHexaWVTN
+  inc si
+  LOOPMainHexaWVTN:
+      mov dl,[si]
+      cmp dl,cl
+      jz OutloopHexaWVTN
+          mul bx
+          add al,[si]
+          inc si
+  jmp LOOPMainHexaWVTN
+  OutloopHexaWVTN:
+  mov si,offset newWantedValue
+  mov [si],ax
+  ret
+WantedValueToNumber endp
 ;-----------------------------------------------------;
-
-
-
-
-
-
-
 
 
 
