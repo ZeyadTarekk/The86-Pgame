@@ -25,19 +25,20 @@ charToDrawColor db ?
 charToDrawx db ?
 charToDrawy db ?
 
-myName db 'Zeyad$'
-otherName db 'Beshoy$'
+; myName db 'Zeyad$'
+; otherName db 'Beshoy$'
 
 myNameL LABEL BYTE
 myNameSize db 15
-; myNameActualSize db ?
-myNameActualSize db 5
-; myName db 15 dup('$')
+myNameActualSize db ?
+; myNameActualSize db 5
+myName db 15 dup('$')
 
 otherNameL LABEL BYTE
 otherNameSize db 15
-; otherNameActualSize db ?
-otherNameActualSize db 6
+otherNameActualSize db ?
+otherName db 15 dup('$')
+; otherNameActualSize db 6
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstModifiedMSG db 'You Sent a game inivitation to ','$'
@@ -128,9 +129,22 @@ CodeOfOperation     db ?
 invalidOperationFlag  db 0     ;equal 1 when the operation is wrong
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;Get name & initial points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+endl db  10,13 ,'$'
+StringToPrint db 10,13,10,13,10,13
+        db '                            Please enter your Name: ','$'
 
-myPointsValue db 2Fh
-otherPointsValue db 5d
+intialPointSize    db 5                    
+intialPointActualSize db ?                    
+initalPointStr      db 6 dup ('$')
+STRIP           db 10,13,10,13,10,13 
+                db '                            Please enter your Intial Point: ','$'                    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+myPointsValue db 15h
+otherPointsValue db 1fh
 myPointsX db ?
 otherPointsX db ?
 pointsY db 0dh
@@ -1352,26 +1366,27 @@ ENDM
 ; Function to draw the two players points
 printTwoPoints MACRO
 
-  mov al,myPointsValue
-  add al,30h
-  mov charToDraw,al
+  ; print my points
+  lea di,myPointsValue
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
   mov al,myPointsX
-  mov charToDrawX,al
+  mov printX,al
   mov al,pointsY
-  mov charToDrawY,al
-  mov charToDrawColor,YELLOW
-  drawCharWithGivenVar
+  mov printY,al
+  printMemWithGivenVar
 
-  mov al,otherPointsValue
-  add al,30h
-  mov charToDraw,al
+  ; print other points
+  lea di,otherPointsValue
+  mov ah,0
+  mov al,[di]
+  convertMemToStr
   mov al,otherPointsX
-  mov charToDrawX,al
+  mov printX,al
   mov al,pointsY
-  mov charToDrawY,al
-  mov charToDrawColor,YELLOW
-  drawCharWithGivenVar
-
+  mov printY,al
+  printMemWithGivenVar
 
 ENDM
 
@@ -1400,7 +1415,7 @@ printCommands MACRO
 ENDM
 
 ; Function to draw the points of each color 
-printPoints MACRO 
+printPoints MACRO
   lea di,coloredPoints
   mov al,[di]
   add al,30h
@@ -1516,13 +1531,13 @@ main proc
   mov es,ax
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+  call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;call clearScreen
-  ;call mainScreen
+  call clearScreen
+  call mainScreen
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1560,6 +1575,7 @@ main proc
   printTwoMessage
   printCommands
   printWantedValue
+
   ;for the main loop,   note: outside the loop called one time
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
   ;get out of the loop when (any register value = wantedValue)
@@ -1588,6 +1604,9 @@ main proc
 
   hlt
 main endp
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1765,10 +1784,11 @@ clearScreen proc
   mov cx,0
   mov dx,184FH
   int 10h
-  mov bh,0
+    mov bh,0
   ret
 clearScreen endp
 mainScreen proc
+
   ; first display yhe first message
   mov ah,2
   mov dx,0A18h            ; set the cursor at the middle of the screen nearly
@@ -1894,9 +1914,143 @@ mainScreen proc
   int 21h
   
   AfterDrawSec:
+
   ret
 mainScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ClearName proc
+  lea di,myName
+  ClearNaAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearNafinish
+  mov [di],dl
+  inc di
+  jmp ClearNaAgain
+  ClearNafinish:
+  ret
+ClearName endp
+
+HexaIntialPoint proc
+    lea si,initalPointStr
+    ;lea   si,string
+    ;lea   di,hexaWord    ;converted string to hexadecimal
+    HIPmainLoop:
+      mov ah,24h              ;to avoid dbox khara error :3
+      cmp   [si],ah       ;check if char is $
+      jz    exitHIP           ;if ture ==>end
+      mov   dl,[si]        ;assci of current char
+      mov ah,40h
+      cmp dl,40h          ;compare if digit from 0-9
+      jbe   HIPfrom_zero_nine    ;jump to get hexadecimal of digit
+      sub dl,61h  ;  get hexa of  digit (A==>F)
+      add dl,10
+      jmp   HIPskip  ; jump to skip (0-->9)
+    HIPfrom_zero_nine:
+    sub dl,30h
+  HIPskip:
+  mov [si],dl ; assignment value of dl to string
+  inc si   ; points to the next digit
+  jmp   HIPmainLoop  ;iterate till  $
+  exitHIP:
+  lea si,initalPointStr       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
+  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
+  mov al,[si]
+  mov ah,0
+  mov cl,'$'
+
+  cmp al,cl
+  jz HIPOutloop
+  inc si
+  HIPLOOPMain:
+      mov dl,[si]
+      cmp dl,cl
+      jz HIPOutloop
+          mul bx
+          add al,[si]
+          inc si
+  jmp HIPLOOPMain
+  HIPOutloop:
+  lea si,initalPointStr
+  mov [si],ax
+  ret
+HexaIntialPoint endp
+
+
+GetNameAndIntialP proc
+  GNPmainLoop:
+    mov bx,0
+    mov ah,2 
+    mov dx,0 ;set cursor at x=0,y=0
+    int 10h
+    call clearScreen         
+    mov ah,9
+    lea dx,StringToPrint   
+    int 21h 
+    
+    call ClearName        
+    mov ah,0AH      
+    lea dx,myName-2    
+    int 21h
+
+    lea si,myName
+
+    mov al,'Z'
+    cmp [si],al ;check if between A,Z
+    jbe LAZ
+    
+    mov al,'z'
+    cmp [si],al     ;check if between a,z
+    jbe Lza
+    
+    LAZ:
+    mov al,'A'
+    cmp [si],al
+    jae GNPexit
+    jmp GNPmainLoop
+
+    Lza:
+    mov al,'a'
+    cmp [si],al
+    jae GNPexit
+    jmp GNPmainLoop
+    
+    GNPexit:
+
+    ;convert the (enter) char to $
+    lea si,myName
+    mov al,0dh
+    ConvertEnterName:
+    inc si
+    mov bl,[si]
+    cmp bl,al 
+    jnz ConvertEnterName
+    mov [si],24h
+
+    mov ah,9
+    lea dx,STRIP   
+    int 21h 
+
+    mov ah,0AH      
+    lea dx,initalPointStr-2    
+    int 21h
+
+    mov cl,intialPointActualSize
+    mov ch,0
+    lea bx,initalPointStr
+    add bx,cx
+    mov al,'$'
+    mov [bx],al
+    call HexaIntialPoint
+    ret
+GetNameAndIntialP endp
+
+
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

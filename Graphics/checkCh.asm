@@ -77,6 +77,7 @@ myNameL LABEL BYTE
 myNameSize db 16
 myNameActualSize db ?
 myName db 16 dup('$')
+
 endl    db  10,13 ,'$'
 str           db 10,13,10,13,10,13 
               db '                            Please enter your Name: ','$'
@@ -192,7 +193,7 @@ GetNameAndIntialP proc
     int 10h
     clearScreen         ;call
     mov ah,9
-    lea dx,str   
+    lea dx,StringToPrint   
     int 21h 
     
     call ClearName        
