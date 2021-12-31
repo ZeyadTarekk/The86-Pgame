@@ -154,8 +154,8 @@ STRIP           db 10,13,10,13,10,13
 
 
 
-myPointsValue db 64h
-otherPointsValue db 63h
+myPointsValue db 65h
+otherPointsValue db 67h
 myPointsX db ?
 otherPointsX db ?
 pointsY db 0dh
@@ -1763,77 +1763,56 @@ WinnerScreen proc
     mov ah,9
 	lea dx,firstWin
     int 21h
-    ; mov bh,0
-    ; mov ah,2
-    ; mov dl,22d
-    ; mov dh,10d
-    ; int 10h
+    mov bh,0
+    mov ah,2
+    mov dl,43d
+    mov dh,10d
+    int 10h
 
-lea di,myPointsValue
-;   mov cx,15d
-;   add di,cx
-;   MyMemLoop:
-  mov ah,0
-  mov al,[di]
-  convertMemToStr
-  mov al,myMemx
-  mov printX,al
-  mov al,cl
-  mov printY,al
-  printMemWithGivenVar
-  dec di
-  LOOP MyMemLoopH
-  jmp myMemExit
-  MyMemLoopH: jmp MyMemLoop
-  myMemExit:
+    mov ah,0
+    mov al,myPointsValue
+    mov dl,10h
+    div dl
 
-  mov ah,0
-  mov al,[di]
-  convertMemToStr
-  mov al,myMemx
-  mov printX,al
-  mov al,0
-  mov printY,al
-  printMemWithGivenVar
+   add ah,30h
+   add al,30h 
 
-;  mov charToDrawx,43d
-;   mov charToDrawy,10d
-;   mov charToDrawColor,WHITE
-;     mov ah,0
-;   mov al,myPointsValue
-;   convertRegToStr
+   mov bx,ax
+    mov ah,2
+   mov dl,bl
+   int 21h
 
-;   lea si,RegStringToPrint
-;   mov al,[si]
-;   mov charToDraw,al
-;   drawCharWithGivenVar
+   mov ah,2
+   mov dl,bh
+   int 21h
 
 
-;   inc charToDrawx
-;   inc si
-;   mov al,[si]
-;   mov charToDraw,al
-;   drawCharWithGivenVar
+		
 
-
-;   inc charToDrawx
-;   inc si
-;   mov al,[si]
-;   mov charToDraw,al
-;   drawCharWithGivenVar
-
-
-;   inc charToDrawx
-;   inc si
-;   mov al,[si]
-;   mov charToDraw,al
-;   drawCharWithGivenVar
 
     jmp  exitPage2
     secondWiner:
     mov ah,9
 	lea dx,secondWin
 	int 21h
+
+
+    mov ah,0
+    mov al,otherPointsValue
+    mov dl,10h
+    div dl
+
+   add ah,30h
+   add al,30h 
+
+   mov bx,ax
+    mov ah,2
+   mov dl,bl
+   int 21h
+
+   mov ah,2
+   mov dl,bh
+   int 21h
     
 
     exitPage2:
