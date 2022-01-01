@@ -138,7 +138,7 @@ newWantedValue db 6 dup('$')
 
 ; 0 my turn execute on other registers
 ; 1 his turn execute on my registers
-flagTurn db 1
+flagTurn db 0
 
 myCommandL LABEL BYTE
 myCommandSize db 15
@@ -1475,9 +1475,33 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPcommand:
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz myRegistersExecute
+
+  mov whichRegisterToExecute,0
+  jmp AfterSettingRegistersExecute
+
+  myRegistersExecute:
+  mov whichRegisterToExecute,1
+
+
+  AfterSettingRegistersExecute:
   call commandCyle
   call ClearCommand
   call printCommands
+
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz setFlagTurnZero
+  mov flagTurn,1
+  jmp keyPressedExit
+
+  setFlagTurnZero:
+  mov flagTurn,0
+
   jmp keyPressedExit
 
   GKPchat:
