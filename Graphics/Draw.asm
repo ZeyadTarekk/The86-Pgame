@@ -106,7 +106,7 @@ selectedMode db ?    ; 1 for chat ---- 2 for game
 getLevelMSG db "Please enter the level (1-2): $"
 
 ; forbiden character window data
-getForbiddenMSGWindow db "Please forbidden character: $"
+getForbiddenMSGWindow db "Please enter forbidden character: $"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level 2 Registers;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -175,6 +175,7 @@ regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
 forbiddenChar   db ?  ; my  the other player enters it
+myforbiddenChar   db ?  ; my  the other player enters it
 otherforbiddenChar   db ?   ; other   i enter it
 getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
@@ -362,9 +363,8 @@ main proc
   call printWantedValue
   call printTwoMessage
   call printTwoPoints
-  call printForbiddenChar
   call level2Intial
-
+  call printForbiddenChar
   ;for the main loop,   note: outside the loop called one time
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
   ;get out of the loop when (any register value = wantedValue)
@@ -825,7 +825,7 @@ otherforbiddenWindow PROC  ; other player enters it
     mov dl,al
     int 21h
     ;convert to number
-    mov forbiddenChar,al
+    mov myforbiddenChar,al
 
     ; delay one second
     MOV     CX, 0FH
@@ -1480,14 +1480,18 @@ getKeyPressed proc
   cmp al,dl 
   jnz myRegistersExecute
 
-  mov whichRegisterToExecute,0
+  mov whichRegisterToExecute,0    ; execute on his registers
+  mov al,myforbiddenChar
+  mov forbiddenChar,al 
   jmp AfterSettingRegistersExecute
 
-  myRegistersExecute:
+  myRegistersExecute:    ;execute on my registers
+  mov al,otherforbiddenChar
+  mov forbiddenChar,al 
   mov whichRegisterToExecute,1
 
-
   AfterSettingRegistersExecute:
+  call printForbiddenChar
   call commandCyle
   call ClearCommand
   call printCommands
@@ -2117,6 +2121,7 @@ clearBGcommand endp
 getCommandLvl1 proc
   lea di,myCommand
   lea si,myCommand
+
   mov al,forbiddenChar
   or al,32                           ;or with ascci in string
   mov forbiddenChar,al               ;lower character will be placed
@@ -2164,7 +2169,15 @@ getCommandLvl1 proc
   mov bh,0h  ;get cursor
   int 10h
   ;check if the cursor(x) = 0
+  mov bl,flagTurn
+  mov cl,0
+  cmp bl,cl
+  jnz SecondTurnCheckCommandBackSpace
   mov al,2
+  jmp afterCheckBackspaceSecond
+  SecondTurnCheckCommandBackSpace:
+  mov al,16h
+  afterCheckBackspaceSecond:
   cmp al,dl
   jz NoDEC2
   dec dl
