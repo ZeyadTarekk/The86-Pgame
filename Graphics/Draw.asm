@@ -59,6 +59,7 @@ DBLUE EQU 1H
 PURPLE EQU 0DH
 LGREEN EQU 0AH
 DGREEN EQU 2H
+CYAN EQU 3H
 
 ;data for the char to draw (x,y,char,color)
 charToDraw db ?
@@ -73,8 +74,10 @@ myName db 15 dup('$')
 
 otherNameL LABEL BYTE
 otherNameSize db 15
-otherNameActualSize db ?
-otherName db 15 dup('$')
+; otherNameActualSize db ?
+; otherName db 15 dup('$')
+otherNameActualSize db 6
+otherName db 'hamada$'
 
 ; message to winner of the game
 firstWin db ' is the  winner with score  ','$'
@@ -200,9 +203,9 @@ pointsY db 0dh
 linex dw ?
 liney dw ?
 ;the values of hitted balls with a given color
-;               1     2       3     4         5
-              ;red, Yellow , blue, Green , PURPLE 
-coloredPoints db 5h,3h,8h,2h,1h
+;                 1     2       3     4       5
+                ;Blue, green , Cyan, red , Magenta 
+coloredPoints db  0h ,   0h  ,  0h ,  0h ,  0h
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;variables for postioning
@@ -545,60 +548,23 @@ WinnerScreen proc
   mov  al,3h 
   int  10h
 
-
   mov ah,2
   mov dl,20d
   mov dh,10d
   mov bh,0
   int 10h
-
-  mov al,myPointsValue
-  mov bl,otherPointsValue
-  cmp al,bl
-
-  ja firstWinner
-  jb secondWiner
-  firstWinner:
-  ; display player 1 name
-  mov ah, 9
-  mov dx, offset myName
-  int 21h
-  mov ah,9
-  lea dx,firstWin
-  int 21h
-  
-  
-  mov ah,0
-  mov al,myPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  jmp  exitPage2
-  secondWiner:
+  mov cl,winnerFlag
+  cmp cl,1
+  jz IamWinner
+  ; display name of other player 
   mov ah, 9
   mov dx, offset otherName
   int 21h
+  ;display meesage 
   mov ah,9
   lea dx,firstWin
   int 21h
-
+  ;display score of the other player
   mov ah,0
   mov al,otherPointsValue
   mov bl,16d
@@ -616,13 +582,43 @@ WinnerScreen proc
   lea bx, ASC_TBL
   XLAT
 
+  mov ah,2
+  mov dl,al
+  int 21h
+  jmp exitPage2
+
+  IamWinner:
+; display player 1 name
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
+  ;display meesage 
+  mov ah,9
+  lea dx,firstWin
+  int 21h
+  ;display score of the first player
+  mov ah,0
+  mov al,myPointsValue
+  mov bl,16d
+  div bl
+  mov cx,ax
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
 
   mov ah,2
   mov dl,al
   int 21h
 
+  mov al,ch
+  lea bx, ASC_TBL
+  XLAT
 
+  mov ah,2
+  mov dl,al
+  int 21h
   exitPage2:
+
   ; delay 5 seconds
   mov bx,5
   DELAYWINNER:
@@ -634,7 +630,7 @@ WinnerScreen proc
   jnz DELAYWINNER
   ; return to video mode
   mov ah, 00h
-  mov al, 13h     
+  mov al, 13h
   int 10h 
 
   ret
@@ -704,6 +700,13 @@ clearTheGame proc
   inc bx
   inc di
   loop clearTheGameMem
+
+  ;clear the colored points
+  mov coloredPoints,00h
+  mov coloredPoints+1,00h
+  mov coloredPoints+2,00h
+  mov coloredPoints+3,00h
+  mov coloredPoints+4,00h
   ;return the wanted value to its intial
   mov wantedValue,105Eh
   ;return the change wanted value flag power up 
@@ -750,18 +753,23 @@ ESCWinnerScreen proc
   ;display player 1 score
   mov ah,0
   mov al,myPointsValue
-  mov dl,10h
-  div dl
-  add ah,30h
-  add al,30h 
-  mov bx,ax
-  ;print first number
+  mov bl,16d
+  div bl
+  mov cx,ax
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
+
   mov ah,2
-  mov dl,bl
+  mov dl,al
   int 21h
-  ;print second number
+
+  mov al,ch
+  lea bx, ASC_TBL
+  XLAT
+
   mov ah,2
-  mov dl,bh
+  mov dl,al
   int 21h
   
   ; set cursor
@@ -778,21 +786,26 @@ ESCWinnerScreen proc
   mov ah, 9
   mov dx, offset ESCWinnerMSG
   int 21h
-  ;display player 1 score
+  ;display player 2 score
   mov ah,0
   mov al,otherPointsValue
-  mov dl,10h
-  div dl
-  add ah,30h
-  add al,30h 
-  mov bx,ax
-  ;print first number
+  mov bl,16d
+  div bl
+  mov cx,ax
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
+
   mov ah,2
-  mov dl,bl
+  mov dl,al
   int 21h
-  ;print second number
+
+  mov al,ch
+  lea bx, ASC_TBL
+  XLAT
+
   mov ah,2
-  mov dl,bh
+  mov dl,al
   int 21h
 
   mov bx,5
@@ -1332,6 +1345,7 @@ runGun proc
   call drawRegNames
   call drawMyRegisters
   call printTwoPoints
+  call printPoints
   ;get the key pressed to move the gun
   mov ah,1 ; check if key is clicked
   int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
@@ -1455,6 +1469,44 @@ runGun proc
   jb case2
     cmp cx, dx    ;case1 
     ja case2
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlue1
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreen1
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyan1
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRed1
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagenta1
+
+      increamentBlue1:
+        inc coloredPoints
+        jmp ENDINCCOLORS1
+      increamentGreen1:
+        inc coloredPoints[1]
+        jmp ENDINCCOLORS1
+      increamentCyan1:
+        inc coloredPoints[2]
+        jmp ENDINCCOLORS1
+      increamentRed1:
+        inc coloredPoints[3]
+        jmp ENDINCCOLORS1
+      increamentMagenta1:
+        inc coloredPoints[4]
+        jmp ENDINCCOLORS1
+      ENDINCCOLORS1:
+
       mov targetStartColumnPosition, 115d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
@@ -1466,9 +1518,49 @@ runGun proc
       cmp bh,ah
       jnz EndCompare
         mov targetColor, 1
+        jmp EndCompare
+      
   case2:
   cmp cx, dx
   jb case3
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlue2
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreen2
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyan2
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRed2
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagenta2
+
+      increamentBlue2:
+        inc coloredPoints
+        jmp ENDINCCOLORS2
+      increamentGreen2:
+        inc coloredPoints[1]
+        jmp ENDINCCOLORS2
+      increamentCyan2:
+        inc coloredPoints[2]
+        jmp ENDINCCOLORS2
+      increamentRed2:
+        inc coloredPoints[3]
+        jmp ENDINCCOLORS2
+      increamentMagenta2:
+        inc coloredPoints[4]
+        jmp ENDINCCOLORS2
+      ENDINCCOLORS2:
+
       mov targetStartColumnPosition, 115d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
@@ -1480,11 +1572,49 @@ runGun proc
       cmp bh,ah
       jnz EndCompare
         mov targetColor, 1
+        jmp EndCompare
   case3:
   cmp ax,bx
   ja EndCompare
       cmp cx,dx
       jbe EndCompare
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlue3
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreen3
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyan3
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRed3
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagenta3
+
+      increamentBlue3:
+        inc coloredPoints
+        jmp ENDINCCOLORS3
+      increamentGreen3:
+        inc coloredPoints[1]
+        jmp ENDINCCOLORS3
+      increamentCyan3:
+        inc coloredPoints[2]
+        jmp ENDINCCOLORS3
+      increamentRed3:
+        inc coloredPoints[3]
+        jmp ENDINCCOLORS3
+      increamentMagenta3:
+        inc coloredPoints[4]
+        jmp ENDINCCOLORS3
+      ENDINCCOLORS3:
       mov targetStartColumnPosition, 115d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
@@ -1496,6 +1626,7 @@ runGun proc
       cmp bh,ah
       jnz EndCompare
         mov targetColor, 1
+        jmp EndCompare
   EndCompare:
   jmp runGunHome
   gunGameExit:
@@ -6410,7 +6541,7 @@ printPoints proc
   mov al,[di]
   add al,30h
   mov charToDraw,al
-  mov charToDrawColor,RED
+  mov charToDrawColor,DBLUE
   mov al,firstPointX
   mov charToDrawX,al
   mov charToDrawY,21d
@@ -6421,23 +6552,23 @@ printPoints proc
   mov al,[di]
   add al,30h
   mov charToDraw,al
-  mov charToDrawColor,YELLOW
-  call drawCharWithGivenVar
-
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,LBLUE
-  call drawCharWithGivenVar
-
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
   mov charToDrawColor,LGREEN
+  call drawCharWithGivenVar
+
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,CYAN
+  call drawCharWithGivenVar
+
+  add charToDrawX,2
+  inc di
+  mov al,[di]
+  add al,30h
+  mov charToDraw,al
+  mov charToDrawColor,RED
   call drawCharWithGivenVar
 
   add charToDrawX,2
