@@ -5957,47 +5957,32 @@ drawGun proc
   ret
 drawGun endp
 drawTarget proc
-  mov colTarget,0
+  mov rowTarget,0 
   RemoverowLoopTarget:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowTarget    ;row
-  mov cx, colTarget    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colTarget
-  mov ax,colTarget
-  mov dx,125d
-  cmp ax,dx
-  jnz RemoverowLoopTarget
-  mov colTarget,0
-  inc rowTarget
-  mov ax,rowTarget
-  mov dx,targetEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowTarget                    ;row
+    mov cx, targetStartColumnPosition    ;column
+    add cx, targetWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowTarget
+    mov ax, rowTarget
+    cmp ax, 07d
   jnz RemoverowLoopTarget
 
   mov rowTarget,0d
-  mov colTarget,163d
   RemoverowLoopOtherTarget:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowTarget    ;row
-  mov cx, colTarget    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colTarget
-  mov ax,colTarget
-  mov dx,287d
-  cmp ax,dx
-  jnz RemoverowLoopOtherTarget
-  mov colTarget,163d
-  inc rowTarget
-  mov ax,rowTarget
-  mov dx,targetEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowTarget                    ;row
+    mov cx, targetStartColumnPositionOther    ;column
+    add cx, targetWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowTarget
+    mov ax, rowTarget
+    cmp ax, 07d
   jnz RemoverowLoopOtherTarget
 
   mov rowTarget,0d
