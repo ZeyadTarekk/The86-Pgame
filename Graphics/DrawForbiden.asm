@@ -89,8 +89,8 @@ otherNameActualSize db ?
 otherName db "Sherif$"
 
 ; message to winner of the game
-firstWin db 'First Player is Winner:  ','$'
-secondWin db 'Second Player is Winner: ','$'
+firstWin db ' is the  winner with score  ','$'
+secondWin db ' is the winner with score ','$'
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstModifiedMSG db 'You Sent a game inivitation to ','$'
@@ -306,7 +306,7 @@ main proc
   mov ds,ax
   mov es,ax
 
-
+  call WinnerScreen
   call ESCWinnerScreen
 
 
@@ -664,6 +664,10 @@ WinnerScreen proc
   ja firstWinner
   jb secondWiner
   firstWinner:
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
   mov ah,9
   lea dx,firstWin
   int 21h
@@ -692,8 +696,11 @@ WinnerScreen proc
 
   jmp  exitPage2
   secondWiner:
+  mov ah, 9
+  mov dx, offset otherName
+  int 21h
   mov ah,9
-  lea dx,secondWin
+  lea dx,firstWin
   int 21h
 
   mov ah,0
@@ -728,6 +735,7 @@ WinnerScreen proc
   mov ah, 00h
   mov al, 13h     
   int 10h 
+
   ret
 WinnerScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
