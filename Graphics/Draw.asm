@@ -305,8 +305,8 @@ main proc
   mov es,ax
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call GetNameAndIntialP
-  call GetNameAndIntialPother
+  ;call GetNameAndIntialP
+  ;call GetNameAndIntialPother
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -339,6 +339,7 @@ main proc
   call getMyIntialPoints
   call otherforbiddenWindow
   call getOtherIntialPoints
+  call calcInitialPoints
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
@@ -1347,6 +1348,22 @@ getOtherIntialPoints proc
   INT 15H
   ret
 getOtherIntialPoints endp
+
+calcInitialPoints proc 
+mov al,myPointsValue
+mov dl,otherPointsValue
+cmp al,dl 
+ja myPointsLarger
+mov otherPointsValue,al
+jmp calcInitialPointsExit
+
+myPointsLarger:
+mov myPointsValue,dl
+
+calcInitialPointsExit:
+ret
+calcInitialPoints endp
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Keys handling;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
