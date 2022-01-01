@@ -1456,6 +1456,14 @@ getKeyPressed proc
 
   GKPfirst:
   call firstPowerUp
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz setFlagTurnZeroFiPU
+  mov flagTurn,1
+  jmp keyPressedExit
+  setFlagTurnZeroFiPU:
+  mov flagTurn,0
   jmp keyPressedExit
 
   GKPsec:
@@ -1486,9 +1494,9 @@ getKeyPressed proc
   jmp AfterSettingRegistersExecute
 
   myRegistersExecute:    ;execute on my registers
+  mov whichRegisterToExecute,1
   mov al,otherforbiddenChar
   mov forbiddenChar,al 
-  mov whichRegisterToExecute,1
 
   AfterSettingRegistersExecute:
   call printForbiddenChar
@@ -1499,11 +1507,11 @@ getKeyPressed proc
   mov al,flagTurn
   mov dl,0
   cmp al,dl 
-  jnz setFlagTurnZero
+  jnz setFlagTurnZeroCommand
   mov flagTurn,1
   jmp keyPressedExit
 
-  setFlagTurnZero:
+  setFlagTurnZeroCommand:
   mov flagTurn,0
 
   jmp keyPressedExit
@@ -1822,17 +1830,40 @@ runGun endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Power Up;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstPowerUp proc
   ;check if the points < 5 then exit
+  mov bl,flagTurn
+  mov cl,0
+  cmp bl,cl
+  jnz FPUOther
   mov al,myPointsValue
   mov dl,5h
   cmp al,dl
   jb FiPUExit
-
   sub myPointsValue,5h 
   call printTwoPoints
   mov whichRegisterToExecute,1
+  mov al,myforbiddenChar
+  mov forbiddenChar,al 
+  call printForbiddenChar
   call commandCyle
   call ClearCommand
   mov whichRegisterToExecute,0
+  jmp FiPUExit
+
+  FPUOther:
+  mov al,otherPointsValue
+  mov dl,5h
+  cmp al,dl
+  jb FiPUExit
+  sub otherPointsValue,5h 
+  call printTwoPoints
+  mov whichRegisterToExecute,0
+  mov al,otherforbiddenChar
+  mov forbiddenChar,al 
+  call printForbiddenChar
+  call commandCyle
+  call ClearCommand
+  mov whichRegisterToExecute,1
+
   FiPUExit:
 
   ret
@@ -6795,6 +6826,7 @@ printTwoPoints proc
   mov ah,2
   mov dl,myPointsX
   mov dh,0Dh
+  mov bh,0
   int 10h
   ;print the first digit
   mov ax,0
@@ -6806,6 +6838,7 @@ printTwoPoints proc
   mov ah,2
   mov dl,otherPointsX
   mov dh,0Dh
+  mov bh,0
   int 10h
   ;print the first digit
   mov ax,0
