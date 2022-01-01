@@ -285,6 +285,8 @@ bulletEndColumnPositionOther dw 200d
 ;Player Score
 MyScore dw 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;flag to know when to exit the game
+exitGame db 0
 
 .code
 main proc
@@ -298,6 +300,9 @@ main proc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   MainScreenLoop:
+  mov ah,0h
+  mov al,3h
+  int 10h 
   call clearScreen
   call mainScreen
   mov al,selectedMode
@@ -351,6 +356,12 @@ main proc
   GameLoop:
   call getKeyPressed
 
+  ;check if the exit game flag = 1
+  mov al,exitGame
+  mov dl,1
+  cmp al,dl
+  jz OutOfGame
+
   ;update the screen
   call drawRegNames
   call drawMyRegisters
@@ -362,7 +373,15 @@ main proc
   call printTwoPoints
   call printPoints
 
+  ;call checkWinner
+
   jmp GameLoop
+
+  OutOfGame:
+  ; call scoresScreen
+  call WinnerScreen
+  mov exitGame,0
+  jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ProgramExit:
   call clearScreen
@@ -1030,7 +1049,7 @@ getKeyPressed proc
   cmp al,dl
   jz levelTwoPowerUp         ;execute the forth power up
 
-  mov dl,3Eh        ;F4 pressed
+  mov dl,3Eh          ;F4 pressed
   cmp ah,dl
   jz GKPexitGame      ;exit the game and show static screen with scores
   jmp keyPressedExit
@@ -1070,7 +1089,7 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPexitGame:
-  ;call exitGame
+  mov exitGame,1
   keyPressedExit:
   ret
 getKeyPressed endp
@@ -1545,10 +1564,19 @@ commandCyle proc
   jmp CCExit
   NOEXITSO:
 
+
+
   call Execute
   ;function to clear the command string (turn it back to $)
   CCExit:
-  
+
+  ;check the invalid flag to decrement the points
+  mov al,invalidOperationFlag
+  mov dl,1
+  cmp al,dl
+  jnz NoPointDec
+  dec myPointsValue
+  NoPointDec:
   ret
 commandCyle endp
 clearBGcommand proc
@@ -1764,17 +1792,39 @@ knowTheOperation endp
 Execute proc
   ;if the operation between memory to memory then exit
   mov al,typeOfDestination
+  mov dl,0h
+  cmp al,dl
+  jz EXECUTEOP
   mov dl,1h
   cmp al,dl
-  jnz EXECUTEOP
-  ;destination is memory now check the source
+  jz DSISMEM
+  jmp DSISDIM
+  DSISMEM:
+  ;destination is memory (1h) now check the source
   mov al,typeOfSource
   mov dl,1h
   cmp al,dl
-  jnz EXECUTEOP
+  jz MEMMEMError
+  mov dl,3h
+  cmp al,dl
+  jz MEMMEMError
+  jmp EXECUTEOP
+  DSISDIM:
+  ;destination is memory (2h) now check the source
+  mov al,typeOfSource
+  mov dl,1h
+  cmp al,dl
+  jz MEMMEMError
+  mov dl,3h
+  cmp al,dl
+  jz MEMMEMError
+  jmp EXECUTEOP
+
+  MEMMEMError:
   ;they both are memory
   mov invalidOperationFlag,1
   jmp EXEXIT
+
   EXECUTEOP:
   ;compare the code of the operation to go to the block of that command
   mov al,CodeOfOperation
@@ -4388,7 +4438,7 @@ otherOffsetSetter proc
         inc si
         add bx,2
         dec cx
-    loop offsetLoop8
+    loop otherOffsetLoop8
     ret
 otherOffsetSetter endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
