@@ -136,6 +136,10 @@ newWantedValue db 6 dup('$')
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; 0 my turn execute on other registers
+; 1 his turn execute on my registers
+flagTurn db 0
+
 myCommandL LABEL BYTE
 myCommandSize db 15
 myCommandActualSize db ?
@@ -143,10 +147,10 @@ myCommand db 15 dup('$')
 
 otherCommandL LABEL BYTE
 otherCommandSize db 15
-; otherCommandActualSize db ?
-otherCommandActualSize db 8
-; otherCommand db 15 dup('$')
-otherCommand db 'ADC BX,6$'
+otherCommandActualSize db ?
+; otherCommandActualSize db 8
+otherCommand db 15 dup('$')
+; otherCommand db 'ADC BX,6$'
 
 clearBGC db '                  $'
 
@@ -170,7 +174,8 @@ ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
-forbiddenChar   db ?
+forbiddenChar   db ?  ; my  the other player enters it
+otherforbiddenChar   db ?   ; other   i enter it
 getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
 forbiddenFlag     db 0            ;equal 1 when the player use that char
@@ -193,6 +198,10 @@ intialPointSize    db 5
 intialPointActualSize db ?                    
 initalPointStr      db 6 dup ('$')
 STRIP           db 'Please enter your Intial Point: ','$'                    
+
+intialPointSizeother    db 5                    
+intialPointActualSizeother db ?                    
+initalPointStrother      db 6 dup ('$')
 
 myPointsValue db 61h
 otherPointsValue db 1fh
@@ -298,6 +307,7 @@ main proc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
+  call GetNameAndIntialPother
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -326,8 +336,10 @@ main proc
   StartGame:
   ;get the level and the forbidden char
   call levelWindow
-  call forbiddenWindow
-  call getIntialPoints
+  call myforbiddenWindow
+  call getMyIntialPoints
+  call otherforbiddenWindow
+  call getOtherIntialPoints
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
@@ -565,26 +577,9 @@ WinnerScreen proc
   lea dx,firstWin
   int 21h
   ;display score of the other player
-  mov ah,0
+  mov ax,0
   mov al,otherPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   jmp exitPage2
 
   IamWinner:
@@ -597,26 +592,9 @@ WinnerScreen proc
   lea dx,firstWin
   int 21h
   ;display score of the first player
-  mov ah,0
+  mov ax,0
   mov al,myPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   exitPage2:
 
   ; delay 5 seconds
@@ -750,27 +728,10 @@ ESCWinnerScreen proc
   mov ah, 9
   mov dx, offset ESCWinnerMSG
   int 21h
-  ;display player 1 score
-  mov ah,0
+
+  mov ax,0
   mov al,myPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   
   ; set cursor
   mov ah,2
@@ -786,27 +747,10 @@ ESCWinnerScreen proc
   mov ah, 9
   mov dx, offset ESCWinnerMSG
   int 21h
-  ;display player 2 score
-  mov ah,0
+
+  mov ax,0
   mov al,otherPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
 
   mov bx,5
   DELAYESCWINNER:
@@ -858,7 +802,7 @@ levelWindow ENDP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;forbidden Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-forbiddenWindow PROC
+otherforbiddenWindow PROC  ; other player enters it
     ;text mode
     mov  ah,0  
     mov  al,3h 
@@ -889,7 +833,40 @@ forbiddenWindow PROC
     MOV     AH, 86H
     INT     15H
     ret
-forbiddenWindow ENDP
+otherforbiddenWindow ENDP
+
+myforbiddenWindow PROC  ; i enter it
+    ;text mode
+    mov  ah,0  
+    mov  al,3h 
+    int  10h
+    ; set cursor
+    mov ah,2
+    mov dl,20d
+    mov dh,10d
+    mov bh,0
+    int 10h
+    ; display message
+    mov ah, 9
+    mov dx, offset getForbiddenMSGWindow
+    int 21h
+    ;read one character => level
+    mov ah,07
+    int 21h
+    ; print the character
+    mov ah,2
+    mov dl,al
+    int 21h
+    ;convert to number
+    mov otherforbiddenChar,al
+
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
+    ret
+myforbiddenWindow ENDP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level 2 Intialization;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1064,6 +1041,24 @@ clearCommandSection proc
   int 10h
   ret
 clearCommandSection endp
+
+clearOtherCommandSection proc
+  ;set the cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  ret
+clearOtherCommandSection endp
+
 clearInputLabel proc
   lea di,newWantedValue
   ClearInputAgain:
@@ -1092,8 +1087,20 @@ ClearName proc
   inc di
   jmp ClearNaAgain
   ClearNafinish:
+
+  lea di,otherName
+  ClearNaAgainother:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearNafinishother
+  mov [di],dl
+  inc di
+  jmp ClearNaAgainother
+  ClearNafinishother:
   ret
 ClearName endp
+
 HexaIntialPoint proc
     lea si,initalPointStr
     ;lea   si,string
@@ -1139,6 +1146,7 @@ HexaIntialPoint proc
   mov myPointsValue,al
   ret
 HexaIntialPoint endp
+
 GetNameAndIntialP proc
   GNPmainLoop:
     mov bx,0
@@ -1213,7 +1221,130 @@ GetNameAndIntialP proc
     call HexaIntialPoint
     ret
 GetNameAndIntialP endp
-getIntialPoints proc
+
+HexaIntialPointother proc
+    lea si,initalPointStrother
+    ;lea   si,string
+    ;lea   di,hexaWord    ;converted string to hexadecimal
+    HIPmainLoopother:
+      mov ah,24h              ;to avoid dbox khara error :3
+      cmp   [si],ah       ;check if char is $
+      jz    exitHIPother           ;if ture ==>end
+      mov   dl,[si]        ;assci of current char
+      mov ah,40h
+      cmp dl,40h          ;compare if digit from 0-9
+      jbe   HIPfrom_zero_nineother    ;jump to get hexadecimal of digit
+      sub dl,61h  ;  get hexa of  digit (A==>F)
+      add dl,10
+      jmp   HIPskipother  ; jump to skip (0-->9)
+    HIPfrom_zero_nineother:
+    sub dl,30h
+  HIPskipother:
+  mov [si],dl ; assignment value of dl to string
+  inc si   ; points to the next digit
+  jmp   HIPmainLoopother  ;iterate till  $
+  exitHIPother:
+  lea si,initalPointStrother       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
+  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
+  mov al,[si]
+  mov ah,0
+  mov cl,'$'
+
+  cmp al,cl
+  jz HIPOutloopother
+  inc si
+  HIPLOOPMainother:
+      mov dl,[si]
+      cmp dl,cl
+      jz HIPOutloopother
+          mul bx
+          add al,[si]
+          inc si
+  jmp HIPLOOPMainother
+  HIPOutloopother:
+  lea si,initalPointStrother
+  mov [si],ax
+  mov otherPointsValue,al
+  ret
+HexaIntialPointother endp
+
+GetNameAndIntialPother proc
+  GNPmainLoopother:
+    mov bx,0
+    mov ah,2 
+    mov dl,20d
+    mov dh,7d
+    int 10h
+    call clearScreen         
+    mov ah,9
+    lea dx,StringToPrint   
+    int 21h 
+    
+    ;call ClearName        
+    mov ah,0AH      
+    lea dx,otherName-2    
+    int 21h
+
+    lea si,otherName
+
+    mov al,'Z'
+    cmp [si],al ;check if between A,Z
+    jbe LAZother
+    
+    mov al,'z'
+    cmp [si],al     ;check if between a,z
+    jbe Lzaother
+    
+    LAZother:
+    mov al,'A'
+    cmp [si],al
+    jae GNPexitother
+    jmp GNPmainLoopother
+
+    Lzaother:
+    mov al,'a'
+    cmp [si],al
+    jae GNPexitother
+    jmp GNPmainLoopother
+    
+    GNPexitother:
+
+    ;convert the (enter) char to $
+    lea si,otherName
+    mov al,0dh
+    ConvertEnterNameother:
+    inc si
+    mov bl,[si]
+    cmp bl,al 
+    jnz ConvertEnterNameother
+    mov [si],24h
+
+    mov bx,0
+    mov ah,2 
+    mov dl,20d
+    mov dh,9d
+    int 10h
+
+    mov ah,9
+    lea dx,STRIP   
+    int 21h 
+
+    mov ah,0AH      
+    lea dx,initalPointStrother-2    
+    int 21h
+
+    mov cl,intialPointActualSizeother
+    mov ch,0
+    lea bx,initalPointStrother
+    add bx,cx
+    mov al,'$'
+    mov [bx],al
+    call HexaIntialPointother
+    ret
+GetNameAndIntialPother endp
+
+
+getMyIntialPoints proc
   call clearScreen 
   mov bx,0
   mov ah,2 
@@ -1236,7 +1367,32 @@ getIntialPoints proc
   mov [bx],al
   call HexaIntialPoint
   ret
-getIntialPoints endp
+getMyIntialPoints endp
+
+getOtherIntialPoints proc
+  call clearScreen 
+  mov bx,0
+  mov ah,2 
+  mov dl,20d
+  mov dh,10d
+  int 10h
+  mov ah,9
+  lea dx,STRIP
+  int 21h 
+
+  mov ah,0AH      
+  lea dx,initalPointStrother-2    
+  int 21h
+
+  mov cl,intialPointActualSizeother
+  mov ch,0
+  lea bx,initalPointStrother
+  add bx,cx
+  mov al,'$'
+  mov [bx],al
+  call HexaIntialPointother
+  ret
+getOtherIntialPoints endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Keys handling;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1319,9 +1475,33 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPcommand:
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz myRegistersExecute
+
+  mov whichRegisterToExecute,0
+  jmp AfterSettingRegistersExecute
+
+  myRegistersExecute:
+  mov whichRegisterToExecute,1
+
+
+  AfterSettingRegistersExecute:
   call commandCyle
   call ClearCommand
   call printCommands
+
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz setFlagTurnZero
+  mov flagTurn,1
+  jmp keyPressedExit
+
+  setFlagTurnZero:
+  mov flagTurn,0
+
   jmp keyPressedExit
 
   GKPchat:
@@ -1809,9 +1989,19 @@ commandCyle proc
   mov dl,1
   cmp al,dl 
   jz GCcont
-  
-  call clearCommandSection
 
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz otherTurn
+
+  call clearCommandSection
+  jmp afterClearCommandSection
+
+  otherTurn:
+  call clearOtherCommandSection
+
+  afterClearCommandSection:
   ;check for the level to know how to enter the command
   mov al,level
   mov dl,1
@@ -1895,12 +2085,26 @@ commandCyle proc
   ;function to clear the command string (turn it back to $)
   CCExit:
 
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz otherDecCheck
+
   ;check the invalid flag to decrement the points
   mov al,invalidOperationFlag
   mov dl,1
   cmp al,dl
   jnz NoPointDec
   dec myPointsValue
+  jmp NoPointDec
+
+  otherDecCheck:
+  mov al,invalidOperationFlag
+  mov dl,1
+  cmp al,dl
+  jnz NoPointDec
+  dec otherPointsValue
+
   NoPointDec:
   ret
 commandCyle endp
@@ -6459,7 +6663,7 @@ printTwoNames proc
   ;set cursor
   mov ah,2
   mov dl,3h
-  mov dh,0Dh 
+  mov dh,0Dh
   mov bh,0
   int 10h
   ; print name
@@ -6486,29 +6690,114 @@ printTwoNames proc
   mov otherPointsX,al
   ret
 printTwoNames endp
+;funtion to print the decimal number from hexa one
+print3Decimal proc
+  ;ah=0 , al=num
+  mov bl,100
+  div bl
+  add al,30h    
+  mov dh,ah
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h
+  mov di,dx
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h
+  mov dx,di
+  ;print the second digit
+  mov ax,0
+  mov al,dh
+  mov bl,10
+  div bl
+  add al,30h    
+  mov dh,ah
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h 
+  mov di,dx
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h 
+  mov dx,di
+  ;print the third digit
+  mov dl,dh
+  add dl,30h
+  mov al,dl
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h
+  ret
+print3Decimal endp
+print2Decimal proc
+  ;ah=0 , al=num , si = color
+  ;print the first digit
+  mov bl,10
+  div bl
+  mov di,ax
+  add al,30h    
+  mov ah,9 
+  mov cx,1
+  mov bx,si
+  int 10h 
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h
+  ;print the second digit
+  mov ax,di
+  mov cl,8
+  shr ax,cl
+  add al,30h
+  mov ah,9
+  mov cx,1
+  mov bx,si
+  int 10h
+  ret
+print2Decimal endp
 ;function to draw the two players points
 printTwoPoints proc
-  ; print my points
-  lea di,myPointsValue
-  mov ah,0
-  mov al,[di]
-  call convertMemToStr
-  mov al,myPointsX
-  mov printX,al
-  mov al,pointsY
-  mov printY,al
-  call printMemWithGivenVar
+  ;convert myPointValue to decimal then print it
+  ;set the cursor
+  mov ah,2
+  mov dl,myPointsX
+  mov dh,0Dh
+  int 10h
+  ;print the first digit
+  mov ax,0
+  mov al,myPointsValue
+  call print3Decimal
 
-  ; print other points
-  lea di,otherPointsValue
-  mov ah,0
-  mov al,[di]
-  call convertMemToStr
-  mov al,otherPointsX
-  mov printX,al
-  mov al,pointsY
-  mov printY,al
-  call printMemWithGivenVar
+  ;print other points
+  ;set the cursor
+  mov ah,2
+  mov dl,otherPointsX
+  mov dh,0Dh
+  int 10h
+  ;print the first digit
+  mov ax,0
+  mov al,otherPointsValue
+  call print3Decimal
   ret
 printTwoPoints endp
 ;function to print commands
@@ -6537,47 +6826,69 @@ printCommands proc
 printCommands endp
 ;function to draw the points of each color 
 printPoints proc
-  lea di,coloredPoints
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,DBLUE
-  mov al,firstPointX
-  mov charToDrawX,al
-  mov charToDrawY,21d
-  call drawCharWithGivenVar
-  
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,LGREEN
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints
+  mov si,0
+  mov si,DBLUE
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,CYAN
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,3
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+1
+  mov si,0
+  mov si,LGREEN
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,RED
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,6
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+2
+  mov si,0
+  mov si,CYAN
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,PURPLE
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,9
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+3
+  mov si,0
+  mov si,RED
+  call print2Decimal
+
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,12
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+4
+  mov si,0
+  mov si,PURPLE
+  call print2Decimal
   ret
 printPoints endp
 ;function print two messages of chatting 
