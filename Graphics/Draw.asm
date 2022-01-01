@@ -1408,6 +1408,7 @@ getKeyPressed proc
 
   GKPfirst:
   call firstPowerUp
+  ;toggle the turn
   mov al,flagTurn
   mov dl,0
   cmp al,dl 
@@ -1419,7 +1420,30 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPsec:
+  ;check the turn to update the forbidden key
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz SPUForbiddenCheck
+  mov al,myforbiddenChar
+  mov forbiddenChar,al
+  jmp SPUForbiddenDone
+  SPUForbiddenCheck:
+  mov al,otherforbiddenChar
+  mov forbiddenChar,al
+  SPUForbiddenDone:
+
+  call printForbiddenChar
   call secondPowerUp
+  ;toggle the turn
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz setFlagTurnZeroSPU
+  mov flagTurn,1
+  jmp keyPressedExit
+  setFlagTurnZeroSPU:
+  mov flagTurn,0
   jmp keyPressedExit
 
   GKPthird:
@@ -1822,12 +1846,26 @@ firstPowerUp proc
 firstPowerUp endp
 secondPowerUp proc
   ;check if the points < 3 then exit
+  mov bl,flagTurn
+  mov cl,0
+  cmp bl,cl
+  jnz SPUOther
+
   mov al,myPointsValue
   mov dl,3h
   cmp al,dl
   jb SPUExit
-
   sub myPointsValue,3h 
+  jmp SPUCheckDone
+
+  SPUOther:
+  mov al,otherPointsValue
+  mov dl,3h
+  cmp al,dl
+  jb SPUExit
+  sub otherPointsValue,3h
+
+  SPUCheckDone:
   call printTwoPoints
   mov whichRegisterToExecute,1
   call commandCyle
