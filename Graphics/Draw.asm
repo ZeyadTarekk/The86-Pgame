@@ -565,26 +565,9 @@ WinnerScreen proc
   lea dx,firstWin
   int 21h
   ;display score of the other player
-  mov ah,0
+  mov ax,0
   mov al,otherPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   jmp exitPage2
 
   IamWinner:
@@ -597,26 +580,9 @@ WinnerScreen proc
   lea dx,firstWin
   int 21h
   ;display score of the first player
-  mov ah,0
+  mov ax,0
   mov al,myPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   exitPage2:
 
   ; delay 5 seconds
@@ -750,27 +716,10 @@ ESCWinnerScreen proc
   mov ah, 9
   mov dx, offset ESCWinnerMSG
   int 21h
-  ;display player 1 score
-  mov ah,0
+
+  mov ax,0
   mov al,myPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
   
   ; set cursor
   mov ah,2
@@ -786,27 +735,10 @@ ESCWinnerScreen proc
   mov ah, 9
   mov dx, offset ESCWinnerMSG
   int 21h
-  ;display player 2 score
-  mov ah,0
+
+  mov ax,0
   mov al,otherPointsValue
-  mov bl,16d
-  div bl
-  mov cx,ax
-  ;al=num to print      
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
-
-  mov al,ch
-  lea bx, ASC_TBL
-  XLAT
-
-  mov ah,2
-  mov dl,al
-  int 21h
+  call print3Decimal
 
   mov bx,5
   DELAYESCWINNER:
@@ -6459,7 +6391,7 @@ printTwoNames proc
   ;set cursor
   mov ah,2
   mov dl,3h
-  mov dh,0Dh 
+  mov dh,0Dh
   mov bh,0
   int 10h
   ; print name
@@ -6486,29 +6418,114 @@ printTwoNames proc
   mov otherPointsX,al
   ret
 printTwoNames endp
+;funtion to print the decimal number from hexa one
+print3Decimal proc
+  ;ah=0 , al=num
+  mov bl,100
+  div bl
+  add al,30h    
+  mov dh,ah
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h
+  mov di,dx
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h
+  mov dx,di
+  ;print the second digit
+  mov ax,0
+  mov al,dh
+  mov bl,10
+  div bl
+  add al,30h    
+  mov dh,ah
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h 
+  mov di,dx
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h 
+  mov dx,di
+  ;print the third digit
+  mov dl,dh
+  add dl,30h
+  mov al,dl
+  mov ah,9
+  mov bh,0 
+  mov cx,1
+  mov bl,RED
+  int 10h
+  ret
+print3Decimal endp
+print2Decimal proc
+  ;ah=0 , al=num , si = color
+  ;print the first digit
+  mov bl,10
+  div bl
+  mov di,ax
+  add al,30h    
+  mov ah,9 
+  mov cx,1
+  mov bx,si
+  int 10h 
+  ;get the cursor position
+  mov ah,3h
+  mov bh,0h
+  int 10h
+  inc dl
+  ;move the cursor
+  mov ah,2
+  int 10h
+  ;print the second digit
+  mov ax,di
+  mov cl,8
+  shr ax,cl
+  add al,30h
+  mov ah,9
+  mov cx,1
+  mov bx,si
+  int 10h
+  ret
+print2Decimal endp
 ;function to draw the two players points
 printTwoPoints proc
-  ; print my points
-  lea di,myPointsValue
-  mov ah,0
-  mov al,[di]
-  call convertMemToStr
-  mov al,myPointsX
-  mov printX,al
-  mov al,pointsY
-  mov printY,al
-  call printMemWithGivenVar
+  ;convert myPointValue to decimal then print it
+  ;set the cursor
+  mov ah,2
+  mov dl,myPointsX
+  mov dh,0Dh
+  int 10h
+  ;print the first digit
+  mov ax,0
+  mov al,myPointsValue
+  call print3Decimal
 
-  ; print other points
-  lea di,otherPointsValue
-  mov ah,0
-  mov al,[di]
-  call convertMemToStr
-  mov al,otherPointsX
-  mov printX,al
-  mov al,pointsY
-  mov printY,al
-  call printMemWithGivenVar
+  ;print other points
+  ;set the cursor
+  mov ah,2
+  mov dl,otherPointsX
+  mov dh,0Dh
+  int 10h
+  ;print the first digit
+  mov ax,0
+  mov al,otherPointsValue
+  call print3Decimal
   ret
 printTwoPoints endp
 ;function to print commands
@@ -6537,47 +6554,69 @@ printCommands proc
 printCommands endp
 ;function to draw the points of each color 
 printPoints proc
-  lea di,coloredPoints
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,DBLUE
-  mov al,firstPointX
-  mov charToDrawX,al
-  mov charToDrawY,21d
-  call drawCharWithGivenVar
-  
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,LGREEN
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints
+  mov si,0
+  mov si,DBLUE
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,CYAN
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,3
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+1
+  mov si,0
+  mov si,LGREEN
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,RED
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,6
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+2
+  mov si,0
+  mov si,CYAN
+  call print2Decimal
 
-  add charToDrawX,2
-  inc di
-  mov al,[di]
-  add al,30h
-  mov charToDraw,al
-  mov charToDrawColor,PURPLE
-  call drawCharWithGivenVar
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,9
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+3
+  mov si,0
+  mov si,RED
+  call print2Decimal
+
+  ;set the cursor
+  mov ah,2
+  mov dl,firstPointX
+  add dl,12
+  mov dh,21d
+  int 10h
+  ;print the first digit
+  mov ah,0
+  mov al,coloredPoints+4
+  mov si,0
+  mov si,PURPLE
+  call print2Decimal
   ret
 printPoints endp
 ;function print two messages of chatting 
