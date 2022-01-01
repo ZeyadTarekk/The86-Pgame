@@ -693,6 +693,8 @@ clearTheGame proc
   mov clearAllRegPowerUp,0
   ;clear the carry
   mov carry,0
+  ;clear the forbidden char
+  mov forbiddenChar,' '
   ret
 clearTheGame endp
 ESCWinnerScreen proc
@@ -1904,7 +1906,7 @@ thirdPowerUp proc
   mov  bh, 0                ;Display page
   mov  ah, 0Eh              ;Teletype
   int  10h 
-  mov forbiddenChar,al
+  mov otherforbiddenChar,al
   mov forbiddenPowerUpFlag,1
   sub myPointsValue,8h
   call printForbiddenChar
@@ -1926,15 +1928,15 @@ forthPowerUp proc
 
   mov cx,8h
   lea bx,myRegisters
-  lea di,otherRegisters
+  ; lea di,otherRegisters
   FPUclear:
   mov [bx],0000H
-  mov [di],0000H
+  ; mov [di],0000H
   add bx,2
-  add di,2
+  ; add di,2
   loop FPUclear
   mov clearAllRegPowerUp,1
-  sub myPointsValue,30h
+  sub myPointsValue,30d
   
   call clearCommandSection
   ;print Clear all registers message
@@ -1955,19 +1957,7 @@ changeWantedValue proc
   cmp al,dl
   jz ExitchangeWantedValue
 
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
-  call clearBGcommand
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
+  call clearCommandSection
 
   ;print Enter new wanted value
   mov ah,9
