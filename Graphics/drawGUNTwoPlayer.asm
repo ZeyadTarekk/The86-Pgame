@@ -1537,7 +1537,7 @@ runGun proc
   cmp ax, cx
   ja helpJmpEndCompare
       jmp continueToCompare
-    helpJmpEndCompare: jmp EndCompare
+    helpJmpEndCompare: jmp CheckIfOtherHits
   continueToCompare:
   
   ; Check if my bullet hits the my target
@@ -1661,9 +1661,9 @@ runGun proc
         jmp EndCompare
   case3:
   cmp ax,dx
-  ja EndCompare
+  ja CheckIfOtherHits
       cmp cx,dx
-      jb EndCompare
+      jb CheckIfOtherHits
       ; compare with dark Blue
       mov al, 1
       cmp al, targetColor
@@ -1715,6 +1715,192 @@ runGun proc
         mov targetColor, 1
         jmp EndCompare
     
+
+    CheckIfOtherHits:
+    ; check if other bullet hits other target
+      mov ax, bulletStartRowPositionOther
+  add ax, bulletWidth
+  mov cx, targetWidth
+  cmp ax, cx
+  ja helpJmpEndCompareOther
+      jmp continueToCompareOther
+    helpJmpEndCompareOther: jmp EndCompare
+  continueToCompareOther:
+  
+  ; Check if my bullet hits the my target
+  mov ax, bulletStartColumnPositionOther
+  mov cx, bulletEndColumnPositionOther
+
+  mov bx, targetStartColumnPositionOther
+  mov dx, targetStartColumnPositionOther
+  add dx, targetWidth
+  
+  cmp ax,bx
+  jb case2Other
+    cmp cx, dx    ;case1 
+    ja case2Other
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlueOther1
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreenOther1
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyanOther1
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRedOther1
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagentaOther1
+
+      increamentBlueOther1:
+        ; inc coloredPoints
+        jmp ENDINCCOLORSOther1
+      increamentGreenOther1:
+        ; inc coloredPoints[1]
+        jmp ENDINCCOLORSOther1
+      increamentCyanOther1:
+        ; inc coloredPoints[2]
+        jmp ENDINCCOLORSOther1
+      increamentRedOther1:
+        ; inc coloredPoints[3]
+        jmp ENDINCCOLORSOther1
+      increamentMagentaOther1:
+        ; inc coloredPoints[4]
+        jmp ENDINCCOLORSOther1
+      ENDINCCOLORSOther1:
+
+      mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add otherPointsValue,al ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+      jmp EndCompare 
+  case2Other:
+  cmp cx, bx
+  jb case3Other
+     cmp ax,bx
+     ja case3Other
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlueOther2
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreenOther2
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyanOther2
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRedOther2
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagentaOther2
+
+      increamentBlueOther2:
+        ; inc coloredPoints
+        jmp ENDINCCOLORSOther2
+      increamentGreenOther2:
+        ; inc coloredPoints[1]
+        jmp ENDINCCOLORSOther2
+      increamentCyanOther2:
+        ; inc coloredPoints[2]
+        jmp ENDINCCOLORSOther2
+      increamentRedOther2:
+        ; inc coloredPoints[3]
+        jmp ENDINCCOLORSOther2
+      increamentMagentaOther2:
+        ; inc coloredPoints[4]
+        jmp ENDINCCOLORSOther2
+      ENDINCCOLORSOther2:
+
+      mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add otherPointsValue,al ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+        jmp EndCompare
+  case3Other:
+  cmp ax,dx
+  ja EndCompare
+      cmp cx,dx
+      jb EndCompare
+      ; compare with dark Blue
+      mov al, 1
+      cmp al, targetColor
+      jz increamentBlueOther3
+      ; compare with green
+      mov al, 2
+      cmp al, targetColor
+      jz increamentGreenOther3
+      ; compare with Cyan
+      mov al, 3
+      cmp al, targetColor
+      jz increamentCyanOther3
+      ; compare with Red
+      mov al, 4
+      cmp al, targetColor
+      jz increamentRedOther3
+      ; compare with Magenta
+      mov al, 5
+      cmp al, targetColor
+      jz increamentMagentaOther3
+
+      increamentBlueOther3:
+        ; inc coloredPoints
+        jmp ENDINCCOLORSOther3
+      increamentGreenOther3:
+        ; inc coloredPoints[1]
+        jmp ENDINCCOLORSOther3
+      increamentCyanOther3:
+        ; inc coloredPoints[2]
+        jmp ENDINCCOLORSOther3
+      increamentRedOther3:
+        ; inc coloredPoints[3]
+        jmp ENDINCCOLORSOther3
+      increamentMagentaOther3:
+        ; inc coloredPoints[4]
+        jmp ENDINCCOLORSOther3
+      ENDINCCOLORSOther3:
+      mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
+      mov al,targetColor ; ax = 0 targetColor
+      mov ah,0           
+      add otherPointsValue,al ; add target color to my score the color is considered as score
+      ;change the target color
+      inc targetColor
+      mov ah,6
+      mov bh,targetColor
+      cmp bh,ah
+      jnz EndCompare
+        mov targetColor, 1
+        jmp EndCompare
     
   EndCompare:
   jmp runGunHome
