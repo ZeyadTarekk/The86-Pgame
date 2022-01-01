@@ -3,16 +3,9 @@
 .stack 64
 .data
 
-
-; level window data
-getLevelMSG db "Please enter the level (1-2): $"
-
-; forbiden character window data
-getForbiddenMSGWindow db "Please forbidden character: $"
-
-
-
-
+; ESC winner
+ESCWinnerMSGTitle db "END GAME$"
+ESCWinnerMSG db " got score $"
 
 
 
@@ -88,12 +81,12 @@ charToDrawy db ?
 myNameL LABEL BYTE
 myNameSize db 15
 myNameActualSize db ?
-myName db 15 dup('$')
+myName db "Abdelrahman$"
 
 otherNameL LABEL BYTE
 otherNameSize db 15
 otherNameActualSize db ?
-otherName db 15 dup('$')
+otherName db "Sherif$"
 
 ; message to winner of the game
 firstWin db 'First Player is Winner:  ','$'
@@ -109,7 +102,28 @@ secondMSG db 'To Start The Game Press F2','$'
 thirdMSG db 'To End the program press ESC','$'
 LINE db '--------------------------------------------------------------------------------','$'
 carReturn db 10,13,'$'
-selectedMode db ?    ; 1 for chat,,, 2 for game
+selectedMode db ?    ; 1 for chat ---- 2 for game
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Get Forbidden char;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; level window data
+getLevelMSG db "Please enter the level (1-2): $"
+
+; forbiden character window data
+getForbiddenMSGWindow db "Please forbidden character: $"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level 2 Registers;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+AXmsg db 'AX = $'
+BXmsg db 'BX = $'
+CXmsg db 'CX = $'
+DXmsg db 'DX = $'
+SImsg db 'SI = $'
+DImsg db 'DI = $'
+SPmsg db 'SP = $'
+BPmsg db 'BP = $'
+Donemsg db 'Registers Done!$'
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Wanted Value Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -161,7 +175,7 @@ ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
-forbiddenChar     db 'Z'
+forbiddenChar   db ?
 getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
 forbiddenFlag     db 0            ;equal 1 when the player use that char
@@ -188,7 +202,7 @@ STRIP           db 10,13,10,13,10,13
                 db '                            Please enter your Intial Point: ','$'                    
 
 myPointsValue db 61h
-otherPointsValue db 1fh
+otherPointsValue db 70h
 myPointsX db ?
 otherPointsX db ?
 pointsY db 0dh
@@ -283,6 +297,8 @@ bulletEndColumnPositionOther dw 200d
 ;Player Score
 MyScore dw 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;flag to know when to exit the game
+exitGame db 0
 
 .code
 main proc
@@ -290,31 +306,54 @@ main proc
   mov ds,ax
   mov es,ax
 
+
+  call ESCWinnerScreen
+
+
+
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;call GetNameAndIntialP 
+  call GetNameAndIntialP 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call levelWindow
-  call WinnerScreen
-  call forbiddenWindow
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;call clearScreen
-  ;call mainScreen
+  MainScreenLoop:
+  mov ah,0h
+  mov al,3h
+  int 10h 
+  call clearScreen
+  call mainScreen
+  mov al,selectedMode
+  mov dl,2
+  cmp al,dl
+  jz StartGame
+  mov dl,0
+  cmp al,dl
+  jz ProgramExit
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chat Section;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  StartChat:
+
+  jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   StartGame:
+  ;get the level and the forbidden char
+  call levelWindow
+  call forbiddenWindow
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
   int 10h 
 
   call drawBackGround
-
+  ;draw the register and its intial values
   call drawRegNames
   call drawMyRegisters
   call drawOtherRegisters
-
+  ;draw the memory and its intial values
   call drawMemoryAdresses
   call drawMemoryLines
   call drawMyMemory
@@ -325,6 +364,9 @@ main proc
   call printCommands
   call printWantedValue
   call printTwoMessage
+  call printTwoPoints
+  call printForbiddenChar
+  call level2Intial
 
   ;for the main loop,   note: outside the loop called one time
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
@@ -332,91 +374,142 @@ main proc
   GameLoop:
   call getKeyPressed
 
+  ;check if the exit game flag = 1
+  mov al,exitGame
+  mov dl,1
+  cmp al,dl
+  jz OutOfGame
+
   ;update the screen
-  call printTwoPoints
   call drawRegNames
   call drawMyRegisters
   call drawOtherRegisters
+
   call drawMyMemory
   call drawOtherMemory
+
+  call printTwoPoints
   call printPoints
 
-  jmp GameLoop
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;call checkWinner
 
+  jmp GameLoop
+
+  OutOfGame:
+  ; call scoresScreen
+  call WinnerScreen
+  mov exitGame,0
+  jmp MainScreenLoop
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ProgramExit:
+  call clearScreen
   hlt
 main endp
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-levelWindow PROC
-    ;text mode
-    mov  ah,0  
-    mov  al,3h 
-    int  10h
-    ; set cursor
-    mov ah,2
-    mov dl,20d
-    mov dh,10d
-    mov bh,0
-    int 10h
-    ; display message
-    mov ah, 9
-    mov dx, offset getLevelMSG
-    int 21h
-    ;read one character => level
-    mov ah,07
-    int 21h
-    ; print the character
-    mov ah,2
-    mov dl,al
-    int 21h
-    ;convert to number
-    sub al,30h
-    mov level,al
+ESCWinnerScreen proc
+  ;text mode
+  mov  ah,0  
+  mov  al,3h 
+  int  10h
 
-    ; delay one second
-    MOV     CX, 0FH
-    MOV     DX, 4240H
-    MOV     AH, 86H
-    INT     15H
-    ret
-levelWindow ENDP
+  ; set cursor
+  mov ah,2
+  mov dl,33d
+  mov dh,5d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset ESCWinnerMSGTitle
+  int 21h
+
+  ; set cursor
+  mov ah,2
+  mov dl,25d
+  mov dh,10d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
+  ; display message
+  mov ah, 9
+  mov dx, offset ESCWinnerMSG
+  int 21h
+  ;display player 1 score
+  mov ah,0
+  mov al,myPointsValue
+  mov dl,10h
+  div dl
+  add ah,30h
+  add al,30h 
+  mov bx,ax
+  ;print first number
+  mov ah,2
+  mov dl,bl
+  int 21h
+  ;print second number
+  mov ah,2
+  mov dl,bh
+  int 21h
+  
+  ; set cursor
+  mov ah,2
+  mov dl,25d
+  mov dh,12d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset otherName
+  int 21h
+  ; display message
+  mov ah, 9
+  mov dx, offset ESCWinnerMSG
+  int 21h
+  ;display player 1 score
+  mov ah,0
+  mov al,otherPointsValue
+  mov dl,10h
+  div dl
+  add ah,30h
+  add al,30h 
+  mov bx,ax
+  ;print first number
+  mov ah,2
+  mov dl,bl
+  int 21h
+  ;print second number
+  mov ah,2
+  mov dl,bh
+  int 21h
+
+  mov bx,5
+  DELAYESCWINNER:
+  MOV CX, 0FH
+  MOV DX, 4240H
+  MOV AH, 86H
+  INT 15H
+  dec bx
+  jnz DELAYESCWINNER
+  
+  ret
+ESCWinnerScreen endp
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;forbidden Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-forbiddenWindow PROC
-    ;text mode
-    mov  ah,0  
-    mov  al,3h 
-    int  10h
-    ; set cursor
-    mov ah,2
-    mov dl,20d
-    mov dh,10d
-    mov bh,0
-    int 10h
-    ; display message
-    mov ah, 9
-    mov dx, offset getForbiddenMSGWindow
-    int 21h
-    ;read one character => level
-    mov ah,07
-    int 21h
-    ; print the character
-    mov ah,2
-    mov dl,al
-    int 21h
-    ;convert to number
-    mov forbiddenChar,al
 
-    ; delay one second
-    MOV     CX, 0FH
-    MOV     DX, 4240H
-    MOV     AH, 86H
-    INT     15H
-    ret
-forbiddenWindow ENDP
+
+
+
+
+
+
+
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -480,7 +573,8 @@ mainScreen proc
   jnz ClearBuffer    ; if not ESC Clear buffer and wait for more chars
   mov ah,0    ;Clear the buffer
   int 16h
-  hlt             ;  (ESC) hlt the program
+  mov selectedMode,0
+  ret             ;  (ESC) hlt the program
   ClearBuffer:
   mov ah,0    ;Clear the buffer
   int 16h
@@ -624,10 +718,10 @@ WinnerScreen proc
   ; delay 5 seconds
   mov bx,5
   DELAYWINNER:
-  MOV     CX, 0FH
-  MOV     DX, 4240H
-  MOV     AH, 86H
-  INT     15H
+  MOV CX, 0FH
+  MOV DX, 4240H
+  MOV AH, 86H
+  INT 15H
   dec bx
   jnz DELAYWINNER
   ; return to video mode
@@ -636,6 +730,265 @@ WinnerScreen proc
   int 10h 
   ret
 WinnerScreen endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+levelWindow PROC
+    ;text mode
+    mov  ah,0  
+    mov  al,3h 
+    int  10h
+    ; set cursor
+    mov ah,2
+    mov dl,20d
+    mov dh,10d
+    mov bh,0
+    int 10h
+    ; display message
+    mov ah, 9
+    mov dx, offset getLevelMSG
+    int 21h
+    ;read one character => level
+    mov ah,07
+    int 21h
+    ; print the character
+    mov ah,2
+    mov dl,al
+    int 21h
+    ;convert to number
+    sub al,30h
+    mov level,al
+
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
+    ret
+levelWindow ENDP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;forbidden Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+forbiddenWindow PROC
+    ;text mode
+    mov  ah,0  
+    mov  al,3h 
+    int  10h
+    ; set cursor
+    mov ah,2
+    mov dl,20d
+    mov dh,10d
+    mov bh,0
+    int 10h
+    ; display message
+    mov ah, 9
+    mov dx, offset getForbiddenMSGWindow
+    int 21h
+    ;read one character => level
+    mov ah,07
+    int 21h
+    ; print the character
+    mov ah,2
+    mov dl,al
+    int 21h
+    ;convert to number
+    mov forbiddenChar,al
+
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
+    ret
+forbiddenWindow ENDP
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level 2 Intialization;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+level2Intial proc
+  ;check for the level
+  ;clear the command section and print a certain register for the user to enter
+  ;take the string and convert it to word
+  ;place the string in myRegisters
+
+  mov al,level
+  mov dl,1
+  cmp al,dl
+  jz level2IntialExit
+
+  ;get ax value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,AXmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue
+  mov myRegisters,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get bx value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,BXmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+2,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get cx value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,CXmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+4,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get dx value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,DXmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+6,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get si value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,SImsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+8,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get di value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,DImsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+10d,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get sp value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,SPmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+14d,ax
+  call clearInputLabel
+  call drawMyRegisters
+
+  ;get bp value
+  call clearCommandSection
+  ;print register name
+  mov ah,9
+  lea dx,BPmsg
+  int 21h
+
+  mov ah,0AH
+  mov dx,offset newWantedValueL
+  int 21h
+
+  call WantedValueToNumber
+  mov ax,word ptr newWantedValue 
+  mov myRegisters+12d,ax
+  call clearInputLabel
+  call drawMyRegisters
+  call clearCommandSection
+
+  mov ah,9
+  lea dx,Donemsg
+  int 21h
+  
+  level2IntialExit:
+  ret
+level2Intial endp
+clearCommandSection proc
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,2h
+  mov dh,11h
+  mov bh,0
+  int 10h
+  ret
+clearCommandSection endp
+clearInputLabel proc
+  lea di,newWantedValue
+  ClearInputAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearInputfinish
+  mov [di],dl
+  inc di
+  jmp ClearInputAgain
+  ClearInputfinish:
+  mov newWantedValueActualSize,0
+  ret
+clearInputLabel endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -694,6 +1047,7 @@ HexaIntialPoint proc
   HIPOutloop:
   lea si,initalPointStr
   mov [si],ax
+  mov myPointsValue,al
   ret
 HexaIntialPoint endp
 GetNameAndIntialP proc
@@ -771,7 +1125,7 @@ GetNameAndIntialP endp
 ;F2 ---> get the command   (scan code: 3Ch)
 ;F3 ---> enter the gun game  (scan code: 3Dh)
 ;F4 ---> exit the main loop and get back to main screen (scan code: 3Eh)
-;;;;;;PowerUps
+;    PowerUps
 ;1 ---> Executing a command on your own processor + get the command after this (5 points)
 ;2 ---> Executing a command on your processor and your opponent processor at the same time + get the command after this (3 points)
 ;3 ---> Changing the forbidden character only once (8 points) + turn on a flag
@@ -819,7 +1173,7 @@ getKeyPressed proc
   cmp al,dl
   jz levelTwoPowerUp         ;execute the forth power up
 
-  mov dl,3Eh        ;F4 pressed
+  mov dl,3Eh          ;F4 pressed
   cmp ah,dl
   jz GKPexitGame      ;exit the game and show static screen with scores
   jmp keyPressedExit
@@ -859,7 +1213,7 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPexitGame:
-  ;call exitGame
+  mov exitGame,1
   keyPressedExit:
   ret
 getKeyPressed endp
@@ -1122,6 +1476,7 @@ thirdPowerUp proc
   mov forbiddenChar,al
   mov forbiddenPowerUpFlag,1
   sub myPointsValue,8h
+  call printForbiddenChar
   TPUExit:
   ret
 thirdPowerUp endp
@@ -1227,7 +1582,8 @@ changeWantedValue proc
   mov wantedValue,ax
   mov flagChangeWantedValue,1
   call printWantedValue
-
+  call clearInputLabel
+  
   ExitchangeWantedValue:
 ret
 changeWantedValue endp
@@ -1332,10 +1688,19 @@ commandCyle proc
   jmp CCExit
   NOEXITSO:
 
+
+
   call Execute
   ;function to clear the command string (turn it back to $)
   CCExit:
-  
+
+  ;check the invalid flag to decrement the points
+  mov al,invalidOperationFlag
+  mov dl,1
+  cmp al,dl
+  jnz NoPointDec
+  dec myPointsValue
+  NoPointDec:
   ret
 commandCyle endp
 clearBGcommand proc
@@ -1551,17 +1916,39 @@ knowTheOperation endp
 Execute proc
   ;if the operation between memory to memory then exit
   mov al,typeOfDestination
+  mov dl,0h
+  cmp al,dl
+  jz EXECUTEOP
   mov dl,1h
   cmp al,dl
-  jnz EXECUTEOP
-  ;destination is memory now check the source
+  jz DSISMEM
+  jmp DSISDIM
+  DSISMEM:
+  ;destination is memory (1h) now check the source
   mov al,typeOfSource
   mov dl,1h
   cmp al,dl
-  jnz EXECUTEOP
+  jz MEMMEMError
+  mov dl,3h
+  cmp al,dl
+  jz MEMMEMError
+  jmp EXECUTEOP
+  DSISDIM:
+  ;destination is memory (2h) now check the source
+  mov al,typeOfSource
+  mov dl,1h
+  cmp al,dl
+  jz MEMMEMError
+  mov dl,3h
+  cmp al,dl
+  jz MEMMEMError
+  jmp EXECUTEOP
+
+  MEMMEMError:
   ;they both are memory
   mov invalidOperationFlag,1
   jmp EXEXIT
+
   EXECUTEOP:
   ;compare the code of the operation to go to the block of that command
   mov al,CodeOfOperation
@@ -4175,7 +4562,7 @@ otherOffsetSetter proc
         inc si
         add bx,2
         dec cx
-    loop offsetLoop8
+    loop otherOffsetLoop8
     ret
 otherOffsetSetter endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -6016,8 +6403,50 @@ printTwoMessage proc
 printTwoMessage endp
 ;function to print wanted value
 printWantedValue proc
-  mov charToDrawx,1Dh
-  mov charToDrawy,20d
+  mov charToDrawx,16h
+  mov charToDrawy,19d
+  mov charToDrawColor,LGREEN
+  mov charToDraw,'W'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'a'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'n'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'t'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'e'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'d'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,' '
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'V'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'a'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'l'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'u'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'e'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,':'
+  call drawCharWithGivenVar
+
+  mov charToDrawx,23h
+  mov charToDrawy,19d
   mov charToDrawColor,LGREEN
 
   mov ax,wantedValue
@@ -6047,6 +6476,66 @@ printWantedValue proc
   call drawCharWithGivenVar
   ret
 printWantedValue endp
+;function to print the forbidden char for level 1
+printForbiddenChar proc
+  mov al,level
+  mov dl,2
+  cmp al,dl
+  jz ForbiddenExit
 
+  mov charToDrawx,16h
+  mov charToDrawy,21d
+  mov charToDrawColor,RED
+  mov charToDraw,'F'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'o'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'r'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'b'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'i'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'d'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'d'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'e'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'n'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,' '
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'C'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'h'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'a'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,'r'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov charToDraw,':'
+  call drawCharWithGivenVar
+  inc charToDrawx
+  mov al,forbiddenChar
+  mov charToDraw,al
+  call drawCharWithGivenVar
+  ForbiddenExit:
+  ret
+printForbiddenChar endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 end main
