@@ -5848,46 +5848,49 @@ drawBullet endp
 ; draw gun macro 
 drawGun proc
   mov colGun,0
+  mov rowGun, 80d
   RemoverowLoop:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowGun    ;row
-  mov cx, colGun    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colGun
-  mov ax,colGun
-  mov dx,125d
-  cmp ax,dx
-  jnz RemoverowLoop
-  mov colGun,0
-  inc rowGun
-  mov ax,rowGun
-  mov dx,gunEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowGun                    ;row
+    mov cx, gunStartColumnPosition    ;column
+    dec cx
+    mov al, BLACK   ;colour
+    int 10h
+
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowGun                    ;row
+    mov cx, gunStartColumnPosition    ;column
+    add cx, gunWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowGun
+    mov ax, rowGun
+    cmp ax, 90d
   jnz RemoverowLoop
 
-  mov rowGun,80d
-  mov colGun,163d
+  mov colGun,0
+  mov rowGun, 80d
   RemoverowLoopOther:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowGun    ;row
-  mov cx, colGun    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colGun
-  mov ax,colGun
-  mov dx,287d
-  cmp ax,dx
-  jnz RemoverowLoopOther
-  mov colGun,163d
-  inc rowGun
-  mov ax,rowGun
-  mov dx,gunEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                            ;write pixels on screen
+    mov bh, 0                              ;page
+    mov dx, rowGun                         ;row
+    mov cx, gunStartColumnPositionOther    ;column
+    dec cx
+    mov al, BLACK   ;colour
+    int 10h
+
+    mov ah, 0ch                            ;write pixels on screen
+    mov bh, 0                              ;page
+    mov dx, rowGun                         ;row
+    mov cx, gunStartColumnPositionOther    ;column
+    add cx, gunWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowGun
+    mov ax, rowGun
+    cmp ax, 90d
   jnz RemoverowLoopOther
 
   mov rowGun,80d
