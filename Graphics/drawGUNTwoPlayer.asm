@@ -267,7 +267,7 @@ targetStartColumnPosition dw 115d
 targetWidth EQU 10d
 ; gun start column is variable
 ; This variable changes the position of Other target
-targetStartColumnPositionOther dw 200d
+targetStartColumnPositionOther dw 277d
 targetColor db 1 ; this is considered also as the score
 
 rowBullet dw 80d                    ; iterator for row of bullet always starts at 80d
@@ -1432,7 +1432,6 @@ runGun proc
   
 
 
-
    movOtherGunRight:
     mov bx,85d                    ; if bullet is not at its start position stop moving the Gun
     mov ax, bulletStartRowPositionOther
@@ -1505,12 +1504,12 @@ runGun proc
   
   call drawTarget
   dec targetStartColumnPosition       ;decreament bullet position (move up)
-  mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
-  mov bx, 0                           ;its lower border break;
-  cmp ax,bx
-  jnz continueMovingTarget
-    mov targetStartColumnPosition, 115d  ; return bullet to its start position
-  continueMovingTarget:
+;   mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
+;   mov bx, 0                           ;its lower border break;
+;   cmp ax,bx
+;   jnz continueMovingTarget
+;     mov targetStartColumnPosition, 115d  ; return bullet to its start position
+;   continueMovingTarget:
 
   ; Move other Target
   call drawGun
@@ -1522,6 +1521,7 @@ runGun proc
   cmp ax,bx
   jnz continueMovingTargetOther
     mov targetStartColumnPositionOther, 277d  ; return bullet to its start position
+    mov targetStartColumnPosition, 115d  ; return bullet to its start position
     ;change the target color
     inc targetColor
     mov ah,6
@@ -1533,14 +1533,14 @@ runGun proc
 
   mov ax, bulletStartRowPosition
   add ax, bulletWidth
-  mov cx, 15d
+  mov cx, targetWidth
   cmp ax, cx
   ja helpJmpEndCompare
       jmp continueToCompare
     helpJmpEndCompare: jmp EndCompare
   continueToCompare:
   
-  ; Check if 
+  ; Check if my bullet hits the my target
   mov ax, bulletStartColumnPosition
   mov cx, bulletEndColumnPosition
 
@@ -1591,6 +1591,7 @@ runGun proc
       ENDINCCOLORS1:
 
       mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
       add myPointsValue,al ; add target color to my score the color is considered as score
@@ -1601,11 +1602,12 @@ runGun proc
       cmp bh,ah
       jnz EndCompare
         mov targetColor, 1
-        jmp EndCompare
-      
+      jmp EndCompare 
   case2:
-  cmp cx, dx
+  cmp cx, bx
   jb case3
+     cmp ax,bx
+     ja case3
       ; compare with dark Blue
       mov al, 1
       cmp al, targetColor
@@ -1645,6 +1647,7 @@ runGun proc
       ENDINCCOLORS2:
 
       mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
       add myPointsValue,al ; add target color to my score the color is considered as score
@@ -1657,10 +1660,10 @@ runGun proc
         mov targetColor, 1
         jmp EndCompare
   case3:
-  cmp ax,bx
+  cmp ax,dx
   ja EndCompare
       cmp cx,dx
-      jbe EndCompare
+      jb EndCompare
       ; compare with dark Blue
       mov al, 1
       cmp al, targetColor
@@ -1699,6 +1702,7 @@ runGun proc
         jmp ENDINCCOLORS3
       ENDINCCOLORS3:
       mov targetStartColumnPosition, 115d
+      mov targetStartColumnPositionOther, 277d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
       add myPointsValue,al ; add target color to my score the color is considered as score
@@ -1710,6 +1714,8 @@ runGun proc
       jnz EndCompare
         mov targetColor, 1
         jmp EndCompare
+    
+    
   EndCompare:
   jmp runGunHome
   gunGameExit:
