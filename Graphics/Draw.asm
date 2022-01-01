@@ -139,7 +139,7 @@ newWantedValue db 6 dup('$')
 flagTurn db 0
 
 
-choiceMessage db '0->yours|1->other$'
+choiceMessage db '0->yours 1->other$'
 
 myCommandL LABEL BYTE
 myCommandSize db 15
