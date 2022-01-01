@@ -693,6 +693,8 @@ clearTheGame proc
   mov clearAllRegPowerUp,0
   ;clear the carry
   mov carry,0
+  ;clear the forbidden char
+  mov forbiddenChar,' '
   ret
 clearTheGame endp
 ESCWinnerScreen proc
@@ -1408,6 +1410,7 @@ getKeyPressed proc
 
   GKPfirst:
   call firstPowerUp
+  ;toggle the turn
   mov al,flagTurn
   mov dl,0
   cmp al,dl 
@@ -1419,7 +1422,30 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPsec:
+  ;check the turn to update the forbidden key
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz SPUForbiddenCheck
+  mov al,myforbiddenChar
+  mov forbiddenChar,al
+  jmp SPUForbiddenDone
+  SPUForbiddenCheck:
+  mov al,otherforbiddenChar
+  mov forbiddenChar,al
+  SPUForbiddenDone:
+
+  call printForbiddenChar
   call secondPowerUp
+  ;toggle the turn
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl 
+  jnz setFlagTurnZeroSPU
+  mov flagTurn,1
+  jmp keyPressedExit
+  setFlagTurnZeroSPU:
+  mov flagTurn,0
   jmp keyPressedExit
 
   GKPthird:
@@ -1822,12 +1848,26 @@ firstPowerUp proc
 firstPowerUp endp
 secondPowerUp proc
   ;check if the points < 3 then exit
+  mov bl,flagTurn
+  mov cl,0
+  cmp bl,cl
+  jnz SPUOther
+
   mov al,myPointsValue
   mov dl,3h
   cmp al,dl
   jb SPUExit
-
   sub myPointsValue,3h 
+  jmp SPUCheckDone
+
+  SPUOther:
+  mov al,otherPointsValue
+  mov dl,3h
+  cmp al,dl
+  jb SPUExit
+  sub otherPointsValue,3h
+
+  SPUCheckDone:
   call printTwoPoints
   mov whichRegisterToExecute,1
   call commandCyle
@@ -1866,7 +1906,7 @@ thirdPowerUp proc
   mov  bh, 0                ;Display page
   mov  ah, 0Eh              ;Teletype
   int  10h 
-  mov forbiddenChar,al
+  mov otherforbiddenChar,al
   mov forbiddenPowerUpFlag,1
   sub myPointsValue,8h
   call printForbiddenChar
@@ -1888,15 +1928,15 @@ forthPowerUp proc
 
   mov cx,8h
   lea bx,myRegisters
-  lea di,otherRegisters
+  ; lea di,otherRegisters
   FPUclear:
   mov [bx],0000H
-  mov [di],0000H
+  ; mov [di],0000H
   add bx,2
-  add di,2
+  ; add di,2
   loop FPUclear
   mov clearAllRegPowerUp,1
-  sub myPointsValue,30h
+  sub myPointsValue,30d
   
   call clearCommandSection
   ;print Clear all registers message
@@ -1917,19 +1957,7 @@ changeWantedValue proc
   cmp al,dl
   jz ExitchangeWantedValue
 
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
-  call clearBGcommand
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
+  call clearCommandSection
 
   ;print Enter new wanted value
   mov ah,9
