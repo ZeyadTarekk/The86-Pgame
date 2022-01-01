@@ -74,10 +74,8 @@ myName db 15 dup('$')
 
 otherNameL LABEL BYTE
 otherNameSize db 15
-; otherNameActualSize db ?
-; otherName db 15 dup('$')
-otherNameActualSize db 6
-otherName db 'hamada$'
+otherNameActualSize db ?
+otherName db 15 dup('$')
 
 ; message to winner of the game
 firstWin db ' is the  winner with score  ','$'
@@ -583,7 +581,7 @@ WinnerScreen proc
   jmp exitPage2
 
   IamWinner:
-; display player 1 name
+  ;display player 1 name
   mov ah, 9
   mov dx, offset myName
   int 21h
@@ -1076,77 +1074,6 @@ clearInputLabel endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-ClearName proc
-  lea di,myName
-  ClearNaAgain:
-  mov al,[di]
-  mov dl,'$'
-  cmp al,dl
-  jz ClearNafinish
-  mov [di],dl
-  inc di
-  jmp ClearNaAgain
-  ClearNafinish:
-
-  lea di,otherName
-  ClearNaAgainother:
-  mov al,[di]
-  mov dl,'$'
-  cmp al,dl
-  jz ClearNafinishother
-  mov [di],dl
-  inc di
-  jmp ClearNaAgainother
-  ClearNafinishother:
-  ret
-ClearName endp
-
-HexaIntialPoint proc
-    lea si,initalPointStr
-    ;lea   si,string
-    ;lea   di,hexaWord    ;converted string to hexadecimal
-    HIPmainLoop:
-      mov ah,24h              ;to avoid dbox khara error :3
-      cmp   [si],ah       ;check if char is $
-      jz    exitHIP           ;if ture ==>end
-      mov   dl,[si]        ;assci of current char
-      mov ah,40h
-      cmp dl,40h          ;compare if digit from 0-9
-      jbe   HIPfrom_zero_nine    ;jump to get hexadecimal of digit
-      sub dl,61h  ;  get hexa of  digit (A==>F)
-      add dl,10
-      jmp   HIPskip  ; jump to skip (0-->9)
-    HIPfrom_zero_nine:
-    sub dl,30h
-  HIPskip:
-  mov [si],dl ; assignment value of dl to string
-  inc si   ; points to the next digit
-  jmp   HIPmainLoop  ;iterate till  $
-  exitHIP:
-  lea si,initalPointStr       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
-  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
-  mov al,[si]
-  mov ah,0
-  mov cl,'$'
-
-  cmp al,cl
-  jz HIPOutloop
-  inc si
-  HIPLOOPMain:
-      mov dl,[si]
-      cmp dl,cl
-      jz HIPOutloop
-          mul bx
-          add al,[si]
-          inc si
-  jmp HIPLOOPMain
-  HIPOutloop:
-  lea si,initalPointStr
-  mov [si],ax
-  mov myPointsValue,al
-  ret
-HexaIntialPoint endp
-
 GetNameAndIntialP proc
   GNPmainLoop:
     mov bx,0
@@ -1159,7 +1086,6 @@ GetNameAndIntialP proc
     lea dx,StringToPrint   
     int 21h 
     
-    call ClearName        
     mov ah,0AH      
     lea dx,myName-2    
     int 21h
@@ -1208,66 +1134,38 @@ GetNameAndIntialP proc
     lea dx,STRIP   
     int 21h 
 
-    mov ah,0AH      
-    lea dx,initalPointStr-2    
+    mov ah,1
     int 21h
+    ;al=first digit
+    sub al,30h
+    mov bl,100
+    mul bl
+    mov cx,ax
+    
+    mov ah,1
+    int 21h
+    ;al=second digit
+    sub al,30h
+    mov bl,10
+    mul bl
+    add cx,ax
+    
+    mov ah,1
+    int 21h
+    ;al=third digit
+    sub al,30h
+    mov ah,0
+    add cx,ax
+    
+    mov myPointsValue,cl
 
-    mov cl,intialPointActualSize
-    mov ch,0
-    lea bx,initalPointStr
-    add bx,cx
-    mov al,'$'
-    mov [bx],al
-    call HexaIntialPoint
+    ;delay one second
+    MOV CX, 0FH
+    MOV DX, 4240H
+    MOV AH, 86H
+    INT 15H
     ret
 GetNameAndIntialP endp
-
-HexaIntialPointother proc
-    lea si,initalPointStrother
-    ;lea   si,string
-    ;lea   di,hexaWord    ;converted string to hexadecimal
-    HIPmainLoopother:
-      mov ah,24h              ;to avoid dbox khara error :3
-      cmp   [si],ah       ;check if char is $
-      jz    exitHIPother           ;if ture ==>end
-      mov   dl,[si]        ;assci of current char
-      mov ah,40h
-      cmp dl,40h          ;compare if digit from 0-9
-      jbe   HIPfrom_zero_nineother    ;jump to get hexadecimal of digit
-      sub dl,61h  ;  get hexa of  digit (A==>F)
-      add dl,10
-      jmp   HIPskipother  ; jump to skip (0-->9)
-    HIPfrom_zero_nineother:
-    sub dl,30h
-  HIPskipother:
-  mov [si],dl ; assignment value of dl to string
-  inc si   ; points to the next digit
-  jmp   HIPmainLoopother  ;iterate till  $
-  exitHIPother:
-  lea si,initalPointStrother       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
-  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
-  mov al,[si]
-  mov ah,0
-  mov cl,'$'
-
-  cmp al,cl
-  jz HIPOutloopother
-  inc si
-  HIPLOOPMainother:
-      mov dl,[si]
-      cmp dl,cl
-      jz HIPOutloopother
-          mul bx
-          add al,[si]
-          inc si
-  jmp HIPLOOPMainother
-  HIPOutloopother:
-  lea si,initalPointStrother
-  mov [si],ax
-  mov otherPointsValue,al
-  ret
-HexaIntialPointother endp
-
 GetNameAndIntialPother proc
   GNPmainLoopother:
     mov bx,0
@@ -1279,8 +1177,7 @@ GetNameAndIntialPother proc
     mov ah,9
     lea dx,StringToPrint   
     int 21h 
-    
-    ;call ClearName        
+      
     mov ah,0AH      
     lea dx,otherName-2    
     int 21h
@@ -1329,20 +1226,38 @@ GetNameAndIntialPother proc
     lea dx,STRIP   
     int 21h 
 
-    mov ah,0AH      
-    lea dx,initalPointStrother-2    
+    mov ah,1
     int 21h
+    ;al=first digit
+    sub al,30h
+    mov bl,100
+    mul bl
+    mov cx,ax
+    
+    mov ah,1
+    int 21h
+    ;al=second digit
+    sub al,30h
+    mov bl,10
+    mul bl
+    add cx,ax
+    
+    mov ah,1
+    int 21h
+    ;al=third digit
+    sub al,30h
+    mov ah,0
+    add cx,ax
+    
+    mov otherPointsValue,cl
 
-    mov cl,intialPointActualSizeother
-    mov ch,0
-    lea bx,initalPointStrother
-    add bx,cx
-    mov al,'$'
-    mov [bx],al
-    call HexaIntialPointother
+    ;delay one second
+    MOV CX, 0FH
+    MOV DX, 4240H
+    MOV AH, 86H
+    INT 15H
     ret
 GetNameAndIntialPother endp
-
 
 getMyIntialPoints proc
   call clearScreen 
@@ -1355,20 +1270,38 @@ getMyIntialPoints proc
   lea dx,STRIP
   int 21h 
 
-  mov ah,0AH      
-  lea dx,initalPointStr-2    
+  mov ah,1
   int 21h
+  ;al=first digit
+  sub al,30h
+  mov bl,100
+  mul bl
+  mov cx,ax
+  
+  mov ah,1
+  int 21h
+  ;al=second digit
+  sub al,30h
+  mov bl,10
+  mul bl
+  add cx,ax
+  
+  mov ah,1
+  int 21h
+  ;al=third digit
+  sub al,30h
+  mov ah,0
+  add cx,ax
+  
+  mov myPointsValue,cl
 
-  mov cl,intialPointActualSize
-  mov ch,0
-  lea bx,initalPointStr
-  add bx,cx
-  mov al,'$'
-  mov [bx],al
-  call HexaIntialPoint
+  ;delay one second
+  MOV CX, 0FH
+  MOV DX, 4240H
+  MOV AH, 86H
+  INT 15H
   ret
 getMyIntialPoints endp
-
 getOtherIntialPoints proc
   call clearScreen 
   mov bx,0
@@ -1380,17 +1313,36 @@ getOtherIntialPoints proc
   lea dx,STRIP
   int 21h 
 
-  mov ah,0AH      
-  lea dx,initalPointStrother-2    
+  mov ah,1
   int 21h
+  ;al=first digit
+  sub al,30h
+  mov bl,100
+  mul bl
+  mov cx,ax
+  
+  mov ah,1
+  int 21h
+  ;al=second digit
+  sub al,30h
+  mov bl,10
+  mul bl
+  add cx,ax
+  
+  mov ah,1
+  int 21h
+  ;al=third digit
+  sub al,30h
+  mov ah,0
+  add cx,ax
+  
+  mov otherPointsValue,cl
 
-  mov cl,intialPointActualSizeother
-  mov ch,0
-  lea bx,initalPointStrother
-  add bx,cx
-  mov al,'$'
-  mov [bx],al
-  call HexaIntialPointother
+  ;delay one second
+  MOV CX, 0FH
+  MOV DX, 4240H
+  MOV AH, 86H
+  INT 15H
   ret
 getOtherIntialPoints endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1955,7 +1907,6 @@ forthPowerUp proc
   ret
 forthPowerUp endp
 changeWantedValue proc
-
   mov al,level
   mov dl,1
   cmp al,dl
