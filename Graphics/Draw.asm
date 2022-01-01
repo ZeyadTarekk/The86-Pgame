@@ -379,6 +379,10 @@ main proc
   mov dl,1
   cmp al,dl
   jz HaveAWinner
+  mov dl,2
+  cmp al,dl
+  jz HaveAWinner
+
 
   jmp GameLoop
 
@@ -562,27 +566,28 @@ WinnerScreen proc
   mov ah,9
   lea dx,firstWin
   int 21h
-  mov bh,0
-  mov ah,2
-  mov dl,43d
-  mov dh,10d
-  int 10h
-
+  
+  
   mov ah,0
   mov al,myPointsValue
-  mov dl,10h
-  div dl
+  mov bl,16d
+  div bl
+  mov cx,ax
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
 
-  add ah,30h
-  add al,30h 
-
-  mov bx,ax
   mov ah,2
-  mov dl,bl
+  mov dl,al
   int 21h
 
+  mov al,ch
+  lea bx, ASC_TBL
+  XLAT
+
+
   mov ah,2
-  mov dl,bh
+  mov dl,al
   int 21h
 
   jmp  exitPage2
@@ -596,19 +601,24 @@ WinnerScreen proc
 
   mov ah,0
   mov al,otherPointsValue
-  mov dl,10h
-  div dl
+  mov bl,16d
+  div bl
+  mov cx,ax
+  ;al=num to print      
+  lea bx, ASC_TBL
+  XLAT
 
-  add ah,30h
-  add al,30h 
-
-  mov bx,ax
   mov ah,2
-  mov dl,bl
+  mov dl,al
   int 21h
 
+  mov al,ch
+  lea bx, ASC_TBL
+  XLAT
+
+
   mov ah,2
-  mov dl,bh
+  mov dl,al
   int 21h
 
 
@@ -651,9 +661,18 @@ checkWinner proc
   add bx,2
   loop checkOtherRegWinner
 
+  mov al,0
+  mov dl,myPointsValue
+  cmp al,dl 
+  jz SetWinnerFlag2
+
+  mov dl,otherPointsValue
+  cmp al,dl 
+  jz SetWinnerFlag1
+
   jmp checkWinnerExit
   ;he is the winner
-  SetWinnerFlag2
+  SetWinnerFlag2:
   mov winnerFlag,2
   jmp checkWinnerExit
 
