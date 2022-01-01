@@ -5974,6 +5974,61 @@ drawTarget proc
     cmp ax, 07d
   jnz RemoverowLoopTarget
 
+  mov rowTarget,0
+  mov colTarget,0
+  rowLastTarget:
+  mov ah, 0ch    ;write pixels on screen
+  mov bh, 0      ;page
+  mov dx, rowTarget    ;row
+  mov cx, colTarget  ;column
+  mov al, BLACK   ;colour
+  int 10h
+  ;need to mov the row 
+  inc colTarget
+  mov ax,colTarget
+  mov dx,targetWidth
+  cmp ax,dx
+  jnz rowLastTarget
+  mov colTarget,0
+  inc rowTarget
+  mov ax,rowTarget
+  mov dx,targetWidth
+  cmp ax,dx
+  jnz rowLastTarget
+  mov rowTarget,0
+  mov colTarget,0
+  
+
+
+mov rowTarget,0
+mov colTarget,163d
+  rowLastTargetOther:
+  mov ah, 0ch    ;write pixels on screen
+  mov bh, 0      ;page
+  mov dx, rowTarget  ;row
+  mov cx, colTarget  ;column
+  mov al, BLACK   ;colour
+  int 10h
+  ;need to mov the row 
+  inc colTarget
+  mov ax,colTarget
+  mov dx,targetWidth
+  add dx,163d
+  cmp ax,dx
+  jnz rowLastTargetOther
+  mov colTarget,163d
+  inc rowTarget
+  mov ax,rowTarget
+  mov dx,targetWidth
+  cmp ax,dx
+  jnz rowLastTargetOther
+   mov rowTarget,0
+   mov colTarget,0
+
+
+
+
+
   mov rowTarget,0d
   RemoverowLoopOtherTarget:
     mov ah, 0ch                          ;write pixels on screen
