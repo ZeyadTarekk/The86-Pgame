@@ -136,6 +136,10 @@ newWantedValue db 6 dup('$')
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; 0 my turn execute on other registers
+; 1 his turn execute on my registers
+flagTurn db 1
+
 myCommandL LABEL BYTE
 myCommandSize db 15
 myCommandActualSize db ?
@@ -143,10 +147,10 @@ myCommand db 15 dup('$')
 
 otherCommandL LABEL BYTE
 otherCommandSize db 15
-; otherCommandActualSize db ?
-otherCommandActualSize db 8
-; otherCommand db 15 dup('$')
-otherCommand db 'ADC BX,6$'
+otherCommandActualSize db ?
+; otherCommandActualSize db 8
+otherCommand db 15 dup('$')
+; otherCommand db 'ADC BX,6$'
 
 clearBGC db '                  $'
 
@@ -333,8 +337,8 @@ main proc
   ;get the level and the forbidden char
   call levelWindow
   call myforbiddenWindow
-  call otherforbiddenWindow
   call getMyIntialPoints
+  call otherforbiddenWindow
   call getOtherIntialPoints
   ;set video mode   (320x200)
   mov ah,0h
@@ -1037,6 +1041,24 @@ clearCommandSection proc
   int 10h
   ret
 clearCommandSection endp
+
+clearOtherCommandSection proc
+  ;set the cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  call clearBGcommand
+  ;set the cursor
+  mov ah,2
+  mov dl,16h
+  mov dh,11h 
+  mov bh,0
+  int 10h
+  ret
+clearOtherCommandSection endp
+
 clearInputLabel proc
   lea di,newWantedValue
   ClearInputAgain:
@@ -1943,9 +1965,19 @@ commandCyle proc
   mov dl,1
   cmp al,dl 
   jz GCcont
-  
-  call clearCommandSection
 
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz otherTurn
+
+  call clearCommandSection
+  jmp afterClearCommandSection
+
+  otherTurn:
+  call clearOtherCommandSection
+
+  afterClearCommandSection:
   ;check for the level to know how to enter the command
   mov al,level
   mov dl,1
@@ -2029,12 +2061,26 @@ commandCyle proc
   ;function to clear the command string (turn it back to $)
   CCExit:
 
+  mov al,flagTurn
+  mov dl,0
+  cmp al,dl
+  jnz otherDecCheck
+
   ;check the invalid flag to decrement the points
   mov al,invalidOperationFlag
   mov dl,1
   cmp al,dl
   jnz NoPointDec
   dec myPointsValue
+  jmp NoPointDec
+
+  otherDecCheck:
+  mov al,invalidOperationFlag
+  mov dl,1
+  cmp al,dl
+  jnz NoPointDec
+  dec otherPointsValue
+
   NoPointDec:
   ret
 commandCyle endp
