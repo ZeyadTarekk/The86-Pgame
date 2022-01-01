@@ -3,18 +3,6 @@
 .stack 64
 .data
 
-; ESC winner
-ESCWinnerMSGTitle db "END GAME$"
-ESCWinnerMSG db " got score $"
-
-
-
-
-
-
-
-
-
 ;dimensions of the screen
 row dw 0
 col dw 0
@@ -81,16 +69,20 @@ charToDrawy db ?
 myNameL LABEL BYTE
 myNameSize db 15
 myNameActualSize db ?
-myName db "Abdelrahman$"
+myName db 'Ziaddd$'
 
 otherNameL LABEL BYTE
 otherNameSize db 15
 otherNameActualSize db ?
-otherName db "Sherif$"
+otherName db 'Abdelrhman$'
 
 ; message to winner of the game
-firstWin db ' is the  winner with score  ','$'
-secondWin db ' is the winner with score ','$'
+firstWin db ' is the  winner with score:  ','$'
+;flag to know that there is a winner     (1 --> my)  (2 --> other)
+winnerFlag db 1
+; ESC winner
+ESCWinnerMSGTitle db "END GAME$"
+ESCWinnerMSG db " got score $"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstModifiedMSG db 'You Sent a game inivitation to ','$'
@@ -192,16 +184,14 @@ invalidOperationFlag  db 0     ;equal 1 when the operation is wrong
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Get name & initial points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 endl db  10,13 ,'$'
-StringToPrint db 10,13,10,13,10,13
-        db '                            Please enter your Name: ','$'
+StringToPrint db 'Please enter your Name: ','$'
 
 intialPointSize    db 5                    
 intialPointActualSize db ?                    
 initalPointStr      db 6 dup ('$')
-STRIP           db 10,13,10,13,10,13 
-                db '                            Please enter your Intial Point: ','$'                    
+STRIP           db 'Please enter your Intial Point: ','$'                    
 
-myPointsValue db 61h
+myPointsValue db 65h
 otherPointsValue db 70h
 myPointsX db ?
 otherPointsX db ?
@@ -233,14 +223,14 @@ ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
 whichRegisterToExecute db 0
 flagSecondPowerUp db 0
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
-myRegisters dw 0000H, 0000h, 0000h, 57FEh, 5ADFh, 1254h, 0010h, 1000h
+myRegisters dw 0000H, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
-otherRegisters dw 1034h, 1034h, 1000h, 57FEh, 5ADFh, 0F4FEH, 0010h, 1254h
+otherRegisters dw 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h
 
 clearAllRegPowerUp db 0
 clearAllRegMsg db 'Registers Cleared$'
-myMemory db 12h,54h,43h,56h,88h,75h,54h,0FDh,75h,13h,57h,86h,11h,58h,0FFh,5Fh
-otherMemory db 13h,66h,43h,56h,88h,0FFh,54h,33h,75h,13h,57h,86h,11h,0FDh,77h,5Fh
+myMemory db 16 dup(00h)
+otherMemory db 16 dup(00h)
 
 firstMessage db 'Hello from first$'
 secondMessage db 'Hello from second$'
@@ -293,9 +283,6 @@ bulletWidth EQU 5d
 ; This variable changes the position of Other target
 bulletStartColumnPositionOther dw 200d
 bulletEndColumnPositionOther dw 200d
-
-;Player Score
-MyScore dw 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;flag to know when to exit the game
 exitGame db 0
@@ -305,15 +292,9 @@ main proc
   mov ax,@data
   mov ds,ax
   mov es,ax
-
   call WinnerScreen
-  call ESCWinnerScreen
-
-
-
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  call GetNameAndIntialP 
+  call GetNameAndIntialP
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -343,6 +324,7 @@ main proc
   ;get the level and the forbidden char
   call levelWindow
   call forbiddenWindow
+  call getIntialPoints
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
@@ -391,126 +373,32 @@ main proc
   call printTwoPoints
   call printPoints
 
-  ;call checkWinner
+  call checkWinner
+  ;check the winner flag
+  mov al,winnerFlag
+  mov dl,1
+  cmp al,dl
+  jz HaveAWinner
 
   jmp GameLoop
 
   OutOfGame:
-  ; call scoresScreen
-  call WinnerScreen
+  call ESCWinnerScreen
   mov exitGame,0
+  call clearTheGame
+  jmp MainScreenLoop
+
+  HaveAWinner:
+  call WinnerScreen
+  mov winnerFlag,1
+  mov exitGame,0
+  call clearTheGame
   jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ProgramExit:
   call clearScreen
   hlt
 main endp
-
-
-ESCWinnerScreen proc
-  ;text mode
-  mov  ah,0  
-  mov  al,3h 
-  int  10h
-
-  ; set cursor
-  mov ah,2
-  mov dl,33d
-  mov dh,5d
-  mov bh,0
-  int 10h
-  ; display player 1 name
-  mov ah, 9
-  mov dx, offset ESCWinnerMSGTitle
-  int 21h
-
-  ; set cursor
-  mov ah,2
-  mov dl,25d
-  mov dh,10d
-  mov bh,0
-  int 10h
-  ; display player 1 name
-  mov ah, 9
-  mov dx, offset myName
-  int 21h
-  ; display message
-  mov ah, 9
-  mov dx, offset ESCWinnerMSG
-  int 21h
-  ;display player 1 score
-  mov ah,0
-  mov al,myPointsValue
-  mov dl,10h
-  div dl
-  add ah,30h
-  add al,30h 
-  mov bx,ax
-  ;print first number
-  mov ah,2
-  mov dl,bl
-  int 21h
-  ;print second number
-  mov ah,2
-  mov dl,bh
-  int 21h
-  
-  ; set cursor
-  mov ah,2
-  mov dl,25d
-  mov dh,12d
-  mov bh,0
-  int 10h
-  ; display player 1 name
-  mov ah, 9
-  mov dx, offset otherName
-  int 21h
-  ; display message
-  mov ah, 9
-  mov dx, offset ESCWinnerMSG
-  int 21h
-  ;display player 1 score
-  mov ah,0
-  mov al,otherPointsValue
-  mov dl,10h
-  div dl
-  add ah,30h
-  add al,30h 
-  mov bx,ax
-  ;print first number
-  mov ah,2
-  mov dl,bl
-  int 21h
-  ;print second number
-  mov ah,2
-  mov dl,bh
-  int 21h
-
-  mov bx,5
-  DELAYESCWINNER:
-  MOV CX, 0FH
-  MOV DX, 4240H
-  MOV AH, 86H
-  INT 15H
-  dec bx
-  jnz DELAYESCWINNER
-  
-  ret
-ESCWinnerScreen endp
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 clearScreen proc
@@ -525,7 +413,8 @@ clearScreen endp
 mainScreen proc
   ; first display yhe first message
   mov ah,2
-  mov dx,0A18h            ; set the cursor at the middle of the screen nearly
+  mov dl,18h            ; set the cursor at the middle of the screen nearly
+  mov dh,8d
   int 10h
 
   mov ah, 9
@@ -533,7 +422,8 @@ mainScreen proc
   int 21h
 
   mov ah,2
-  mov dx,0C18h    ; for the second message set the position at after the first by two rows
+  mov dl,18h    ; for the second message set the position at after the first by two rows
+  mov dh,10d
   int 10h 
 
   mov ah, 9
@@ -541,7 +431,8 @@ mainScreen proc
   int 21h
 
   mov ah,2
-  mov dx,0E18h   ; for the third message set the position at after the second by two rows
+  mov dl,18h   ; for the third message set the position at after the second by two rows
+  mov dh,12d
   int 10h
 
   mov ah, 9
@@ -649,60 +540,24 @@ WinnerScreen proc
   mov  ah,0  ;move to winner Screen
   mov  al,3h 
   int  10h
-
-
+ 
   mov ah,2
   mov dl,20d
   mov dh,10d
   mov bh,0
   int 10h
-
-  mov al,myPointsValue
-  mov bl,otherPointsValue
-  cmp al,bl
-
-  ja firstWinner
-  jb secondWiner
-  firstWinner:
-  ; display player 1 name
-  mov ah, 9
-  mov dx, offset myName
-  int 21h
-  mov ah,9
-  lea dx,firstWin
-  int 21h
-  mov bh,0
-  mov ah,2
-  mov dl,43d
-  mov dh,10d
-  int 10h
-
-  mov ah,0
-  mov al,myPointsValue
-  mov dl,10h
-  div dl
-
-  add ah,30h
-  add al,30h 
-
-  mov bx,ax
-  mov ah,2
-  mov dl,bl
-  int 21h
-
-  mov ah,2
-  mov dl,bh
-  int 21h
-
-  jmp  exitPage2
-  secondWiner:
+  mov cl,winnerFlag
+  cmp cl,1
+  jz IamWinner
+  ; display name of other player 
   mov ah, 9
   mov dx, offset otherName
   int 21h
+  ;display meesage 
   mov ah,9
   lea dx,firstWin
   int 21h
-
+  ;display score of the other player
   mov ah,0
   mov al,otherPointsValue
   mov dl,10h
@@ -719,9 +574,36 @@ WinnerScreen proc
   mov ah,2
   mov dl,bh
   int 21h
+  jmp exitPage2
 
+  IamWinner:
+; display player 1 name    
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
+  ;display meesage 
+  mov ah,9
+  lea dx,firstWin
+  int 21h
+  ;display score of the first player
+  mov ah,0
+  mov al,myPointsValue
+  mov dl,10h
+  div dl
 
+  add ah,30h
+  add al,30h 
+
+  mov bx,ax
+  mov ah,2
+  mov dl,bl
+  int 21h
+
+  mov ah,2
+  mov dl,bh
+  int 21h
   exitPage2:
+
   ; delay 5 seconds
   mov bx,5
   DELAYWINNER:
@@ -738,6 +620,164 @@ WinnerScreen proc
 
   ret
 WinnerScreen endp
+checkWinner proc
+  mov ax,wantedValue
+  ;check all of my registers
+  lea bx,myRegisters
+  mov cx,8h
+  checkMyRegWinner:
+  mov dx,[bx]
+  cmp ax,dx
+  jz SetWinnerFlag2
+  add bx,2
+  loop checkMyRegWinner
+
+  ;check all of other registers
+  lea bx,otherRegisters
+  mov cx,8h
+  checkOtherRegWinner:
+  mov dx,[bx]
+  cmp ax,dx
+  jz SetWinnerFlag1
+  add bx,2
+  loop checkOtherRegWinner
+
+  jmp checkWinnerExit
+  ;he is the winner
+  SetWinnerFlag2:
+  mov winnerFlag,2
+  jmp checkWinnerExit
+
+  ;i am the winner
+  SetWinnerFlag1:
+  mov winnerFlag,1
+  checkWinnerExit:
+  ret
+checkWinner endp
+clearTheGame proc
+  ;clear all the registers
+  mov cx,8h
+  lea bx,myRegisters
+  lea di,otherRegisters
+  clearTheGameReg:
+  mov [bx],0000H
+  mov [di],0000H
+  add bx,2
+  add di,2
+  loop clearTheGameReg
+
+  ;clear all the memory
+  mov cx,16d
+  lea bx,myMemory
+  lea di,otherMemory
+  clearTheGameMem:
+  mov [bx],00H
+  mov [di],00H
+  inc bx
+  inc di
+  loop clearTheGameMem
+  ;return the wanted value to its intial
+  mov wantedValue,105Eh
+  ;return the change wanted value flag power up 
+  mov flagChangeWantedValue,0
+  ;return the forbidden flag power up
+  mov forbiddenPowerUpFlag,0
+  ;return the clear register flag power up
+  mov clearAllRegPowerUp,0
+  ;clear the carry
+  mov carry,0
+  ret
+clearTheGame endp
+ESCWinnerScreen proc
+  ;text mode
+  mov  ah,0  
+  mov  al,3h 
+  int  10h
+
+  ; set cursor
+  mov ah,2
+  mov dl,33d
+  mov dh,5d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset ESCWinnerMSGTitle
+  int 21h
+
+  ; set cursor
+  mov ah,2
+  mov dl,25d
+  mov dh,10d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
+  ; display message
+  mov ah, 9
+  mov dx, offset ESCWinnerMSG
+  int 21h
+  ;display player 1 score
+  mov ah,0
+  mov al,myPointsValue
+  mov dl,10h
+  div dl
+  add ah,30h
+  add al,30h 
+  mov bx,ax
+  ;print first number
+  mov ah,2
+  mov dl,bl
+  int 21h
+  ;print second number
+  mov ah,2
+  mov dl,bh
+  int 21h
+  
+  ; set cursor
+  mov ah,2
+  mov dl,25d
+  mov dh,12d
+  mov bh,0
+  int 10h
+  ; display player 1 name
+  mov ah, 9
+  mov dx, offset otherName
+  int 21h
+  ; display message
+  mov ah, 9
+  mov dx, offset ESCWinnerMSG
+  int 21h
+  ;display player 1 score
+  mov ah,0
+  mov al,otherPointsValue
+  mov dl,10h
+  div dl
+  add ah,30h
+  add al,30h 
+  mov bx,ax
+  ;print first number
+  mov ah,2
+  mov dl,bl
+  int 21h
+  ;print second number
+  mov ah,2
+  mov dl,bh
+  int 21h
+
+  mov bx,5
+  DELAYESCWINNER:
+  MOV CX, 0FH
+  MOV DX, 4240H
+  MOV AH, 86H
+  INT 15H
+  dec bx
+  jnz DELAYESCWINNER
+  
+  ret
+ESCWinnerScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1062,7 +1102,8 @@ GetNameAndIntialP proc
   GNPmainLoop:
     mov bx,0
     mov ah,2 
-    mov dx,0 ;set cursor at x=0,y=0
+    mov dl,20d
+    mov dh,7d
     int 10h
     call clearScreen         
     mov ah,9
@@ -1108,6 +1149,12 @@ GetNameAndIntialP proc
     jnz ConvertEnterName
     mov [si],24h
 
+    mov bx,0
+    mov ah,2 
+    mov dl,20d
+    mov dh,9d
+    int 10h
+
     mov ah,9
     lea dx,STRIP   
     int 21h 
@@ -1125,6 +1172,30 @@ GetNameAndIntialP proc
     call HexaIntialPoint
     ret
 GetNameAndIntialP endp
+getIntialPoints proc
+  call clearScreen 
+  mov bx,0
+  mov ah,2 
+  mov dl,20d
+  mov dh,10d
+  int 10h
+  mov ah,9
+  lea dx,STRIP
+  int 21h 
+
+  mov ah,0AH      
+  lea dx,initalPointStr-2    
+  int 21h
+
+  mov cl,intialPointActualSize
+  mov ch,0
+  lea bx,initalPointStr
+  add bx,cx
+  mov al,'$'
+  mov [bx],al
+  call HexaIntialPoint
+  ret
+getIntialPoints endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Keys handling;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1389,7 +1460,7 @@ runGun proc
       mov targetStartColumnPosition, 115d
       mov al,targetColor ; ax = 0 targetColor
       mov ah,0           
-      add MyScore,ax ; add target color to my score the color is considered as score
+      add myPointsValue,al ; add target color to my score the color is considered as score
       ;change the target color
       inc targetColor
       mov ah,6
@@ -1456,19 +1527,7 @@ thirdPowerUp proc
   cmp al,dl
   jz TPUExit
 
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
-  call clearBGcommand
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
+  call clearCommandSection
   ;print get the forbidden msg
   mov ah,9
   lea dx,getForbiddenMsg
@@ -1513,19 +1572,7 @@ forthPowerUp proc
   mov clearAllRegPowerUp,1
   sub myPointsValue,30h
   
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
-  call clearBGcommand
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  mov bh,0
-  int 10h
+  call clearCommandSection
   ;print Clear all registers message
   mov ah,9
   lea dx,clearAllRegMsg
@@ -1603,19 +1650,8 @@ commandCyle proc
   mov dl,1
   cmp al,dl 
   jz GCcont
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  int 10h
-
-  call clearBGcommand
-
-  ;set the cursor
-  mov ah,2
-  mov dl,2h
-  mov dh,11h
-  int 10h
+  
+  call clearCommandSection
 
   ;check for the level to know how to enter the command
   mov al,level
@@ -1695,8 +1731,6 @@ commandCyle proc
   mov invalidOperationFlag,1
   jmp CCExit
   NOEXITSO:
-
-
 
   call Execute
   ;function to clear the command string (turn it back to $)
@@ -5255,6 +5289,8 @@ drawBackGround proc
   mov dx,200d
   cmp ax,dx
   jnz rowLoop
+  mov row,0
+  mov col,0
   ret
 drawBackGround endp
 ; draw gun macro 
