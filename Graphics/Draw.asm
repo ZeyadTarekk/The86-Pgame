@@ -170,7 +170,8 @@ ourOperation          db 4 dup('$')
 regName               db 5 dup('$')
 SrcStr                db 5 dup('$')
 ;our forbidden char
-forbiddenChar   db ?
+forbiddenChar   db ?  ; my  the other player enters it
+otherforbiddenChar   db ?   ; other   i enter it
 getForbiddenMsg db 'New Forbidden: $'
 ;forbidden flag to know that he entered forbidden char
 forbiddenFlag     db 0            ;equal 1 when the player use that char
@@ -193,6 +194,10 @@ intialPointSize    db 5
 intialPointActualSize db ?                    
 initalPointStr      db 6 dup ('$')
 STRIP           db 'Please enter your Intial Point: ','$'                    
+
+intialPointSizeother    db 5                    
+intialPointActualSizeother db ?                    
+initalPointStrother      db 6 dup ('$')
 
 myPointsValue db 61h
 otherPointsValue db 1fh
@@ -298,6 +303,7 @@ main proc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
+  call GetNameAndIntialPother
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -326,8 +332,10 @@ main proc
   StartGame:
   ;get the level and the forbidden char
   call levelWindow
-  call forbiddenWindow
-  call getIntialPoints
+  call myforbiddenWindow
+  call otherforbiddenWindow
+  call getMyIntialPoints
+  call getOtherIntialPoints
   ;set video mode   (320x200)
   mov ah,0h
   mov al,13h
@@ -790,7 +798,7 @@ levelWindow ENDP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;forbidden Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-forbiddenWindow PROC
+otherforbiddenWindow PROC  ; other player enters it
     ;text mode
     mov  ah,0  
     mov  al,3h 
@@ -821,7 +829,40 @@ forbiddenWindow PROC
     MOV     AH, 86H
     INT     15H
     ret
-forbiddenWindow ENDP
+otherforbiddenWindow ENDP
+
+myforbiddenWindow PROC  ; i enter it
+    ;text mode
+    mov  ah,0  
+    mov  al,3h 
+    int  10h
+    ; set cursor
+    mov ah,2
+    mov dl,20d
+    mov dh,10d
+    mov bh,0
+    int 10h
+    ; display message
+    mov ah, 9
+    mov dx, offset getForbiddenMSGWindow
+    int 21h
+    ;read one character => level
+    mov ah,07
+    int 21h
+    ; print the character
+    mov ah,2
+    mov dl,al
+    int 21h
+    ;convert to number
+    mov otherforbiddenChar,al
+
+    ; delay one second
+    MOV     CX, 0FH
+    MOV     DX, 4240H
+    MOV     AH, 86H
+    INT     15H
+    ret
+myforbiddenWindow ENDP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level 2 Intialization;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1024,8 +1065,20 @@ ClearName proc
   inc di
   jmp ClearNaAgain
   ClearNafinish:
+
+  lea di,otherName
+  ClearNaAgainother:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearNafinishother
+  mov [di],dl
+  inc di
+  jmp ClearNaAgainother
+  ClearNafinishother:
   ret
 ClearName endp
+
 HexaIntialPoint proc
     lea si,initalPointStr
     ;lea   si,string
@@ -1071,6 +1124,7 @@ HexaIntialPoint proc
   mov myPointsValue,al
   ret
 HexaIntialPoint endp
+
 GetNameAndIntialP proc
   GNPmainLoop:
     mov bx,0
@@ -1145,7 +1199,130 @@ GetNameAndIntialP proc
     call HexaIntialPoint
     ret
 GetNameAndIntialP endp
-getIntialPoints proc
+
+HexaIntialPointother proc
+    lea si,initalPointStrother
+    ;lea   si,string
+    ;lea   di,hexaWord    ;converted string to hexadecimal
+    HIPmainLoopother:
+      mov ah,24h              ;to avoid dbox khara error :3
+      cmp   [si],ah       ;check if char is $
+      jz    exitHIPother           ;if ture ==>end
+      mov   dl,[si]        ;assci of current char
+      mov ah,40h
+      cmp dl,40h          ;compare if digit from 0-9
+      jbe   HIPfrom_zero_nineother    ;jump to get hexadecimal of digit
+      sub dl,61h  ;  get hexa of  digit (A==>F)
+      add dl,10
+      jmp   HIPskipother  ; jump to skip (0-->9)
+    HIPfrom_zero_nineother:
+    sub dl,30h
+  HIPskipother:
+  mov [si],dl ; assignment value of dl to string
+  inc si   ; points to the next digit
+  jmp   HIPmainLoopother  ;iterate till  $
+  exitHIPother:
+  lea si,initalPointStrother       ;;conctenate the final answer ==> 01 02 00 0f $as exmaple ==>should be 120f
+  mov bx,10h             ;; ax 00 01 => 00 10 => 00  12 => 01 20=> 12 0f
+  mov al,[si]
+  mov ah,0
+  mov cl,'$'
+
+  cmp al,cl
+  jz HIPOutloopother
+  inc si
+  HIPLOOPMainother:
+      mov dl,[si]
+      cmp dl,cl
+      jz HIPOutloopother
+          mul bx
+          add al,[si]
+          inc si
+  jmp HIPLOOPMainother
+  HIPOutloopother:
+  lea si,initalPointStrother
+  mov [si],ax
+  mov otherPointsValue,al
+  ret
+HexaIntialPointother endp
+
+GetNameAndIntialPother proc
+  GNPmainLoopother:
+    mov bx,0
+    mov ah,2 
+    mov dl,20d
+    mov dh,7d
+    int 10h
+    call clearScreen         
+    mov ah,9
+    lea dx,StringToPrint   
+    int 21h 
+    
+    ;call ClearName        
+    mov ah,0AH      
+    lea dx,otherName-2    
+    int 21h
+
+    lea si,otherName
+
+    mov al,'Z'
+    cmp [si],al ;check if between A,Z
+    jbe LAZother
+    
+    mov al,'z'
+    cmp [si],al     ;check if between a,z
+    jbe Lzaother
+    
+    LAZother:
+    mov al,'A'
+    cmp [si],al
+    jae GNPexitother
+    jmp GNPmainLoopother
+
+    Lzaother:
+    mov al,'a'
+    cmp [si],al
+    jae GNPexitother
+    jmp GNPmainLoopother
+    
+    GNPexitother:
+
+    ;convert the (enter) char to $
+    lea si,otherName
+    mov al,0dh
+    ConvertEnterNameother:
+    inc si
+    mov bl,[si]
+    cmp bl,al 
+    jnz ConvertEnterNameother
+    mov [si],24h
+
+    mov bx,0
+    mov ah,2 
+    mov dl,20d
+    mov dh,9d
+    int 10h
+
+    mov ah,9
+    lea dx,STRIP   
+    int 21h 
+
+    mov ah,0AH      
+    lea dx,initalPointStrother-2    
+    int 21h
+
+    mov cl,intialPointActualSizeother
+    mov ch,0
+    lea bx,initalPointStrother
+    add bx,cx
+    mov al,'$'
+    mov [bx],al
+    call HexaIntialPointother
+    ret
+GetNameAndIntialPother endp
+
+
+getMyIntialPoints proc
   call clearScreen 
   mov bx,0
   mov ah,2 
@@ -1168,7 +1345,32 @@ getIntialPoints proc
   mov [bx],al
   call HexaIntialPoint
   ret
-getIntialPoints endp
+getMyIntialPoints endp
+
+getOtherIntialPoints proc
+  call clearScreen 
+  mov bx,0
+  mov ah,2 
+  mov dl,20d
+  mov dh,10d
+  int 10h
+  mov ah,9
+  lea dx,STRIP
+  int 21h 
+
+  mov ah,0AH      
+  lea dx,initalPointStrother-2    
+  int 21h
+
+  mov cl,intialPointActualSizeother
+  mov ch,0
+  lea bx,initalPointStrother
+  add bx,cx
+  mov al,'$'
+  mov [bx],al
+  call HexaIntialPointother
+  ret
+getOtherIntialPoints endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Keys handling;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
