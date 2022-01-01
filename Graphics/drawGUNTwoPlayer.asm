@@ -297,10 +297,8 @@ main proc
   mov es,ax
 
   ;set video mode   (320x200)
-  mov ah,0h
-  mov al,13h
-  int 10h 
-  call runGun
+
+;   call runGun
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1458,7 +1456,7 @@ runGun proc
     ContinueToMoveOtherLeft:
     ; Move the Gun
     mov dx, gunStartColumnPositionOther ; check if gun reached start of screen
-    mov cx, 162d                     ; 0d is the start of the screen
+    mov cx, 163d                     ; 0d is the start of the screen
     cmp dx, cx                     ; compare position of screen start to start of gun
     jz OthergunMoved                    ; if equal consider the gun has been moved (dont move the gun)
     
@@ -1481,7 +1479,7 @@ runGun proc
     mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
     mov bx, bulletWidth              ;its lower border break;
     cmp ax,bx
-    jae continuePlaying
+    jae checkOtherBullet
       mov bulletStartRowPosition, 85d  ; return bullet to its start position
 
     checkOtherBullet:
