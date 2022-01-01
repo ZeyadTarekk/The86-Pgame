@@ -297,8 +297,10 @@ main proc
   mov es,ax
 
   ;set video mode   (320x200)
-
-;   call runGun
+  mov ah,0h
+  mov al,13h
+  int 10h 
+  call runGun
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -5734,29 +5736,18 @@ drawBullet proc
   add cx, bulletWidth
   mov bulletEndColumnPosition, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
   
-  mov ax, bulletStartRowPosition
-  sub ax, bulletWidth
-  mov rowBullet, 07d  
-
+  mov ax, bulletStartColumnPosition
+  mov rowBullet, ax
   RemoverowLoopBullet:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowBullet    ;row
-  mov cx, colBullet    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colBullet
-  mov ax,colBullet
-  mov dx,bulletEndColumnPosition
-  cmp ax,dx
-  jnz RemoverowLoopBullet  
-  mov ax, bulletStartColumnPosition  ; column iterator starts at gunStartColumnPositionOther
-  mov colBullet, ax
-  inc rowBullet
-  mov ax,rowBullet
-  mov dx,80d
-  cmp ax,dx
+    mov ah, 0ch                     ;write pixels on screen
+    mov bh, 0                       ;page
+    mov dx, bulletStartRowPosition    ;row
+    mov cx, rowBullet    ;column
+    mov al, BLACK          ;colour
+    int 10h
+    inc rowBullet
+    mov ax,rowBullet
+    cmp ax,bulletEndColumnPosition
   jnz RemoverowLoopBullet
 
   ;intialization of other iterators
@@ -5767,30 +5758,19 @@ drawBullet proc
   add cx, bulletWidth
   mov bulletEndColumnPositionOther, cx      ; end of bullet column = gunStartColumnPositionOther+ bullet width
   
-  mov ax, bulletStartRowPositionOther
-  sub ax, bulletWidth
-  mov rowBullet, 07d 
-  
-  RemoverowLoopOtherBullet:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowBullet    ;row
-  mov cx, colBullet    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colBullet
-  mov ax,colBullet
-  mov dx,bulletEndColumnPositionOther
-  cmp ax,dx
-  jnz RemoverowLoopOtherBullet
-  mov ax, bulletStartColumnPositionOther  ; column iterator starts at gunStartColumnPositionOther
-  mov colBullet, ax
-  inc rowBullet
-  mov ax,rowBullet
-  mov dx,80d
-  cmp ax,dx
-  jnz RemoverowLoopOtherBullet
+  mov ax, bulletStartColumnPositionOther
+  mov rowBullet, ax
+  RemoverowLoopBulletOther:
+    mov ah, 0ch                            ;write pixels on screen
+    mov bh, 0                              ;page
+    mov dx, bulletStartRowPositionOther    ;row
+    mov cx, rowBullet                      ;column
+    mov al, BLACK                          ;colour
+    int 10h
+    inc rowBullet
+    mov ax,rowBullet
+    cmp ax,bulletEndColumnPositionOther
+  jnz RemoverowLoopBulletOther
 
   ;Intialization of my iterators
   mov cx, gunStartColumnPosition  ; column iterator starts at gunStartColumnPositionOther
@@ -5977,47 +5957,32 @@ drawGun proc
   ret
 drawGun endp
 drawTarget proc
-  mov colTarget,0
+  mov rowTarget,0 
   RemoverowLoopTarget:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowTarget    ;row
-  mov cx, colTarget    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colTarget
-  mov ax,colTarget
-  mov dx,125d
-  cmp ax,dx
-  jnz RemoverowLoopTarget
-  mov colTarget,0
-  inc rowTarget
-  mov ax,rowTarget
-  mov dx,targetEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowTarget                    ;row
+    mov cx, targetStartColumnPosition    ;column
+    add cx, targetWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowTarget
+    mov ax, rowTarget
+    cmp ax, 07d
   jnz RemoverowLoopTarget
 
   mov rowTarget,0d
-  mov colTarget,163d
   RemoverowLoopOtherTarget:
-  mov ah, 0ch    ;write pixels on screen
-  mov bh, 0      ;page
-  mov dx, rowTarget    ;row
-  mov cx, colTarget    ;column
-  mov al, BLACK   ;colour
-  int 10h
-  ;need to mov the row 
-  inc colTarget
-  mov ax,colTarget
-  mov dx,287d
-  cmp ax,dx
-  jnz RemoverowLoopOtherTarget
-  mov colTarget,163d
-  inc rowTarget
-  mov ax,rowTarget
-  mov dx,targetEndRowPosition
-  cmp ax,dx
+    mov ah, 0ch                          ;write pixels on screen
+    mov bh, 0                            ;page
+    mov dx, rowTarget                    ;row
+    mov cx, targetStartColumnPositionOther    ;column
+    add cx, targetWidth
+    mov al, BLACK   ;colour
+    int 10h
+    inc rowTarget
+    mov ax, rowTarget
+    cmp ax, 07d
   jnz RemoverowLoopOtherTarget
 
   mov rowTarget,0d
