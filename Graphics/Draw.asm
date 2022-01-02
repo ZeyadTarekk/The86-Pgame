@@ -5266,11 +5266,38 @@ EXINC proc
 EXINC endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 EXDEC proc
+  mov al,typeOfDestination
+  mov dl,0
+  cmp al,dl
+  jnz EXDECDestNotRegister
   mov di,source
   mov bx,destination
   mov ax,[bx]  
   dec ax
   mov [bx],ax
+  jmp EXDECEXIT
+  EXDECDestNotRegister:
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz EXDECDestNotMemory
+  ; Here destination is memory
+  mov bx,offsetMemory
+  mov di,destination
+  add bx,[di]
+  mov ax,[bx]
+  dec ax
+  mov [bx],ax
+  jmp EXDECEXIT
+  EXDECDestNotMemory:
+  ; Here destination is register indirect
+  mov bx,offsetMemory
+  mov di,destination
+  add bx,di
+  mov al,[bx]
+  dec al
+  mov [bx],al
+  EXDECEXIT:
   ret
 EXDEC endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
