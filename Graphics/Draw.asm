@@ -5230,11 +5230,38 @@ EXRCL proc
 EXRCL endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 EXINC proc
+  mov al,typeOfDestination
+  mov dl,0
+  cmp al,dl
+  jnz EXINCDestNotRegister
   mov di,source
   mov bx,destination
   mov ax,[bx]  
   inc ax
   mov [bx],ax
+  jmp EXINCEXIT
+  EXINCDestNotRegister:
+  mov al,typeOfDestination
+  mov dl,1
+  cmp al,dl
+  jnz EXINCDestNotMemory
+  ; Here destination is memory
+  mov bx,offsetMemory
+  mov di,destination
+  add bx,[di]
+  mov ax,[bx]
+  inc ax
+  mov [bx],ax
+  jmp EXINCEXIT
+  EXINCDestNotMemory:
+  ; Here destination is register indirect
+  mov bx,offsetMemory
+  mov di,destination
+  add bx,di
+  mov al,[bx]
+  inc al
+  mov [bx],al
+  EXINCEXIT:
   ret
 EXINC endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
