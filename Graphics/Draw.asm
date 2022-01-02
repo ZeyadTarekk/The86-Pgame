@@ -251,6 +251,7 @@ secondMessage db 'Hello from second$'
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Gun Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+GUNLoopIterator dw 0
 ; Variables for Gun
 ;iterators for draw gun
 ; gun starts at row 80d 
@@ -1382,6 +1383,12 @@ calcInitialPoints endp
 ;4 ---> Clearing all registers at once (30 points) + turn on a flag
 ;5 ---> (for level 2) change the target value + turn on a flag
 getKeyPressed proc
+  
+  call RANDNUMBER
+  mov dh,05d          ; if random number equals 5 
+  cmp dh,dl           
+  jz GKPgunGame       ;start the gun game cycle
+
   ;first check if there is any key pressed
   mov ah,1
   int 16h
@@ -1399,9 +1406,9 @@ getKeyPressed proc
   cmp ah,dl
   jz GKPcommand       ;start the command cycle
 
-  mov dl,3Dh          ;F3
-  cmp ah,dl
-  jz GKPgunGame       ;start the gun game cycle
+  ; mov dl,3Dh          ;F3
+  ; cmp ah,dl
+  ; jz GKPgunGame       ;start the gun game cycle
 
   mov dl,31h          ;1
   cmp al,dl
@@ -1540,8 +1547,25 @@ getKeyPressed endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; generate random number between [0:50]
+RANDNUMBER proc
+   MOV AH, 00h  ; interrupts to get system time        
+   INT 1AH      ; CX:DX now hold number of clock ticks since midnight      
+
+   mov  ax, dx
+   xor  dx, dx
+   mov  cx, 10000d    
+   div  cx       ; here dx contains the remainder of the division - from 0 to 9
+
+  ;  add  dl, '0'  ; to ascii from '0' to '9'
+  ;  mov ah, 2h   ; call interrupt to display a value in DL
+  ;  int 21h    
+RET
+RANDNUMBER endp 
 runGun proc
+  mov GUNLoopIterator, 0
   runGunHome:
+  inc GUNLoopIterator
   call drawRegNames
   call drawMyRegisters
   call drawOtherRegisters
@@ -2097,6 +2121,11 @@ runGun proc
         jmp EndCompare
     
   EndCompare:
+  
+  mov ax,1000d
+  cmp GUNLoopIterator, ax
+  jz gunGameExit
+
   jmp runGunHome
   gunGameExit:
   ret
