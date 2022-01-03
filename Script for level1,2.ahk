@@ -5,8 +5,8 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 
 
-F3:: 
-sleep,1500
+F7:: 
+sleep,3000
 send Zeyad
 send {enter down}
 send {enter up}
@@ -93,30 +93,15 @@ send {enter down}
 send {enter up}
 Sleep, 2000
 
-send {Esc down}
-send {Esc up}
-send {F2 down}
-send {F2 up}
-send MOV [SI],DE
-send {enter down}
-send {enter up}
-Sleep, 2000
 
-send {Esc down}
-send {Esc up}
-send {F2 down}
-send {F2 up}
-send MOV [ax],DE
-send {enter down}
-send {enter up}
-Sleep, 2000
+
 
 return
 
 
 
-F4:: 
-sleep,1500
+F8:: 
+sleep,3000
 send Zeyad
 send {enter down}
 send {enter up}
