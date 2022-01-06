@@ -96,6 +96,11 @@ thirdMSG db 'To End the program press ESC','$'
 LINE db '--------------------------------------------------------------------------------','$'
 carReturn db 10,13,'$'
 selectedMode db ?    ; 1 for chat ---- 2 for game
+
+;flag to know if the current user is the one who started the chat or the game
+;0 --> the other started
+;1 --> i started
+starterMainScreenFlag db ?
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -316,37 +321,13 @@ main proc
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
   call SendingAndRecevingNames
-  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  testing:
-  mov ah,2
-  mov dx,0A0Ah
-  mov bh,0
-  int 10h
-
-  mov ah, 9
-  mov dx, offset myName
-  int 21h
-
-  mov ah,2
-  mov dx,0B0Bh
-  mov bh,0
-  int 10h
-
-  mov ah, 9
-  mov dx, offset otherName
-  int 21h
-  
-        mov ah,0
-        int 16h
-
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   MainScreenLoop:
   mov ah,0h
   mov al,3h
-  int 10h 
+  int 10h
   call clearScreen
   call mainScreen
   mov al,selectedMode
@@ -473,8 +454,6 @@ Portinitialization proc
   out dx,al
   ret
 Portinitialization endp
-
-
 SendingAndRecevingNames proc
   ;who finish first send the other (DD --> will start sending his name first)
   ;check if the other sent (DD)
@@ -572,8 +551,6 @@ SendingAndRecevingNames proc
   readyFlagEnd:
   ret
 SendingAndRecevingNames endp
-
-
 sendMyName proc
   ;send the actualSize
   mov dx , 3FDH   ;Line Status Register
@@ -601,7 +578,6 @@ sendMyName proc
   loop MyNameSendLoop
   ret
 sendMyName endp
-
 receiveOtherName proc
   ;receive the actual size of the otherName
   mov dx,3FDH		; Line Status Register
@@ -631,6 +607,14 @@ receiveOtherName proc
   loop otherNameReceiveLoop
   ret
 receiveOtherName endp
+
+
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -687,24 +671,52 @@ mainScreen proc
 
   ; then get the pressed key 
   LoopChar:
+  ;check if the other send any thing
+  ;f1 --> show on your screen that the other invites you to chat
+  ;f2 --> show on your screen that the other invites you to play
+  ;esc --> set the selected mode and exit
+
+  mov dx , 3FDH		; Line Status Register
+	in al , dx 
+  AND al , 1
+  jz GetCurrentUserKey
+  ;the other user sent a char
+  mov starterMainScreenFlag,0
+  mov dx , 03F8H
+  in al , dx
+  ;al = char
+
+  ; mov dl,3Bh    ;F1
+  ; cmp al,dl
+  ; mov selectedMode,1
+  ; jz EXITFORMAINSCREEN
+
+  mov dl,3Ch      ;F2
+  cmp al,dl
+  mov selectedMode,2
+  jz EXITFORMAINSCREEN
+
+
+  GetCurrentUserKey:
+  ;main loop
   mov ah,1
   int 16h
-  jz LoopChar   ; zero flag = 1 if no charachter is entered
-  mov al,3Bh      ;if the pressed key is F1 this is chat mode
+  jz LoopChar       ; zero flag = 1 if no charachter is entered
+  mov al,3Bh        ;if the pressed key is F1 this is chat mode
   cmp ah,al
   jz setChatMode
-  mov al,3Ch      ;if the pressed key is F2 this is game mode
+  mov al,3Ch        ;if the pressed key is F2 this is game mode
   cmp ah,al
   jz setGameMode
-  mov al,1        ; check if ESC 
+  mov al,1          ; check if ESC 
   cmp al,ah 
-  jnz ClearBuffer    ; if not ESC Clear buffer and wait for more chars
-  mov ah,0    ;Clear the buffer
+  jnz ClearBuffer   ; if not ESC Clear buffer and wait for more chars
+  mov ah,0          ;Clear the buffer
   int 16h
   mov selectedMode,0
-  ret             ;  (ESC) hlt the program
+  ret               ;  (ESC) hlt the program
   ClearBuffer:
-  mov ah,0    ;Clear the buffer
+  mov ah,0          ;Clear the buffer
   int 16h
   jmp LoopChar
 
@@ -712,7 +724,18 @@ mainScreen proc
       mov selectedMode,2
       mov ah,0        ;Clear the buffer
       int 16h
+      ;send F2 to the other
+      mov starterMainScreenFlag,1
+      mov dx , 3FDH		; Line Status Register
+      SENDF2AGAIN:  	
+      In al , dx 			;Read Line Status
+      AND al , 00100000b
+      JZ SENDF2AGAIN
+      mov dx,3F8H		; Transmit data register
+      mov al,3Ch
+      out dx,al 
       jmp EXITFORMAINSCREEN
+
   setChatMode:
       mov selectedMode,1
       mov ah,0        ;Clear the buffer
@@ -722,6 +745,7 @@ mainScreen proc
   EXITFORMAINSCREEN:
   ; Here draw the lower part
   mov ah,2
+  mov bh,0
   mov dx,1600h
   int 10h
 
@@ -730,39 +754,82 @@ mainScreen proc
   cmp al,ah 
   jz DrawChat
 
+
+  ;F2
+  ;check who started to print his message
+  mov al,starterMainScreenFlag
+  mov dl,1
+  cmp al,dl
+  jnz otherSentMeG
+
   mov ah, 9
   mov dx, offset firstModifiedMSG
   int 21h
-  jmp AfterDraw
+  mov ah, 9
+  lea dx,otherName
+  int 21h
+  
+  ;loop to wait for the response of the other user
+  mov dx,3FDH		; Line Status Register
+	F2FromOtherCHK:	
+  in al,dx
+  AND al,1
+  JZ F2FromOtherCHK
+  mov dx , 03F8H
+  in al,dx 
+  mov ReadyFlag,al
+  jmp AfterDrawExit
+
+  otherSentMeG:
+  mov ah, 9
+  lea dx,otherName
+  int 21h
+  mov ah, 9
+  mov dx, offset thirdModifiedMSG
+  int 21h
+  ;loop to wait for F2 to continue
+  NotF2:
+  mov ah,0
+  int 16h
+  mov dl,3CH
+  cmp ah,dl
+  jnz NotF2
+  mov dx , 3FDH		; Line Status Register
+  SendF2AGAINGame:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SendF2AGAINGame
+  mov dx , 3F8H		; Transmit data register
+  mov al,3CH
+  out dx , al
+  jmp AfterDrawExit
 
   DrawChat:
   mov ah, 9
   mov dx, offset secondModifiedMSG
   int 21h
   
-  AfterDraw:
+  ; AfterDraw:
 
-  mov ah, 9
-  mov dx, offset otherName
-  int 21h
+  ; mov ah, 9
+  ; mov dx, offset otherName
+  ; int 21h
 
-  mov ah, 9
-  mov dx, offset carReturn
-  int 21h
+  ; mov ah, 9
+  ; mov dx, offset carReturn
+  ; int 21h
 
-  mov ah, 9
-  mov dx, offset myName
-  int 21h
+  ; mov ah, 9
+  ; mov dx, offset myName
+  ; int 21h
 
-  mov al,selectedMode
-  mov ah,1 
-  cmp al,ah 
-  jz DrawChatSec
+  ; mov al,selectedMode
+  ; mov ah,1 
+  ; cmp al,ah 
+  ; jz DrawChatSec
 
-  mov ah, 9
-  mov dx, offset thirdModifiedMSG
-  int 21h
-  jmp AfterDrawSec
+
+  
 
 
   DrawChatSec:
@@ -770,7 +837,7 @@ mainScreen proc
   mov dx, offset fourthModifiedMSG
   int 21h
   
-  AfterDrawSec:
+  AfterDrawExit:
   ret
 mainScreen endp
 WinnerScreen proc
