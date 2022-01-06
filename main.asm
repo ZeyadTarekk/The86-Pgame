@@ -210,8 +210,8 @@ intialPointSizeother    db 5
 intialPointActualSizeother db ?                    
 initalPointStrother      db 6 dup ('$')
 
-myPointsValue db 61h
-otherPointsValue db 1fh
+myPointsValue db 14h
+otherPointsValue db 14h
 myPointsX db ?
 otherPointsX db ?
 pointsY db 0dh
@@ -347,12 +347,29 @@ main proc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   StartGame:
-  ;get the level and the forbidden char
+  ;check if the current user is the one who start the game
+  mov al,starterMainScreenFlag
+  mov dl,1
+  cmp al,dl
+  jnz IamNotTheStarter
   call levelWindow
+  IamNotTheStarter:
+  ;get the forbidden char
   call myforbiddenWindow
   call getMyIntialPoints
-  call otherforbiddenWindow
-  call getOtherIntialPoints
+
+  call SendingAndRecevingFCIP
+
+  mov al,starterMainScreenFlag
+  mov dl,1
+  cmp al,dl
+  jnz WillNotRecieveLvl
+  call sendLevel
+  jmp ContinueAfterLevel
+
+  WillNotRecieveLvl:
+  call recieveLevel
+  ContinueAfterLevel:
   call calcInitialPoints
   ;set video mode   (320x200)
   mov ah,0h
@@ -462,10 +479,8 @@ SendingAndRecevingNames proc
   
   ;check if the other sent any thing
   mov dx , 3FDH		; Line Status Register
-	; CHK:	
   in al , dx 
   AND al , 1
-  ; JZ CHK
   jz sendReady
   mov dx , 03F8H
   in al , dx 
@@ -608,13 +623,181 @@ receiveOtherName proc
   ret
 receiveOtherName endp
 
+SendingAndRecevingFCIP proc
+  ;who finish first send the other (DD --> will start sending his name first)
+  ;check if the other sent (DD)
+  ;{ send (DF) which means that we are ready to receive and call receive function } 
+  ;else send him (DD)
+  
+  ;check if the other sent any thing
+  mov dx , 3FDH		; Line Status Register
+  in al , dx 
+  AND al , 1
+  jz sendReadyFCIP
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
 
+  ;send DF to start receiving the forbidden char and intial points
+  mov dx , 3FDH   ;Line Status Register
+  SFCIPAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SFCIPAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
 
+  call receiveForbiddenChar
+  call receiveIntialPoints
 
+  ;send DD to start sending your forbidden char and intial point
+  mov dx , 3FDH   ;Line Status Register
+  SDDFCIPAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDDFCIPAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
 
+  mov dx , 3FDH		; Line Status Register
+	WAITDFFCIPCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFFCIPCHK
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
 
+  call sendForbiddenChar
+  call sendIntialPoints
+  jmp readyFlagEndFCIP
 
+  sendReadyFCIP:
+  ;then send DD if no thing to receive
+  mov dx , 3FDH   ;Line Status Register
+  SRFAGAINFCIP: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SRFAGAINFCIP
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
 
+  mov dx , 3FDH		; Line Status Register
+	WAITDFFCIPCHK2:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFFCIPCHK2
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendForbiddenChar
+  call sendIntialPoints
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDDCHKFCIP:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDDCHKFCIP
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAINFCIP2: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAINFCIP2
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveForbiddenChar
+  call receiveIntialPoints
+
+  readyFlagEndFCIP:
+  ret
+SendingAndRecevingFCIP endp
+sendForbiddenChar proc
+  ;send my forbidden char
+  mov dx , 3FDH   ;Line Status Register
+  SFCAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SFCAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,otherforbiddenChar
+  out dx,al
+  ret
+sendForbiddenChar endp
+sendIntialPoints proc
+  ;send my inital value
+  mov dx , 3FDH   ;Line Status Register
+  SIPAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SIPAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,myPointsValue
+  out dx,al
+  ret
+sendIntialPoints endp
+receiveForbiddenChar proc
+  ;receive the forbidden char
+  mov dx,3FDH		; Line Status Register
+	RFCCHK:	
+  in al,dx 
+  AND al,1
+  JZ RFCCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov myforbiddenChar,al
+  ret
+receiveForbiddenChar endp
+receiveIntialPoints proc
+  ;receive the intial point
+  mov dx,3FDH		; Line Status Register
+	RIPCHK:	
+  in al,dx 
+  AND al,1
+  JZ RIPCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov otherPointsValue,al
+  ret
+receiveIntialPoints endp
+
+sendLevel proc
+  ;send the level
+  mov dx , 3FDH   ;Line Status Register
+  SLVLAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SLVLAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,level
+  out dx,al
+  ret
+sendLevel endp
+recieveLevel proc
+  ;receive the level
+  mov dx,3FDH		; Line Status Register
+	RLVLCHK:	
+  in al,dx 
+  AND al,1
+  JZ RLVLCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov level,al
+  ret
+recieveLevel endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
