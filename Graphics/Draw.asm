@@ -217,6 +217,10 @@ liney dw ?
 ;                 1     2       3     4       5
                 ;Blue, green , Cyan, red , Magenta 
 coloredPoints db  0h ,   0h  ,  0h ,  0h ,  0h
+
+;flag to know which operation to perform
+ReadyFlag db ?
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;variables for postioning
@@ -308,10 +312,130 @@ main proc
   mov ds,ax
   mov es,ax
 
+  call Portinitialization
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
-  call GetNameAndIntialPother
+
+  ;who finish first send the other (DD --> will start sending his name first)
+  ;check if the other sent (DD)
+  ;{ send (DF) which means that we are ready to receive and call receive function } 
+  ;else send him (DD)
+  
+  
+  ;check if the other sent any thing
+  mov dx , 3FDH		; Line Status Register
+	; CHK:	
+  in al , dx 
+  AND al , 1
+  ; JZ CHK
+  jz sendReady
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherName
+
+  ;send DD to start sending your name
+  mov dx , 3FDH   ;Line Status Register
+  SDDAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDDAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHK
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyName
+  jmp readyFlagEnd
+
+  sendReady:
+  ;then send DD if no thing to receive
+  mov dx , 3FDH   ;Line Status Register
+  SRFAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SRFAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHK2:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHK2
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyName
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDDCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDDCHK
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAIN2: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAIN2
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherName
+
+  readyFlagEnd:
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  testing:
+  mov ah,2
+  mov dx,0A0Ah
+  mov bh,0
+  int 10h
+
+  mov ah, 9
+  mov dx, offset myName
+  int 21h
+
+  mov ah,2
+  mov dx,0B0Bh
+  mov bh,0
+  int 10h
+
+  mov ah, 9
+  mov dx, offset otherName
+  int 21h
+  
+        mov ah,0
+        int 16h
+
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   MainScreenLoop:
@@ -421,6 +545,121 @@ main proc
   call clearScreen
   hlt
 main endp
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Communication;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Portinitialization proc
+  ;Set Divisor Latch Access Bit
+  mov dx,3fbh 			  ; Line Control Register
+  mov al,10000000b		;Set Divisor Latch Access Bit
+  out dx,al
+  ;Set LSB byte of the Baud Rate Divisor Latch register.
+  mov dx,3f8h			
+  mov al,0ch
+  out dx,al
+  ;Set MSB byte of the Baud Rate Divisor Latch register.
+  mov dx,3f9h
+  mov al,00h
+  out dx,al
+  ;Set port configuration
+  mov dx,3fbh
+  mov al,00011011b
+  out dx,al
+  ret
+Portinitialization endp
+
+
+; UpdateReadyFlag proc
+;   ;check if the other sent any thing
+;   mov dx , 3FDH		; Line Status Register
+; 	; CHK:	
+;   in al , dx 
+;   AND al , 1
+;   ; JZ CHK
+;   jz sendReady
+;   mov dx , 03F8H
+;   in al , dx 
+;   mov ReadyFlag , al
+;   jmp readyFlagEnd
+
+;   sendReady:
+;   ;then send DD if no thing to receive
+;   mov dx , 3FDH   ;Line Status Register
+;   SRFAGAIN: 
+;   In al,dx        ;Read Line Status
+;   AND al,00100000b
+;   JZ SRFAGAIN
+;   mov dx , 3F8H   ;Transmit data register
+;   mov al,0DDH
+;   out dx,al
+;   readyFlagEnd:
+;   ret
+; UpdateReadyFlag endp
+
+
+sendMyName proc
+  ;send the actualSize
+  mov dx , 3FDH   ;Line Status Register
+  SACNAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SACNAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,myNameActualSize
+  out dx,al
+  ;loop to send the entire name
+  mov ch,0
+  mov cl,myNameActualSize
+  lea si,myName
+  MyNameSendLoop:
+  mov dx,3FDH   ;Line Status Register
+  SMNAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SMNAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,[si]
+  out dx,al 
+  inc si
+  loop MyNameSendLoop
+  ret
+sendMyName endp
+
+receiveOtherName proc
+  ;receive the actual size of the otherName
+  mov dx,3FDH		; Line Status Register
+	RONACCHK:	
+  in al,dx 
+  AND al,1
+  JZ RONACCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov otherNameActualSize,al
+
+  mov ch,0
+  mov cl,otherNameActualSize
+  lea si,otherName
+  otherNameReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	RONCHK:	
+  in al,dx 
+  AND al,1
+  JZ RONCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherNameReceiveLoop
+  ret
+receiveOtherName endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 clearScreen proc
