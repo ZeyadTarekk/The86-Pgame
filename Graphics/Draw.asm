@@ -696,6 +696,10 @@ mainScreen proc
   mov selectedMode,2
   jz EXITFORMAINSCREEN
 
+  mov dl,01h      ;ESC
+  cmp al,dl
+  mov selectedMode,0
+  jz EXITFORMAINSCREEN
 
   GetCurrentUserKey:
   ;main loop
@@ -713,8 +717,9 @@ mainScreen proc
   jnz ClearBuffer   ; if not ESC Clear buffer and wait for more chars
   mov ah,0          ;Clear the buffer
   int 16h
-  mov selectedMode,0
-  ret               ;  (ESC) hlt the program
+  mov selectedMode,0 ;  (ESC) hlt the program
+  mov starterMainScreenFlag,1
+  jmp EXITFORMAINSCREEN
   ClearBuffer:
   mov ah,0          ;Clear the buffer
   int 16h
@@ -753,7 +758,9 @@ mainScreen proc
   mov ah,1 
   cmp al,ah 
   jz DrawChat
-
+  mov ah,0
+  cmp al,ah
+  jz sendExit
 
   ;F2
   ;check who started to print his message
@@ -804,39 +811,32 @@ mainScreen proc
   out dx , al
   jmp AfterDrawExit
 
+
   DrawChat:
-  mov ah, 9
-  mov dx, offset secondModifiedMSG
-  int 21h
-  
-  ; AfterDraw:
-
-  ; mov ah, 9
-  ; mov dx, offset otherName
-  ; int 21h
-
-  ; mov ah, 9
-  ; mov dx, offset carReturn
-  ; int 21h
-
-  ; mov ah, 9
-  ; mov dx, offset myName
-  ; int 21h
-
-  ; mov al,selectedMode
-  ; mov ah,1 
-  ; cmp al,ah 
-  ; jz DrawChatSec
-
+  ;F1
 
   
+  jmp AfterDrawExit
 
+  sendExit:
+  ;ESC
+  ;check who started
+  mov al,starterMainScreenFlag
+  mov dl,1
+  cmp al,dl
+  jnz AfterDrawExit
 
-  DrawChatSec:
-  mov ah, 9
-  mov dx, offset fourthModifiedMSG
-  int 21h
-  
+  ;send him esc(01h)
+  mov dx , 3FDH		; Line Status Register
+  SendESCAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SendESCAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,01h
+  out dx , al 
+  jmp AfterDrawExit
+
   AfterDrawExit:
   ret
 mainScreen endp
