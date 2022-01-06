@@ -315,102 +315,7 @@ main proc
   call Portinitialization
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Names and Points;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   call GetNameAndIntialP
-
-  ;who finish first send the other (DD --> will start sending his name first)
-  ;check if the other sent (DD)
-  ;{ send (DF) which means that we are ready to receive and call receive function } 
-  ;else send him (DD)
-  
-  
-  ;check if the other sent any thing
-  mov dx , 3FDH		; Line Status Register
-	; CHK:	
-  in al , dx 
-  AND al , 1
-  ; JZ CHK
-  jz sendReady
-  mov dx , 03F8H
-  in al , dx 
-  mov ReadyFlag,al
-
-  ;send DF to start receiving the other name
-  mov dx , 3FDH   ;Line Status Register
-  SDFAGAIN: 
-  In al,dx        ;Read Line Status
-  AND al,00100000b
-  JZ SDFAGAIN
-  mov dx , 3F8H   ;Transmit data register
-  mov al,0DFH
-  out dx,al
-
-  call receiveOtherName
-
-  ;send DD to start sending your name
-  mov dx , 3FDH   ;Line Status Register
-  SDDAGAIN: 
-  In al,dx        ;Read Line Status
-  AND al,00100000b
-  JZ SDDAGAIN
-  mov dx , 3F8H   ;Transmit data register
-  mov al,0DDH
-  out dx,al
-
-  mov dx , 3FDH		; Line Status Register
-	WAITDFCHK:	
-  in al , dx 
-  AND al , 1
-  JZ WAITDFCHK
-  mov dx , 03F8H
-  in al , dx 
-  mov ReadyFlag,al
-
-  call sendMyName
-  jmp readyFlagEnd
-
-  sendReady:
-  ;then send DD if no thing to receive
-  mov dx , 3FDH   ;Line Status Register
-  SRFAGAIN: 
-  In al,dx        ;Read Line Status
-  AND al,00100000b
-  JZ SRFAGAIN
-  mov dx , 3F8H   ;Transmit data register
-  mov al,0DDH
-  out dx,al
-
-  mov dx , 3FDH		; Line Status Register
-	WAITDFCHK2:	
-  in al , dx 
-  AND al , 1
-  JZ WAITDFCHK2
-  mov dx , 03F8H
-  in al , dx 
-  mov ReadyFlag,al
-
-  call sendMyName
-
-  mov dx , 3FDH		; Line Status Register
-	WAITDDCHK:	
-  in al , dx 
-  AND al , 1
-  JZ WAITDDCHK
-  mov dx , 03F8H
-  in al , dx 
-  mov ReadyFlag,al
-
-  ;send DF to start receiving the other name
-  mov dx , 3FDH   ;Line Status Register
-  SDFAGAIN2: 
-  In al,dx        ;Read Line Status
-  AND al,00100000b
-  JZ SDFAGAIN2
-  mov dx , 3F8H   ;Transmit data register
-  mov al,0DFH
-  out dx,al
-
-  call receiveOtherName
-
-  readyFlagEnd:
+  call SendingAndRecevingNames
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -570,32 +475,103 @@ Portinitialization proc
 Portinitialization endp
 
 
-; UpdateReadyFlag proc
-;   ;check if the other sent any thing
-;   mov dx , 3FDH		; Line Status Register
-; 	; CHK:	
-;   in al , dx 
-;   AND al , 1
-;   ; JZ CHK
-;   jz sendReady
-;   mov dx , 03F8H
-;   in al , dx 
-;   mov ReadyFlag , al
-;   jmp readyFlagEnd
+SendingAndRecevingNames proc
+  ;who finish first send the other (DD --> will start sending his name first)
+  ;check if the other sent (DD)
+  ;{ send (DF) which means that we are ready to receive and call receive function } 
+  ;else send him (DD)
+  
+  ;check if the other sent any thing
+  mov dx , 3FDH		; Line Status Register
+	; CHK:	
+  in al , dx 
+  AND al , 1
+  ; JZ CHK
+  jz sendReady
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
 
-;   sendReady:
-;   ;then send DD if no thing to receive
-;   mov dx , 3FDH   ;Line Status Register
-;   SRFAGAIN: 
-;   In al,dx        ;Read Line Status
-;   AND al,00100000b
-;   JZ SRFAGAIN
-;   mov dx , 3F8H   ;Transmit data register
-;   mov al,0DDH
-;   out dx,al
-;   readyFlagEnd:
-;   ret
-; UpdateReadyFlag endp
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherName
+
+  ;send DD to start sending your name
+  mov dx , 3FDH   ;Line Status Register
+  SDDAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDDAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHK
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyName
+  jmp readyFlagEnd
+
+  sendReady:
+  ;then send DD if no thing to receive
+  mov dx , 3FDH   ;Line Status Register
+  SRFAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SRFAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHK2:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHK2
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyName
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDDCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDDCHK
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAIN2: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAIN2
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherName
+
+  readyFlagEnd:
+  ret
+SendingAndRecevingNames endp
 
 
 sendMyName proc
