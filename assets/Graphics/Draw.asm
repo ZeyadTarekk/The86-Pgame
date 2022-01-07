@@ -270,13 +270,13 @@ colGun dw 20d
 gunEndRowPosition EQU 90d
 ; gun start column is variable
 ; This variable changes the position of my gun
-gunStartColumnPosition dw 70d 
+gunStartColumnPosition dw 0d 
 gunWidth EQU 20d
 ;Other Variables for Gun
 ;iterators for draw gun
 ; gun start column is variable
 ; This variable changes the position of Other gun
-gunStartColumnPositionOther dw 200d
+gunStartColumnPositionOther dw 163d
 
 rowTarget dw 0d
 colTarget dw 20d
@@ -1890,12 +1890,47 @@ runGun proc
   cmp cl, ah   ; compare clicked key with a
   jz movOtherGunLeft
   
-  jmp runGunHome     ; if not pressed left or right arrow loop again
+  ; jmp runGunHome     ; if not pressed left or right arrow loop again
   
   NoClickedKey:
+    ;Check that Data Ready
+    mov dx , 3FDH ; Line Status Register
+    in al , dx
+    AND al , 1
+    JZ continueNormalFireSenario
+    ; here something recived
+    mov dx , 03F8H
+    in al , dx
+    ; mov VALUE , al
+
+    mov cl, 20h  ; ascii of space
+    cmp cl, al   ; compare clicked key with space
+    jz ForceFireOtherBullet 
+    
+    mov cl, 04Dh ; scan code of right arrow
+    cmp cl, al   ; compare clicked key with right arrow
+    jz movOtherGunRight
+
+    mov cl, 04Bh ; Scan code of left arrow
+    cmp cl, al   ; compare clicked key with left arrow
+    jz movOtherGunLeft
+
+    jmp runGunHome     ; if not pressed left or right arrow loop again
+    continueNormalFireSenario:
     ; if no key click try to fire bullets
     jmp fire
   movGunRight:
+    ; Check that Transmitter Holding Register is Empty
+    mov dx , 3FDH ; Line Status Register
+    In al , dx ;Read Line Status
+    AND al , 00100000b
+    JZ DONTSENDRIGHT
+    ;If empty put the VALUE in Transmit data register
+    mov dx , 3F8H ; Transmit data register
+    mov al, 04Dh ; scan code of right arrow
+    out dx , al
+
+    DONTSENDRIGHT:
     mov bx,85d                    ; if bullet is not at its start position stop moving the Gun
     mov ax, bulletStartRowPosition
     cmp ax, bx
@@ -1905,7 +1940,7 @@ runGun proc
     ;Move the gun
     mov dx, gunStartColumnPosition ; check if gun reached end of screen
     add dx, gunWidth               ; add gun width to gun start position 
-    mov cx, 125d                   ; 125d is the position of the first line
+    mov cx, 124d                   ; 125d is the position of the first line
     cmp dx, cx                     ; compare position of first line to end of gun
     jz gunMoved                    ; if equal consider the gun has been moved (dont move the gun)
     
@@ -1914,6 +1949,17 @@ runGun proc
     jmp gunMoved
 
   movGunLeft:
+    ; Check that Transmitter Holding Register is Empty
+    mov dx , 3FDH ; Line Status Register
+    In al , dx ;Read Line Status
+    AND al , 00100000b
+    JZ DONTSENDLEFT
+    ;If empty put the VALUE in Transmit data register
+    mov dx , 3F8H ; Transmit data register
+    mov al, 04Bh ; Scan code of left arrow
+    out dx , al
+
+    DONTSENDLEFT:
     mov bx,85d                     ; if bullet is not at its start position stop moving the Gun
     mov ax, bulletStartRowPosition
     cmp ax, bx
@@ -1977,6 +2023,19 @@ runGun proc
     cmp ax, bx
     jz checkOtherBullet
     ForceFireMyBullet:
+
+    ; Check that Transmitter Holding Register is Empty
+    mov dx , 3FDH ; Line Status Register
+    In al , dx ;Read Line Status
+    AND al , 00100000b
+    JZ DONTSENDPSPACE
+    ;If empty put the VALUE in Transmit data register
+    mov dx , 3F8H ; Transmit data register
+    mov al, 20h  ; ascii of space
+    out dx , al
+
+    DONTSENDPSPACE:
+
     call drawBullet 
     dec bulletStartRowPosition       ;decreament bullet position (move up)
     mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
