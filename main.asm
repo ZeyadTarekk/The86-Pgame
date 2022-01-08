@@ -2109,7 +2109,7 @@ getKeyPressed proc
 
   ; mov dl,3Dh          ;F3
   ; cmp ah,dl
-  ; jz GKPgunGame       ;start the gun game cycle
+  ; jz GKPgunGame     ;start the gun game cycle
 
   mov dl,31h          ;1
   cmp al,dl
@@ -2129,7 +2129,7 @@ getKeyPressed proc
 
   mov dl,35h          ;5
   cmp al,dl
-  jz levelTwoPowerUp         ;execute the forth power up
+  jz levelTwoPowerUp  ;execute the forth power up
 
   mov dl,3Eh          ;F4 pressed
   cmp ah,dl
@@ -2165,20 +2165,35 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPsec:
-  ;check the turn to update the forbidden key
-  mov al,flagTurn
-  mov dl,0
-  cmp al,dl
-  jnz SPUForbiddenCheck
-  mov al,myforbiddenChar
-  mov forbiddenChar,al
-  jmp SPUForbiddenDone
-  SPUForbiddenCheck:
-  mov al,otherforbiddenChar
-  mov forbiddenChar,al
-  SPUForbiddenDone:
+  ; ;check the turn to update the forbidden key
+  ; mov al,flagTurn
+  ; mov dl,0
+  ; cmp al,dl
+  ; jnz SPUForbiddenCheck
+  ; mov al,myforbiddenChar
+  ; mov forbiddenChar,al
+  ; jmp SPUForbiddenDone
+  ; SPUForbiddenCheck:
+  ; mov al,otherforbiddenChar
+  ; mov forbiddenChar,al
+  ; SPUForbiddenDone:
 
-  call printForbiddenChar
+  ; call printForbiddenChar
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
+  ;send to the other (DB) to get into loop to wait for the second power up
+  mov dx , 3FDH		; Line Status Register
+  SENDDAF22PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDAF22PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DBH
+  out dx , al 
+  
   call secondPowerUp
   ;toggle the turn
   mov al,flagTurn
@@ -2307,6 +2322,7 @@ receiveKeyPressed proc
   jz Receive2PU
 
   ;Receive F2
+  call ClearOtherCommand
   ;send DF to tell him that i am ready
   mov dx , 3FDH		; Line Status Register
   SENDDFF2AGAIN:  	
@@ -2326,6 +2342,7 @@ receiveKeyPressed proc
   jmp receiveKeyPressedExit
 
   Receive1PU:
+  call ClearOtherCommand
   ;send DF to tell him that i am ready
   mov dx , 3FDH		; Line Status Register
   SENDDF1PUAGAIN:  	
@@ -2335,7 +2352,7 @@ receiveKeyPressed proc
   mov dx , 3F8H		; Transmit data register
   mov  al,0DFH
   out dx , al
-  ;receive the command, myRegisters, myMemory and his points
+  ;receive the command, otherRegisters, otherMemory and his points
   call receiveMyCommand
   call receiveOtherRegisters
   call receiveOtherMemory
@@ -2346,7 +2363,28 @@ receiveKeyPressed proc
   jmp receiveKeyPressedExit
   
   Receive2PU:
-
+  call ClearOtherCommand
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDF2PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDF2PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;receive the command, myRegisters, myMemory and his points
+  call receiveMyCommand
+  call receiveMyRegisters
+  call receiveMyMemory
+  call receiveIntialPoints
+  ;receive the command, otherRegisters, otherMemory and his points
+  call receiveMyCommand
+  call receiveOtherRegisters
+  call receiveOtherMemory
+  call receiveIntialPoints
+  call printCommands
+  mov flagTurn,0h
   jmp receiveKeyPressedExit
 
   receiveKeyPressedExit:
@@ -3062,10 +3100,10 @@ firstPowerUp proc
 firstPowerUp endp
 secondPowerUp proc
   ;check if the points < 3 then exit
-  mov bl,flagTurn
-  mov cl,0
-  cmp bl,cl
-  jnz SPUOther
+  ; mov bl,flagTurn
+  ; mov cl,0
+  ; cmp bl,cl
+  ; jnz SPUOther
 
   mov al,myPointsValue
   mov dl,3h
@@ -3074,12 +3112,12 @@ secondPowerUp proc
   sub myPointsValue,3h 
   jmp SPUCheckDone
 
-  SPUOther:
-  mov al,otherPointsValue
-  mov dl,3h
-  cmp al,dl
-  jb SPUExit
-  sub otherPointsValue,3h
+  ; SPUOther:
+  ; mov al,otherPointsValue
+  ; mov dl,3h
+  ; cmp al,dl
+  ; jb SPUExit
+  ; sub otherPointsValue,3h
 
   SPUCheckDone:
   call printTwoPoints
@@ -3088,6 +3126,18 @@ secondPowerUp proc
   mov whichRegisterToExecute,0
   mov flagSecondPowerUp,1
   call commandCyle
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDF2PUCOMCHK:	in al , dx 
+  AND al , 1
+  JZ WAITDF2PUCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendCommandRegMemPoints
+  call sendCommandMyRegMemPoints
+
   call ClearCommand
   mov flagSecondPowerUp,0
   SPUExit:
@@ -3789,6 +3839,19 @@ EditCarry proc
   CARRYEXIT:
   ret
 EditCarry endp
+ClearOtherCommand proc
+  lea di,otherCommand
+  ClearOComAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearOtherCommandFinish
+  mov [di],dl
+  inc di
+  jmp ClearOComAgain
+  ClearOtherCommandFinish:
+  ret
+ClearOtherCommand endp
 ClearCommand proc
   lea di,myCommand
   ClearComAgain:
