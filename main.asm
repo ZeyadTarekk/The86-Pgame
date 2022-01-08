@@ -154,9 +154,7 @@ myCommand db 15 dup('$')
 otherCommandL LABEL BYTE
 otherCommandSize db 15
 otherCommandActualSize db ?
-; otherCommandActualSize db 8
 otherCommand db 15 dup('$')
-; otherCommand db 'ADC BX,6$'
 
 clearBGC db '                  $'
 
@@ -246,7 +244,7 @@ ASC_TBL DB   '0','1','2','3','4','5','6','7','8','9'
 whichRegisterToExecute db 0
 flagSecondPowerUp db 0
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
-myRegisters dw 0000H, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h
+myRegisters    dw 0000H, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h
 ;                 AX,    BX,    CX,    DX,    SI,    DI,    BP,   SP
 otherRegisters dw 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h, 0000h
 
@@ -347,12 +345,14 @@ main proc
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Game;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   StartGame:
+  mov flagTurn,1h
   ;check if the current user is the one who start the game
   mov al,starterMainScreenFlag
   mov dl,1
   cmp al,dl
   jnz IamNotTheStarter
   call levelWindow
+  mov flagTurn,0h
   IamNotTheStarter:
   ;get the forbidden char
   call myforbiddenWindow
@@ -399,6 +399,7 @@ main proc
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
   ;get out of the loop when (any register value = wantedValue)
   GameLoop:
+  call receiveKeyPressed
   call getKeyPressed
 
   ;check if the exit game flag = 1
@@ -576,6 +577,7 @@ sendMyName proc
   mov dx , 3F8H   ;Transmit data register
   mov al,myNameActualSize
   out dx,al
+
   ;loop to send the entire name
   mov ch,0
   mov cl,myNameActualSize
@@ -798,6 +800,232 @@ recieveLevel proc
   mov level,al
   ret
 recieveLevel endp
+
+sendMyCommand proc
+  ;first send the actual size of the command
+  mov dx , 3FDH		; Line Status Register
+  SENDASCOMAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDASCOMAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,myCommandActualSize
+  out dx , al 
+
+  ;loop to send the entire name
+  mov ch,0
+  mov cl,myCommandActualSize
+  lea si,myCommand
+  MyCommandSendLoop:
+  mov dx,3FDH   ;Line Status Register
+  SENDCOMAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SENDCOMAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,[si]
+  out dx,al 
+  inc si
+  loop MyCommandSendLoop
+
+  ret
+sendMyCommand endp
+
+receiveMyCommand proc
+  ;receive the actual size of the command
+  mov dx,3FDH		; Line Status Register
+	REASCOMCCHK:	
+  in al,dx 
+  AND al,1
+  JZ REASCOMCCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov otherCommandActualSize,al
+
+  mov ch,0
+  mov cl,otherCommandActualSize
+  lea si,otherCommand
+  otherCommandReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	ROCOMCHK:	
+  in al,dx 
+  AND al,1
+  JZ ROCOMCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherCommandReceiveLoop
+  ret
+receiveMyCommand endp
+
+sendOtherRegisters proc
+  ;send Other Registers
+  mov ch,0
+  mov cl,16d
+  lea si,OtherRegisters
+  SendORegistersLoop:
+  mov dx , 3FDH		; Line Status Register
+  SENDOREGAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDOREGAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,[si]
+  out dx , al 
+  inc si
+  loop SendORegistersLoop
+
+  ret
+sendOtherRegisters endp
+
+receiveOtherRegisters proc
+  mov ch,0
+  mov cl,16d
+  lea si,otherRegisters
+  otherRegReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	ROREGCHK:	
+  in al,dx 
+  AND al,1
+  JZ ROREGCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherRegReceiveLoop
+  ret
+receiveOtherRegisters endp
+
+sendOtherMemory proc
+  ;send Other Memory
+  mov ch,0
+  mov cl,16d
+  lea si,otherMemory
+  SendOtherMemoryLoop:
+  mov dx , 3FDH		; Line Status Register
+  SENDOMEMAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDOMEMAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,[si]
+  out dx , al 
+  inc si
+  loop SendOtherMemoryLoop
+  ret
+sendOtherMemory endp
+
+receiveOtherMemory proc
+  mov ch,0
+  mov cl,16d
+  lea si,otherMemory
+  otherMemReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	ROMEMCHK:	
+  in al,dx 
+  AND al,1
+  JZ ROMEMCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherMemReceiveLoop
+  ret
+receiveOtherMemory endp
+
+sendMyRegisters proc
+  ;send My Registers
+  mov ch,0
+  mov cl,16d
+  lea si,myRegisters
+  SendRegistersLoop:
+  mov dx , 3FDH		; Line Status Register
+  SENDREGAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDREGAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,[si]
+  out dx , al 
+  inc si
+  loop SendRegistersLoop
+
+  ret
+sendMyRegisters endp
+
+receiveMyRegisters proc
+  mov ch,0
+  mov cl,16d
+  lea si,MyRegisters
+  myRegReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	RMREGCHK:	
+  in al,dx 
+  AND al,1
+  JZ RMREGCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop myRegReceiveLoop
+  ret
+receiveMyRegisters endp
+
+sendMyMemory proc
+  ;send My Memory
+  mov ch,0
+  mov cl,16d
+  lea si,myMemory
+  SendMemoryLoop:
+  mov dx , 3FDH		; Line Status Register
+  SENDMEMAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDMEMAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,[si]
+  out dx , al 
+  inc si
+  loop SendMemoryLoop
+  ret
+sendMyMemory endp
+
+receiveMyMemory proc
+  mov ch,0
+  mov cl,16d
+  lea si,myMemory
+  myMemReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	RMMEMCHK:	
+  in al,dx 
+  AND al,1
+  JZ RMMEMCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop myMemReceiveLoop
+  ret
+receiveMyMemory endp
+
+sendCommandRegMemPoints proc
+  
+  call sendMyCommand
+  call sendOtherRegisters
+  call sendOtherMemory
+  call sendIntialPoints
+  
+  ret
+sendCommandRegMemPoints endp
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1959,27 +2187,50 @@ getKeyPressed proc
   jnz level2CommandCheck
   ;Here is level 1
   mov al,flagTurn
-  mov dl,0
+  mov dl,1
   cmp al,dl 
-  jnz myRegistersExecute
+  ; jnz myRegistersExecute
+  jz keyPressedExit
+
 
   mov whichRegisterToExecute,0    ; execute on his registers
   mov al,myforbiddenChar
   mov forbiddenChar,al 
   jmp AfterSettingRegistersExecute
 
-  myRegistersExecute:    ;execute on my registers
-  mov whichRegisterToExecute,1
-  mov al,otherforbiddenChar
-  mov forbiddenChar,al 
-  jmp AfterSettingRegistersExecute
+  ; myRegistersExecute:    ;execute on my registers
+  ; mov whichRegisterToExecute,1
+  ; mov al,otherforbiddenChar
+  ; mov forbiddenChar,al 
+  ; jmp AfterSettingRegistersExecute
   level2CommandCheck:
   ; Here is level 2
   call Level2ChooseWhichRegister
 
   AfterSettingRegistersExecute:
+  ;send to the other (DD) to get into loop to wait for the command, registers and memory
+  mov dx , 3FDH		; Line Status Register
+  SENDDDF2COMAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDDF2COMAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DDH
+  out dx , al 
+
   call printForbiddenChar
   call commandCyle
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDFF2COMCHK:	in al , dx 
+  AND al , 1
+  JZ WAITDFF2COMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendCommandRegMemPoints
+
   call ClearCommand
   call printCommands
 
@@ -2000,8 +2251,8 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPgunGame:
-  call runGun
-  call drawMemoryLines
+  ; call runGun
+  ; call drawMemoryLines
   jmp keyPressedExit
 
   GKPexitGame:
@@ -2009,6 +2260,57 @@ getKeyPressed proc
   keyPressedExit:
   ret
 getKeyPressed endp
+
+
+;DF means i am ready to receive
+;DD means F2
+;DA means 1
+;DB means 2
+;else
+
+receiveKeyPressed proc
+  mov dx , 3FDH		; Line Status Register
+  in al , dx 
+  AND al , 1
+  JZ receiveKeyPressedExit
+  mov dx , 03F8H
+  in al , dx
+  ;al = key
+  ; mov dl, 0DDH
+  ; cmp al,dl
+  ; jz
+
+
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDFF2AGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDFF2AGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;receive the command, myRegisters, myMemory and his points
+  call receiveMyCommand
+  call receiveMyRegisters
+  call receiveMyMemory
+  call receiveIntialPoints
+  call printCommands
+  mov flagTurn,0h
+
+
+
+  receiveKeyPressedExit:
+  ret
+receiveKeyPressed endp
+
+
+
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -7808,6 +8110,8 @@ printCommands proc
   lea dx,myCommand
   mov ah,9
   int 21h
+
+  call clearOtherCommandSection
   ;set cursor
   mov ah,2
   mov dl,16h
@@ -8041,7 +8345,7 @@ printForbiddenChar proc
   mov charToDraw,':'
   call drawCharWithGivenVar
   inc charToDrawx
-  mov al,forbiddenChar
+  mov al,myforbiddenChar
   mov charToDraw,al
   call drawCharWithGivenVar
   ForbiddenExit:
