@@ -2165,20 +2165,6 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPsec:
-  ; ;check the turn to update the forbidden key
-  ; mov al,flagTurn
-  ; mov dl,0
-  ; cmp al,dl
-  ; jnz SPUForbiddenCheck
-  ; mov al,myforbiddenChar
-  ; mov forbiddenChar,al
-  ; jmp SPUForbiddenDone
-  ; SPUForbiddenCheck:
-  ; mov al,otherforbiddenChar
-  ; mov forbiddenChar,al
-  ; SPUForbiddenDone:
-
-  ; call printForbiddenChar
   mov al,flagTurn
   mov dl,1
   cmp al,dl 
@@ -2207,7 +2193,41 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPthird:
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
+  ;check if the flag is off
+  mov al,forbiddenPowerUpFlag
+  mov dl,1
+  cmp al,dl
+  jz keyPressedExit
+
+  ;send to the other (DC) to get into loop to wait for the second power up
+  mov dx , 3FDH		; Line Status Register
+  SENDDC3PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDC3PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DCH
+  out dx , al 
+
   call thirdPowerUp
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDF3PUCOMCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDF3PUCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendForbiddenChar
+  call sendIntialPoints
+  mov flagTurn,1h
   jmp keyPressedExit
 
   GKPforth:
@@ -2304,7 +2324,8 @@ getKeyPressed endp
 ;DD means F2
 ;DA means 1
 ;DB means 2
-;else
+;DC means 3
+;D4 means 4
 
 receiveKeyPressed proc
   mov dx , 3FDH		; Line Status Register
@@ -2320,6 +2341,12 @@ receiveKeyPressed proc
   mov dl, 0DBH
   cmp al,dl
   jz Receive2PU
+  mov dl, 0DCH
+  cmp al,dl
+  jz Receive3PU
+  mov dl, 0D4H
+  cmp al,dl
+  jz Receive4PU
 
   ;Receive F2
   call ClearOtherCommand
@@ -2385,6 +2412,29 @@ receiveKeyPressed proc
   call receiveIntialPoints
   call printCommands
   mov flagTurn,0h
+  jmp receiveKeyPressedExit
+
+
+  Receive3PU:
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDF3PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDF3PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;recieve the forbidden char
+  call receiveForbiddenChar
+  call receiveIntialPoints
+  call printForbiddenChar
+  mov flagTurn,0h
+  jmp receiveKeyPressedExit
+
+  Receive4PU:
+  
+  
   jmp receiveKeyPressedExit
 
   receiveKeyPressedExit:
@@ -3151,12 +3201,6 @@ thirdPowerUp proc
   cmp al,dl
   jb TPUExit
 
-  ;check if the flag is off
-  mov al,forbiddenPowerUpFlag
-  mov dl,1
-  cmp al,dl
-  jz TPUExit
-
   call clearCommandSection
   ;print get the forbidden msg
   mov ah,9
@@ -3166,7 +3210,7 @@ thirdPowerUp proc
   mov ah,0
   int 16h
   ;draw the char
-  mov  bl, GRAY
+  mov  bl, WHITE
   mov  bh, 0                ;Display page
   mov  ah, 0Eh              ;Teletype
   int  10h 
