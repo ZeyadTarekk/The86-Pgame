@@ -2379,7 +2379,7 @@ getKeyPressed proc
   cmp al,dl
   jz keyPressedExit
 
-  ;send to the other (DC) to get into loop to wait for the second power up
+  ;send to the other (DC) to get into loop to wait for the third power up
   mov dx , 3FDH		; Line Status Register
   SENDDC3PUAGAIN:  	
   In al , dx 			;Read Line Status
@@ -2423,7 +2423,7 @@ getKeyPressed proc
   cmp al,dl
   jz keyPressedExit
 
-  ;send to the other (D4) to get into loop to wait for the second power up
+  ;send to the other (D4) to get into loop to wait for the forth power up
   mov dx , 3FDH		; Line Status Register
   SENDD44PUAGAIN:  	
   In al , dx 			;Read Line Status
@@ -2465,7 +2465,7 @@ getKeyPressed proc
   cmp al,dl
   jz keyPressedExit
 
-  ;send to the other (D5) to get into loop to wait for the first power up
+  ;send to the other (D5) to get into loop to wait for the wanted value
   mov dx , 3FDH		; Line Status Register
   SENDD5F21PUAGAINLevel2:  	
   In al , dx 			;Read Line Status
@@ -2503,18 +2503,12 @@ getKeyPressed proc
   jnz level2CommandCheck
   ;Here is level 1
 
-
-
-  mov whichRegisterToExecute,0    ; execute on his registers
+  ; execute on his registers
+  mov whichRegisterToExecute,0
   mov al,myforbiddenChar
   mov forbiddenChar,al 
   jmp AfterSettingRegistersExecute
 
-  ; myRegistersExecute:    ;execute on my registers
-  ; mov whichRegisterToExecute,1
-  ; mov al,otherforbiddenChar
-  ; mov forbiddenChar,al 
-  ; jmp AfterSettingRegistersExecute
   level2CommandCheck:
   ; Here is level 2
   call Level2ChooseWhichRegister
@@ -2564,12 +2558,43 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPgunGame:
-  ; call runGun
-  ; call drawMemoryLines
+  ;send to the other (FD) to enter the game
+  mov dx , 3FDH		; Line Status Register
+  SENDFDAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDFDAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0FDH
+  out dx , al 
+  ;wait for him to send DF then you both enter the game
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDFGUNCOMCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFGUNCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call runGun
+  call drawMemoryLines
   jmp keyPressedExit
 
   GKPexitGame:
+  ;send to the other (FF) to exit the game
+  mov dx , 3FDH		; Line Status Register
+  SENDFFAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDFFAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0FFH
+  out dx , al 
+
   mov exitGame,1
+
   keyPressedExit:
   ret
 getKeyPressed endp
@@ -2582,7 +2607,8 @@ getKeyPressed endp
 ;DC means 3
 ;D4 means 4
 ;D5 means 5
-
+;FD means gun game
+;FF means exit
 receiveKeyPressed proc
   mov dx , 3FDH		; Line Status Register
   in al , dx 
@@ -2606,6 +2632,12 @@ receiveKeyPressed proc
   mov dl, 0D5H
   cmp al,dl
   jz Receive5PU
+  mov dl, 0FFH
+  cmp al,dl
+  jz ReceiveExitGame
+  mov dl, 0FDH
+  cmp al,dl
+  jz ReceiveGunGame
 
   ;Receive F2
   call ClearOtherCommand
@@ -2728,6 +2760,24 @@ receiveKeyPressed proc
   call receiveWantedValue
   call printWantedValue
   mov flagTurn,0h
+  jmp receiveKeyPressedExit
+
+  ReceiveGunGame:
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDFGAMEAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDFGAMEAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  call runGun
+  call drawMemoryLines
+  jmp receiveKeyPressedExit
+
+  ReceiveExitGame:
+  mov exitGame,1
   receiveKeyPressedExit:
   ret
 receiveKeyPressed endp
