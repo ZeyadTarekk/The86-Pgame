@@ -1025,7 +1025,15 @@ sendCommandRegMemPoints proc
   ret
 sendCommandRegMemPoints endp
 
+sendCommandMyRegMemPoints proc
 
+  call sendMyCommand
+  call sendMyRegisters
+  call sendMyMemory
+  call sendIntialPoints
+
+  ret
+sendCommandMyRegMemPoints endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2129,6 +2137,21 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPfirst:
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
+  ;send to the other (DA) to get into loop to wait for the first power up
+  mov dx , 3FDH		; Line Status Register
+  SENDDAF21PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDAF21PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DAH
+  out dx , al 
+  
   call firstPowerUp
   ;toggle the turn
   mov al,flagTurn
@@ -2276,11 +2299,14 @@ receiveKeyPressed proc
   mov dx , 03F8H
   in al , dx
   ;al = key
-  ; mov dl, 0DDH
-  ; cmp al,dl
-  ; jz
+  mov dl, 0DAH
+  cmp al,dl
+  jz Receive1PU
+  mov dl, 0DBH
+  cmp al,dl
+  jz Receive2PU
 
-
+  ;Receive F2
   ;send DF to tell him that i am ready
   mov dx , 3FDH		; Line Status Register
   SENDDFF2AGAIN:  	
@@ -2297,8 +2323,31 @@ receiveKeyPressed proc
   call receiveIntialPoints
   call printCommands
   mov flagTurn,0h
+  jmp receiveKeyPressedExit
 
+  Receive1PU:
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDF1PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDF1PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;receive the command, myRegisters, myMemory and his points
+  call receiveMyCommand
+  call receiveOtherRegisters
+  call receiveOtherMemory
+  call receiveIntialPoints
+  call printCommands
+  mov flagTurn,0h
+  
+  jmp receiveKeyPressedExit
+  
+  Receive2PU:
 
+  jmp receiveKeyPressedExit
 
   receiveKeyPressedExit:
   ret
@@ -2962,10 +3011,10 @@ runGun endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Power Up;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 firstPowerUp proc
   ;check if the points < 5 then exit
-  mov bl,flagTurn
-  mov cl,0
-  cmp bl,cl
-  jnz FPUOther
+  ; mov bl,flagTurn
+  ; mov cl,0
+  ; cmp bl,cl
+  ; jnz FPUOther
   mov al,myPointsValue
   mov dl,5h
   cmp al,dl
@@ -2975,26 +3024,37 @@ firstPowerUp proc
   mov whichRegisterToExecute,1
   mov al,myforbiddenChar
   mov forbiddenChar,al 
-  call printForbiddenChar
+  ; call printForbiddenChar
   call commandCyle
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDF1PUCOMCHK:	in al , dx 
+  AND al , 1
+  JZ WAITDF1PUCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendCommandMyRegMemPoints
+
   call ClearCommand
   mov whichRegisterToExecute,0
   jmp FiPUExit
 
-  FPUOther:
-  mov al,otherPointsValue
-  mov dl,5h
-  cmp al,dl
-  jb FiPUExit
-  sub otherPointsValue,5h 
-  call printTwoPoints
-  mov whichRegisterToExecute,0
-  mov al,otherforbiddenChar
-  mov forbiddenChar,al 
-  call printForbiddenChar
-  call commandCyle
-  call ClearCommand
-  mov whichRegisterToExecute,1
+  ; FPUOther:
+  ; mov al,otherPointsValue
+  ; mov dl,5h
+  ; cmp al,dl
+  ; jb FiPUExit
+  ; sub otherPointsValue,5h 
+  ; call printTwoPoints
+  ; mov whichRegisterToExecute,0
+  ; mov al,otherforbiddenChar
+  ; mov forbiddenChar,al 
+  ; call printForbiddenChar
+  ; call commandCyle
+  ; call ClearCommand
+  ; mov whichRegisterToExecute,1
 
   FiPUExit:
 
