@@ -2170,6 +2170,12 @@ getKeyPressed proc
   cmp al,dl 
   jz keyPressedExit
 
+  ;check if myPoints < 3
+  mov al,myPointsValue
+  mov dl,3h
+  cmp al,dl
+  jz keyPressedExit
+
   ;send to the other (DB) to get into loop to wait for the second power up
   mov dx , 3FDH		; Line Status Register
   SENDDAF22PUAGAIN:  	
@@ -2181,6 +2187,7 @@ getKeyPressed proc
   out dx , al 
   
   call secondPowerUp
+  
   ;toggle the turn
   mov al,flagTurn
   mov dl,0
@@ -2196,6 +2203,12 @@ getKeyPressed proc
   mov al,flagTurn
   mov dl,1
   cmp al,dl 
+  jz keyPressedExit
+
+  ;check if the points < 8 then exit
+  mov al,myPointsValue
+  mov dl,8h
+  cmp al,dl
   jz keyPressedExit
 
   ;check if the flag is off
@@ -2231,7 +2244,47 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPforth:
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
+  ;check if the points < 30 then exit
+  mov al,myPointsValue
+  mov dl,30h
+  cmp al,dl
+  jz keyPressedExit
+
+  ;check if the flag is off
+  mov al,clearAllRegPowerUp
+  mov dl,1
+  cmp al,dl
+  jz keyPressedExit
+
+  ;send to the other (D4) to get into loop to wait for the second power up
+  mov dx , 3FDH		; Line Status Register
+  SENDD44PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDD44PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0D4H
+  out dx , al 
+
   call forthPowerUp
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDF4PUCOMCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDF4PUCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendMyRegisters
+  call sendIntialPoints
+  mov flagTurn,1h
   jmp keyPressedExit
 
   levelTwoPowerUp:
@@ -2433,8 +2486,19 @@ receiveKeyPressed proc
   jmp receiveKeyPressedExit
 
   Receive4PU:
-  
-  
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDF4PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDF4PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;recieve the forbidden char
+  call receiveOtherRegisters
+  call receiveIntialPoints
+  mov flagTurn,0h
   jmp receiveKeyPressedExit
 
   receiveKeyPressedExit:
@@ -3149,27 +3213,8 @@ firstPowerUp proc
   ret
 firstPowerUp endp
 secondPowerUp proc
-  ;check if the points < 3 then exit
-  ; mov bl,flagTurn
-  ; mov cl,0
-  ; cmp bl,cl
-  ; jnz SPUOther
 
-  mov al,myPointsValue
-  mov dl,3h
-  cmp al,dl
-  jb SPUExit
   sub myPointsValue,3h 
-  jmp SPUCheckDone
-
-  ; SPUOther:
-  ; mov al,otherPointsValue
-  ; mov dl,3h
-  ; cmp al,dl
-  ; jb SPUExit
-  ; sub otherPointsValue,3h
-
-  SPUCheckDone:
   call printTwoPoints
   mov whichRegisterToExecute,1
   call commandCyle
@@ -3195,11 +3240,6 @@ secondPowerUp proc
   ret
 secondPowerUp endp
 thirdPowerUp proc
-  ;check if the points < 8 then exit
-  mov al,myPointsValue
-  mov dl,8h
-  cmp al,dl
-  jb TPUExit
 
   call clearCommandSection
   ;print get the forbidden msg
@@ -3222,26 +3262,11 @@ thirdPowerUp proc
   ret
 thirdPowerUp endp
 forthPowerUp proc
-  ;check if the points < 30 then exit
-  mov al,myPointsValue
-  mov dl,30h
-  cmp al,dl
-  jb FPUExit
-
-  ;check if the flag is off
-  mov al,clearAllRegPowerUp
-  mov dl,1
-  cmp al,dl
-  jz FPUExit
-
   mov cx,8h
   lea bx,myRegisters
-  ; lea di,otherRegisters
   FPUclear:
   mov [bx],0000H
-  ; mov [di],0000H
   add bx,2
-  ; add di,2
   loop FPUclear
   mov clearAllRegPowerUp,1
   sub myPointsValue,30d
