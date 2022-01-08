@@ -394,6 +394,10 @@ main proc
   call printTwoMessage
   call printTwoPoints
   call level2Intial
+
+  call sendAndRecieveInitialReg
+
+
   call printForbiddenChar
   ;for the main loop,   note: outside the loop called one time
   ;get out of the loop when (myPointsValue or otherPointsValue) = 0
@@ -1034,6 +1038,112 @@ sendCommandMyRegMemPoints proc
 
   ret
 sendCommandMyRegMemPoints endp
+
+sendAndRecieveInitialReg proc 
+  mov al,2
+  mov dl,level
+  cmp al,dl
+  jnz sendAndRecieveInitialRegExit
+
+  ;who finish first send the other (DD --> will start sending his name first)
+  ;check if the other sent (DD)
+  ;{ send (DF) which means that we are ready to receive and call receive function } 
+  ;else send him (DD)
+  
+  ;check if the other sent any thing
+  mov dx , 3FDH		; Line Status Register
+  in al , dx 
+  AND al , 1
+  jz sendReadyReg
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAINReg: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAINReg
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherRegisters
+
+  ;send DD to start sending your name
+  mov dx , 3FDH   ;Line Status Register
+  SDDAGAINReg: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDDAGAINReg
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHKReg:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHKReg
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyRegisters
+  jmp sendAndRecieveInitialRegExit
+
+  sendReadyReg:
+  ;then send DD if no thing to receive
+  mov dx , 3FDH   ;Line Status Register
+  SRFAGAINReg: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SRFAGAINReg
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DDH
+  out dx,al
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHK2Reg:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHK2Reg
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  call sendMyRegisters
+
+  mov dx , 3FDH		; Line Status Register
+	WAITDDCHKReg:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDDCHKReg
+  mov dx , 03F8H
+  in al , dx 
+  mov ReadyFlag,al
+
+  ;send DF to start receiving the other name
+  mov dx , 3FDH   ;Line Status Register
+  SDFAGAIN2Reg: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SDFAGAIN2Reg
+  mov dx , 3F8H   ;Transmit data register
+  mov al,0DFH
+  out dx,al
+
+  call receiveOtherRegisters
+
+  sendAndRecieveInitialRegExit:
+  call drawMyRegisters
+  call drawOtherRegisters
+ret
+sendAndRecieveInitialReg endp
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -2292,16 +2402,17 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPcommand:
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
   mov al,level
   mov dl,1
   cmp al,dl
   jnz level2CommandCheck
   ;Here is level 1
-  mov al,flagTurn
-  mov dl,1
-  cmp al,dl 
-  ; jnz myRegistersExecute
-  jz keyPressedExit
+
 
 
   mov whichRegisterToExecute,0    ; execute on his registers
@@ -2341,6 +2452,7 @@ getKeyPressed proc
   in al , dx
   ;al = value
   call sendCommandRegMemPoints
+  call sendCommandMyRegMemPoints
 
   call ClearCommand
   call printCommands
@@ -2412,14 +2524,21 @@ receiveKeyPressed proc
   mov dx , 3F8H		; Transmit data register
   mov  al,0DFH
   out dx , al
-  ;receive the command, myRegisters, myMemory and his points
+    ;receive the command, myRegisters, myMemory and his points
   call receiveMyCommand
   call receiveMyRegisters
   call receiveMyMemory
   call receiveIntialPoints
+  ;receive the command, otherRegisters, otherMemory and his points
+  call receiveMyCommand
+  call receiveOtherRegisters
+  call receiveOtherMemory
+  call receiveIntialPoints
   call printCommands
   mov flagTurn,0h
   jmp receiveKeyPressedExit
+
+
 
   Receive1PU:
   call ClearOtherCommand
@@ -3597,10 +3716,10 @@ getCommandLvl2 endp
 
 Level2ChooseWhichRegister proc
 
-mov al,flagTurn
-mov dl,0
-cmp al,dl
-jnz otherChoice
+; mov al,flagTurn
+; mov dl,0
+; cmp al,dl
+; jnz otherChoice
 ;here this is my choice 
 mov al,myforbiddenChar
 mov forbiddenChar,al
@@ -3618,26 +3737,26 @@ mov whichRegisterToExecute,1
 jmp Level2ChooseWhichRegisterExit
 executeOnOtherFirstSelection:   ;he clicked 1 so execute on other registers
 mov whichRegisterToExecute,0
-jmp Level2ChooseWhichRegisterExit
+; jmp Level2ChooseWhichRegisterExit
 
-otherChoice:
-; here is the other choice
-mov al,otherforbiddenChar
-mov forbiddenChar,al
-call clearOtherCommandSection
-mov dx,offset choiceMessage
-mov ah,9h
-int 21h
-mov ah,0
-int 16h
-mov ah,30h
-cmp al,ah
-jnz executeOnOtherSecondSelection  
-;here he clicked 0 so execute on his registers
-mov whichRegisterToExecute,0
-jmp Level2ChooseWhichRegisterExit
-executeOnOtherSecondSelection:   ;he clicked 1 so execute on my registers
-mov whichRegisterToExecute,1
+; otherChoice:
+; ; here is the other choice
+; mov al,otherforbiddenChar
+; mov forbiddenChar,al
+; call clearOtherCommandSection
+; mov dx,offset choiceMessage
+; mov ah,9h
+; int 21h
+; mov ah,0
+; int 16h
+; mov ah,30h
+; cmp al,ah
+; jnz executeOnOtherSecondSelection  
+; ;here he clicked 0 so execute on his registers
+; mov whichRegisterToExecute,0
+; jmp Level2ChooseWhichRegisterExit
+; executeOnOtherSecondSelection:   ;he clicked 1 so execute on my registers
+; mov whichRegisterToExecute,1
 
 Level2ChooseWhichRegisterExit:
 ret
