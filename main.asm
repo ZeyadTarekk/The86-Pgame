@@ -740,6 +740,57 @@ sendForbiddenChar proc
   out dx,al
   ret
 sendForbiddenChar endp
+
+sendWantedValue proc
+  mov cx,wantedValue
+  ;send wanted value
+  mov dx , 3FDH   ;Line Status Register
+  SWVAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SWVAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,cl
+  out dx,al
+    ;send my forbidden char
+  mov dx , 3FDH   ;Line Status Register
+  SFWVGAIN2: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SFWVGAIN2
+  mov dx , 3F8H   ;Transmit data register
+  mov al,ch
+  out dx,al
+ret
+sendWantedValue endp
+
+receiveWantedValue proc
+  ;receive the wanted char
+  mov cx,0
+
+  mov dx,3FDH		; Line Status Register
+	RWVCHK:	
+  in al,dx 
+  AND al,1
+  JZ RWVCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov cl,al
+
+  mov dx,3FDH		; Line Status Register
+	RWVCHK2:	
+  in al,dx 
+  AND al,1
+  JZ RWVCHK2
+
+  mov dx,03F8H
+  in al,dx 
+  mov ch,al
+
+  mov wantedValue,cx
+ret
+receiveWantedValue endp
 sendIntialPoints proc
   ;send my inital value
   mov dx , 3FDH   ;Line Status Register
@@ -1509,6 +1560,7 @@ clearTheGame proc
   mov clearAllRegPowerUp,0
   ;clear the carry
   mov carry,0
+  call ClearOtherCommand
   ;clear the forbidden char
   mov forbiddenChar,' '
   ret
@@ -2398,8 +2450,46 @@ getKeyPressed proc
   jmp keyPressedExit
 
   levelTwoPowerUp:
+  mov al,flagTurn
+  mov dl,1
+  cmp al,dl 
+  jz keyPressedExit
+
+  mov al,level
+  mov dl,1
+  cmp al,dl
+  jz keyPressedExit
+
+  mov al,flagChangeWantedValue
+  mov dl,1
+  cmp al,dl
+  jz keyPressedExit
+
+  ;send to the other (D5) to get into loop to wait for the first power up
+  mov dx , 3FDH		; Line Status Register
+  SENDD5F21PUAGAINLevel2:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDD5F21PUAGAINLevel2
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0D5H
+  out dx , al 
+
   call changeWantedValue
+
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDF5PUCOMCHK:	
+  in al , dx 
+  AND al , 1
+  JZ WAITDF5PUCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendWantedValue
+  mov flagTurn,1h
   jmp keyPressedExit
+
 
   GKPcommand:
   mov al,flagTurn
@@ -2491,6 +2581,7 @@ getKeyPressed endp
 ;DB means 2
 ;DC means 3
 ;D4 means 4
+;D5 means 5
 
 receiveKeyPressed proc
   mov dx , 3FDH		; Line Status Register
@@ -2512,6 +2603,9 @@ receiveKeyPressed proc
   mov dl, 0D4H
   cmp al,dl
   jz Receive4PU
+  mov dl, 0D5H
+  cmp al,dl
+  jz Receive5PU
 
   ;Receive F2
   call ClearOtherCommand
@@ -2620,6 +2714,20 @@ receiveKeyPressed proc
   mov flagTurn,0h
   jmp receiveKeyPressedExit
 
+  Receive5PU:
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDF5PUAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDF5PUAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  ;recieve the wanted value
+  call receiveWantedValue
+  call printWantedValue
+  mov flagTurn,0h
   receiveKeyPressedExit:
   ret
 receiveKeyPressed endp
@@ -3399,15 +3507,7 @@ forthPowerUp proc
   ret
 forthPowerUp endp
 changeWantedValue proc
-  mov al,level
-  mov dl,1
-  cmp al,dl
-  jz ExitchangeWantedValue
 
-  mov al,flagChangeWantedValue
-  mov dl,1
-  cmp al,dl
-  jz ExitchangeWantedValue
 
   call clearCommandSection
 
