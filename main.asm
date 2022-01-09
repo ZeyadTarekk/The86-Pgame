@@ -274,6 +274,7 @@ otherMemory db 16 dup(00h)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Gun Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 GUNLoopIterator dw 0
+gunFlag db 0
 ; Variables for Gun
 ;iterators for draw gun
 ; gun starts at row 80d 
@@ -3133,13 +3134,91 @@ RET
 RANDNUMBER endp 
 runGun proc
   mov GUNLoopIterator, 0
+  mov al, flagTurn
+  mov gunFlag, al
   runGunHome:
+
+  mov al, gunFlag
+  cmp al,0
+  jnz DONTSBULLETS
+  mov al, targetColor
+  mov bl, 1
+  cmp al,bl
+  jnz DONTSBULLETS
+  mov ax, targetStartColumnPosition
+  mov bx, 115d
+  cmp ax,bx
+  jnz DONTSBULLETS
+  ; if reached 115d (start) send ff
+  ;Check that Transmitter Holding Register is Empty
+  mov dx , 3FDH  ; Line Status Register
+  FRCSENDFF:In al , dx ;Read Line Status
+  AND al , 00100000b
+  JZ FRCSENDFF
+  ;If empty put the VALUE in Transmit data register
+  mov dx , 3F8H ; Transmit data register
+  mov al,0ffh
+  out dx , al 
+
+  mov dx , 3FDH  ; Line Status Register
+  FRCSENDMY:In al , dx ;Read Line Status
+  AND al , 00100000b
+  JZ FRCSENDMY
+  ;If empty put the VALUE in Transmit data register
+  mov dx , 3F8H ; Transmit data register
+  mov al, myPointsValue
+  out dx , al 
+
+  mov dx , 3FDH  ; Line Status Register
+  FRCSENDO:In al , dx ;Read Line Status
+  AND al , 00100000b
+  JZ FRCSENDO
+  ;If empty put the VALUE in Transmit data register
+  mov dx , 3F8H ; Transmit data register
+  mov al, otherPointsValue
+  out dx , al 
+  jmp NoClickedKey
+  DONTSBULLETS:
+
+
+  
   inc GUNLoopIterator
   call drawRegNames
   call drawMyRegisters
   call drawOtherRegisters
   call printTwoPoints
   call printPoints
+
+
+    ;Check that Data Ready
+    mov dx , 3FDH ; Line Status Register
+    in al , dx
+    AND al , 1
+    JZ TRYGETYKEY
+    ; here something recived
+    mov dx , 03F8H
+    in al , dx
+    ; mov VALUE , al
+
+    mov cl, 20h  ; ascii of space
+    cmp cl, al   ; compare clicked key with space
+    jz ForceFireOtherBullet 
+    
+    mov cl, 04Dh ; scan code of right arrow
+    cmp cl, al   ; compare clicked key with right arrow
+    jz movOtherGunRight
+
+    mov cl, 04Bh ; Scan code of left arrow
+    cmp cl, al   ; compare clicked key with left arrow
+    jz movOtherGunLeft
+
+    mov cl, 0ffh
+    cmp cl, al
+    jz RESETPOSITION
+    
+    jmp TRYGETYKEY 
+
+  TRYGETYKEY:
   ;get the key pressed to move the gun
   mov ah,1 ; check if key is clicked
   int 16h  ; do not wait for a key-AH:scancode,AL:ASCII)
@@ -3148,15 +3227,28 @@ runGun proc
   mov ah,0 ; read the pressed key
   int 16h  ; Get key pressed (Wait for a key-AH:scancode,AL:ASCII)
 
-  mov dl,1        ; check if ESC 
-  cmp dl,ah
-  jz gunGameExit
-
+  ; mov dl,1        ; check if ESC 
+  ; cmp dl,ah
+  ; jz gunGameExit
+  
   continueToMoveOrFire:
+
   mov cl, 20h  ; ascii of space
   cmp cl, al   ; compare clicked key with space
-  jz ForceFireMyBullet 
-  
+  jnz CHKLR 
+    ; Check that Transmitter Holding Register is Empty
+    mov dx , 3FDH ; Line Status Register
+    In al , dx ;Read Line Status
+    AND al , 00100000b
+    JZ DONTSENDPSPACE
+    ;If empty put the VALUE in Transmit data register
+    mov dx , 3F8H ; Transmit data register
+    mov al, 20h  ; ascii of space
+    out dx , al
+
+    DONTSENDPSPACE:
+    jmp ForceFireMyBullet 
+  CHKLR:
   mov cl, 04Dh ; scan code of right arrow
   cmp cl, ah   ; compare clicked key with right arrow
   jz movGunRight
@@ -3164,18 +3256,6 @@ runGun proc
   mov cl, 04Bh ; Scan code of left arrow
   cmp cl, ah   ; compare clicked key with left arrow
   jz movGunLeft
-
-  mov cl, 31d  ; scan of s
-  cmp cl, ah   ; compare clicked key with s
-  jz ForceFireOtherBullet 
-  
-  mov cl, 32d ; scan code of d
-  cmp cl, ah   ; compare clicked key with d
-  jz movOtherGunRight
-
-  mov cl, 30d ; Scan code of a
-  cmp cl, ah   ; compare clicked key with a
-  jz movOtherGunLeft
   
   ; jmp runGunHome     ; if not pressed left or right arrow loop again
   
@@ -3202,6 +3282,36 @@ runGun proc
     cmp cl, al   ; compare clicked key with left arrow
     jz movOtherGunLeft
 
+    mov cl, 0ffh
+    cmp cl, al
+    jz RESETPOSITION
+    
+    jmp CNTGUNHOME 
+
+    RESETPOSITION:
+    mov dx , 3FDH ; Line Status Register
+    FRCRO:in al , dx
+    AND al , 1
+    JZ FRCRO
+    ; here something recived
+    mov dx , 03F8H
+    in al , dx
+    mov otherPointsValue , al
+    
+    mov dx , 3FDH ; Line Status Register
+    FRCRM:in al , dx
+    AND al , 1
+    JZ FRCRM
+    ; here something recived
+    mov dx , 03F8H
+    in al , dx
+    mov myPointsValue , al
+    RSTPANDT:
+    mov targetColor, 1
+    mov targetStartColumnPositionOther, 277d
+    mov targetStartColumnPosition, 115d
+    
+    CNTGUNHOME:
     jmp runGunHome     ; if not pressed left or right arrow loop again
     continueNormalFireSenario:
     ; if no key click try to fire bullets
@@ -3311,18 +3421,6 @@ runGun proc
     jz checkOtherBullet
     ForceFireMyBullet:
 
-    ; Check that Transmitter Holding Register is Empty
-    mov dx , 3FDH ; Line Status Register
-    In al , dx ;Read Line Status
-    AND al , 00100000b
-    JZ DONTSENDPSPACE
-    ;If empty put the VALUE in Transmit data register
-    mov dx , 3F8H ; Transmit data register
-    mov al, 20h  ; ascii of space
-    out dx , al
-
-    DONTSENDPSPACE:
-
     call drawBullet 
     dec bulletStartRowPosition       ;decreament bullet position (move up)
     mov ax, bulletStartRowPosition   ;if width of bullet is more than position of 
@@ -3351,13 +3449,6 @@ runGun proc
   
   call drawTarget
   dec targetStartColumnPosition       ;decreament bullet position (move up)
-;   mov ax, targetStartColumnPosition   ;if width of bullet is more than position of 
-;   mov bx, 0                           ;its lower border break;
-;   cmp ax,bx
-;   jnz continueMovingTarget
-;     mov targetStartColumnPosition, 115d  ; return bullet to its start position
-;   continueMovingTarget:
-
   ; Move other Target
   call drawGun
   
