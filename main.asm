@@ -148,10 +148,13 @@ otherMessageSize db 100
 otherMessageActualSize db ?
 otherMessage db 100 dup('$')
 
-;position for the messages
-myMessagePostionY db 1
+MessageL LABEL BYTE
+MessageSize db 100
+MessageActualSize db ?
+Message db 100 dup('$')
 
-otherMessagePostionY db 13d
+;position for the messages
+MessagePostionY db 0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -357,7 +360,6 @@ main proc
   StartChat:
 
   call clearScreen
-  call ChatScreen
 
   chatingMainLoop:
 
@@ -1286,6 +1288,87 @@ receiveOtherMessage proc
   loop otherMessageReceiveLoop
   ret
 receiveOtherMessage endp
+
+sendMessage proc
+  ;first send the position Y
+  mov dx , 3FDH		; Line Status Register
+  SENDPOMESSAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDPOMESSAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,MessagePostionY
+  out dx , al 
+  
+  ;second send the actual size of the command
+  mov dx , 3FDH		; Line Status Register
+  SENDASCHMESSAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDASCHMESSAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,MessageActualSize
+  out dx , al 
+
+  ;loop to send the entire name
+  mov ch,0
+  mov cl,MessageActualSize
+  lea si,Message
+  MessageChSendLoop:
+  mov dx,3FDH   ;Line Status Register
+  SENDCHMESSAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SENDCHMESSAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,[si]
+  out dx,al 
+  inc si
+  loop MessageChSendLoop
+
+  ret
+sendMessage endp
+
+receiveMessage proc
+  ;first get the position Y
+  mov dx,3FDH		; Line Status Register
+	RPOSMESSCCHK:	
+  in al,dx 
+  AND al,1
+  JZ RPOSMESSCCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov MessagePostionY,al
+
+  ;receive the actual size of the command
+  mov dx,3FDH		; Line Status Register
+	RASCHMESSCCHK:	
+  in al,dx 
+  AND al,1
+  JZ RASCHMESSCCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov MessageActualSize,al
+
+  mov ch,0
+  mov cl,MessageActualSize
+  lea si,Message
+  otherMessageCHReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	RCOMESSCHK:	
+  in al,dx 
+  AND al,1
+  JZ RCOMESSCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherMessageCHReceiveLoop
+  ret
+receiveMessage endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -1774,54 +1857,6 @@ ESCWinnerScreen proc
   
   ret
 ESCWinnerScreen endp
-ChatScreen proc
-  ;set the cursor
-  mov ah,2
-  mov bh,0
-  mov dl,0
-  mov dh,11d
-  int 10h
-
-  mov cx,80d
-  printDashLineChat:
-  mov ah,2
-  mov dl,'-'
-  int 21h
-  loop printDashLineChat
-
-  ;print my name
-  ;set the cursor
-  mov ah,2
-  mov bh,0
-  mov dl,1
-  mov dh,0
-  int 10h
-  mov ah, 9
-  lea dx,myName
-  int 21h
-  mov ah,2
-  mov dl,':'
-  int 21h
-  ;set the cursor
-  mov ah,2
-  mov bh,0
-  mov dl,1
-  mov dh,12d
-  int 10h
-  mov ah, 9
-  lea dx,otherName
-  int 21h
-  mov ah,2
-  mov dl,':'
-  int 21h
-  ;set cursor
-  mov ah,2
-  mov dl,4
-  mov dh,myMessagePostionY
-  mov bh,0
-  int 10h
-  ret
-ChatScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -3056,8 +3091,24 @@ getChatKey proc
   mov dx , 03F8H
   in al , dx
   ;al = value
-  call sendMyMessage
-  call clearMyMessage
+  call sendMessage
+  call clearMessage
+  inc MessagePostionY
+  ;check if the page done then scroll up
+  mov al,MessagePostionY
+  mov dl,25d
+  cmp al,dl
+  jnz getChatKeyExit
+  call scrollUp
+  ;set cursor
+  mov ah,2
+  mov dl,MessageActualSize
+  add dl,myNameActualSize
+  add dl,3
+  mov dh,MessagePostionY
+  dec dh
+  mov bh,0
+  int 10h
   jmp getChatKeyExit
 
   GKPexitChat:
@@ -3095,7 +3146,7 @@ recieveChatKey proc
   jnz recieveChatKeyExit
   
 
-  call clearOtherMessage
+  call clearMessage
   ;send DF to tell him that i am ready
   mov dx , 3FDH		; Line Status Register
   SENDDFCHATINGAGAIN:  	
@@ -3105,13 +3156,13 @@ recieveChatKey proc
   mov dx , 3F8H		; Transmit data register
   mov  al,0DFH
   out dx , al
-  call receiveOtherMessage
+  call receiveMessage
   call printChatMessages
+  call clearMessage
   jmp recieveChatKeyExit
 
   ReceiveExitChat:
   mov exitChat,1
-
   recieveChatKeyExit:
   ret
 recieveChatKey endp
@@ -4057,6 +4108,20 @@ clearOtherMessage proc
   ret
 clearOtherMessage endp
 
+clearMessage proc
+  lea di,Message
+  ClearCMessAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearCMessfinish
+  mov [di],dl
+  inc di
+  jmp ClearCMessAgain
+  ClearCMessfinish:
+  ret
+clearMessage endp
+
 ;inline chating function
 chatCycle proc
   call clearMyChatSection
@@ -4080,23 +4145,29 @@ chatCycle endp
 chatingCycle proc
   ;set cursor
   mov ah,2
-  mov dl,4
-  mov dh,myMessagePostionY
+  mov dl,2
+  mov dh,MessagePostionY
   mov bh,0
   int 10h
-  inc myMessagePostionY
+  ;print my name
+  mov ah, 9
+  lea dx, myName
+  int 21h
   mov ah,2
-  mov dl,'-'
+  mov dl,':'
   int 21h
 
   ;get the input from the user
   mov ah,0AH
-  lea dx,myMessageL
+  lea dx,MessageL
   int 21h
+
   ;set cursor
   mov ah,2
-  mov dl,4
-  mov dh,myMessagePostionY
+  mov dl,MessageActualSize
+  add dl,myNameActualSize
+  add dl,3
+  mov dh,MessagePostionY
   mov bh,0
   int 10h
   ret
@@ -4105,37 +4176,58 @@ chatingCycle endp
 printChatMessages proc
   ;set cursor
   mov ah,2
-  mov dl,4
-  mov dh,otherMessagePostionY
+  mov dl,2
+  mov dh,MessagePostionY
   mov bh,0
   int 10h
-  inc otherMessagePostionY
-  mov ah,2
-  mov dl,'-'
-  int 21h
-
-  ;print other message
+  ;print my name
   mov ah, 9
-  lea dx,otherMessage
+  lea dx, otherName
+  int 21h
+  mov ah,2
+  mov dl,':'
   int 21h
 
-  call clearOtherMessage
+  ;print message
+  mov ah, 9
+  lea dx,Message
+  int 21h
+  inc MessagePostionY
+
+  ;check if the page done then scroll up
+  mov al,MessagePostionY
+  mov dl,25d
+  cmp al,dl
+  jnz printChatMessagesExit
+  call scrollUp
   ;set cursor
   mov ah,2
-  mov dl,4
-  mov dh,myMessagePostionY
+  mov dl,MessageActualSize
+  add dl,otherNameActualSize
+  add dl,3
+  mov dh,MessagePostionY
+  dec dh
   mov bh,0
   int 10h
+  printChatMessagesExit:
   ret
 printChatMessages endp
 clearChat proc
-  call clearMyMessage
-  call clearOtherMessage
-  mov myMessagePostionY,1
-  mov otherMessagePostionY,13d
+  call clearMessage
+  mov MessagePostionY,0
   mov exitChat,0
   ret
 clearChat endp
+
+scrollUp proc
+  mov ax,0604h
+  mov bh,07
+  mov cx,0
+  mov dx,184FH
+  int 10h
+  sub MessagePostionY,4h
+  ret
+scrollUp endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
