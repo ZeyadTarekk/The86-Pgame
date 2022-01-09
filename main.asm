@@ -137,6 +137,20 @@ newWantedValueActualSize db ?
 newWantedValue db 6 dup('$')
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chating Section;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+myMessageL LABEL BYTE
+myMessageSize db 30
+myMessageActualSize db ?
+myMessage db 30 dup('$')
+
+otherMessageL LABEL BYTE
+otherMessageSize db 30
+otherMessageActualSize db ?
+otherMessage db 30 dup('$')
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; 0 my turn execute on other registers
@@ -157,6 +171,7 @@ otherCommandActualSize db ?
 otherCommand db 15 dup('$')
 
 clearBGC db '                  $'
+clearBGCHAT db '                               $'
 
 Names             dw 'xa','xb','xc','xd','is','id','pb','ps','la','ha','lb','hb','lc','hc','ld','hd'
 offsets           dw 16 dup(00)
@@ -252,9 +267,6 @@ clearAllRegPowerUp db 0
 clearAllRegMsg db 'Registers Cleared$'
 myMemory db 16 dup(00h)
 otherMemory db 16 dup(00h)
-
-firstMessage db 'Hello from first$'
-secondMessage db 'Hello from second$'
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Gun Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1194,6 +1206,65 @@ ret
 sendAndRecieveInitialReg endp
 
 
+sendMyMessage proc
+  ;first send the actual size of the command
+  mov dx , 3FDH		; Line Status Register
+  SENDASMESSAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDASMESSAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,myMessageActualSize
+  out dx , al 
+
+  ;loop to send the entire name
+  mov ch,0
+  mov cl,myMessageActualSize
+  lea si,myMessage
+  MyMessageSendLoop:
+  mov dx,3FDH   ;Line Status Register
+  SENDMESSAGAIN: 
+  In al,dx        ;Read Line Status
+  AND al,00100000b
+  JZ SENDMESSAGAIN
+  mov dx , 3F8H   ;Transmit data register
+  mov al,[si]
+  out dx,al 
+  inc si
+  loop MyMessageSendLoop
+
+  ret
+sendMyMessage endp
+
+receiveOtherMessage proc
+  ;receive the actual size of the command
+  mov dx,3FDH		; Line Status Register
+	REASMESSCCHK:	
+  in al,dx 
+  AND al,1
+  JZ REASMESSCCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov otherMessageActualSize,al
+
+  mov ch,0
+  mov cl,otherMessageActualSize
+  lea si,otherMessage
+  otherMessageReceiveLoop:
+  mov dx,3FDH		; Line Status Register
+	ROMESSCHK:	
+  in al,dx 
+  AND al,1
+  JZ ROMESSCHK
+
+  mov dx,03F8H
+  in al,dx 
+  mov [si],al
+  inc si
+  loop otherMessageReceiveLoop
+  ret
+receiveOtherMessage endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2554,7 +2625,30 @@ getKeyPressed proc
   jmp keyPressedExit
 
   GKPchat:
-  ; call chatCycle
+  ;send to the other (FC) to send a message
+  mov dx , 3FDH		; Line Status Register
+  SENDFCAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDFCAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0FCH
+  out dx , al
+
+  call chatCycle
+  
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHATCOMCHK:
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHATCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendMyMessage
+
+  call clearMyMessage
   jmp keyPressedExit
 
   GKPgunGame:
@@ -2608,6 +2702,7 @@ getKeyPressed endp
 ;D4 means 4
 ;D5 means 5
 ;FD means gun game
+;FC means chat
 ;FF means exit
 receiveKeyPressed proc
   mov dx , 3FDH		; Line Status Register
@@ -2632,12 +2727,15 @@ receiveKeyPressed proc
   mov dl, 0D5H
   cmp al,dl
   jz Receive5PU
-  mov dl, 0FFH
-  cmp al,dl
-  jz ReceiveExitGame
   mov dl, 0FDH
   cmp al,dl
   jz ReceiveGunGame
+  mov dl, 0FCH
+  cmp al,dl
+  jz ReceiveChat
+  mov dl, 0FFH
+  cmp al,dl
+  jz ReceiveExitGame
 
   ;Receive F2
   call ClearOtherCommand
@@ -2762,6 +2860,7 @@ receiveKeyPressed proc
   mov flagTurn,0h
   jmp receiveKeyPressedExit
 
+
   ReceiveGunGame:
   ;send DF to tell him that i am ready
   mov dx , 3FDH		; Line Status Register
@@ -2774,6 +2873,23 @@ receiveKeyPressed proc
   out dx , al
   call runGun
   call drawMemoryLines
+  jmp receiveKeyPressedExit
+
+  ReceiveChat:
+  call clearOtherMessage
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDFCHATAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDFCHATAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  call receiveOtherMessage
+  
+  call clearOtherChatSection
+  call printTwoMessage
   jmp receiveKeyPressedExit
 
   ReceiveExitGame:
@@ -3470,21 +3586,6 @@ firstPowerUp proc
   mov whichRegisterToExecute,0
   jmp FiPUExit
 
-  ; FPUOther:
-  ; mov al,otherPointsValue
-  ; mov dl,5h
-  ; cmp al,dl
-  ; jb FiPUExit
-  ; sub otherPointsValue,5h 
-  ; call printTwoPoints
-  ; mov whichRegisterToExecute,0
-  ; mov al,otherforbiddenChar
-  ; mov forbiddenChar,al 
-  ; call printForbiddenChar
-  ; call commandCyle
-  ; call ClearCommand
-  ; mov whichRegisterToExecute,1
-
   FiPUExit:
 
   ret
@@ -3597,6 +3698,81 @@ changeWantedValue proc
   ExitchangeWantedValue:
 ret
 changeWantedValue endp
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chat Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+clearMyChatSection proc
+  ;set cursor
+  mov ah,2
+  mov dl,myNameActualSize
+  inc dl
+  mov dh,23d
+  mov bh,0
+  int 10h
+  mov ah, 9
+  lea dx,clearBGCHAT
+  int 21h
+  ret
+clearMyChatSection endp
+clearOtherChatSection proc
+  ;set cursor
+  mov ah,2
+  mov dl,otherNameActualSize
+  inc dl
+  mov dh,24d
+  mov bh,0
+  int 10h
+  mov ah, 9
+  lea dx,clearBGCHAT
+  int 21h
+  ret
+clearOtherChatSection endp
+
+clearMyMessage proc
+  lea di,myMessage
+  ClearMyMessAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearMyMessfinish
+  mov [di],dl
+  inc di
+  jmp ClearMyMessAgain
+  ClearMyMessfinish:
+  ret
+clearMyMessage endp
+
+clearOtherMessage proc
+  lea di,otherMessage
+  ClearOMessAgain:
+  mov al,[di]
+  mov dl,'$'
+  cmp al,dl
+  jz ClearOMessfinish
+  mov [di],dl
+  inc di
+  jmp ClearOMessAgain
+  ClearOMessfinish:
+  ret
+clearOtherMessage endp
+
+chatCycle proc
+  call clearMyChatSection
+  ;set cursor
+  mov ah,2
+  mov dl,myNameActualSize
+  inc dl
+  mov dh,23d
+  mov bh,0
+  int 10h
+
+  ;get the input from the user
+  mov ah,0AH
+  lea dx,myMessageL
+  int 21h
+  
+  ret
+chatCycle endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -8660,18 +8836,33 @@ printTwoMessage proc
   mov dh,23d
   mov bh,0
   int 10h
-  ; print name
-  lea dx,firstMessage
+  ;print name
+  lea dx,myName
   mov ah,9
   int 21h
+  mov ah,2
+  mov dl,':'
+  int 21h
+  ; print message
+  lea dx,myMessage
+  mov ah,9
+  int 21h
+
   ;set cursor
   mov ah,2
   mov dl,0
   mov dh,24d
   mov bh,0
   int 10h
-  ; print name
-  lea dx,secondMessage
+  ;print name
+  lea dx,otherName
+  mov ah,9
+  int 21h
+  mov ah,2
+  mov dl,':'
+  int 21h
+  ; print message
+  lea dx,otherMessage
   mov ah,9
   int 21h
   ret
