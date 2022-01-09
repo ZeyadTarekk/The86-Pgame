@@ -2824,7 +2824,22 @@ getKeyPressed proc
   in al , dx
   ;al = value
   call runGun
-  call printTwoPoints
+
+  mov al,flagTurn
+  cmp al,0
+  jz sendhsiPOints2
+
+
+  call receiveIntialPoints
+  call sendIntialPoints
+  jmp skipSendPoints2
+  
+  sendhsiPOints2:
+  call sendIntialPoints
+  call receiveIntialPoints
+
+  skipSendPoints2:
+  
   call drawMemoryLines
   jmp keyPressedExit
 
@@ -3023,7 +3038,21 @@ receiveKeyPressed proc
   mov  al,0DFH
   out dx , al
   call runGun
-  call printTwoPoints
+
+  mov al,flagTurn
+  cmp al,0
+  jz sendhsiPOints
+
+
+  call receiveIntialPoints
+  call sendIntialPoints
+  jmp skipSendPoints
+
+  sendhsiPOints:
+  call sendIntialPoints
+  call receiveIntialPoints
+
+  skipSendPoints:
   call drawMemoryLines
   jmp receiveKeyPressedExit
 
