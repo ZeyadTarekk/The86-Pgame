@@ -371,6 +371,7 @@ main proc
   jmp chatingMainLoop
 
   OutOfChat:
+  call clearChat
   jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -2682,6 +2683,16 @@ getKeyPressed proc
   cmp al,dl 
   jz keyPressedExit
 
+  ;send to the other (DD) to get into loop to wait for the command, registers and memory
+  mov dx , 3FDH		; Line Status Register
+  SENDDDF2COMAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDDF2COMAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DDH
+  out dx , al 
+
   mov al,level
   mov dl,1
   cmp al,dl
@@ -2699,16 +2710,6 @@ getKeyPressed proc
   call Level2ChooseWhichRegister
 
   AfterSettingRegistersExecute:
-  ;send to the other (DD) to get into loop to wait for the command, registers and memory
-  mov dx , 3FDH		; Line Status Register
-  SENDDDF2COMAGAIN:  	
-  In al , dx 			;Read Line Status
-  AND al , 00100000b
-  JZ SENDDDF2COMAGAIN
-  mov dx , 3F8H		; Transmit data register
-  mov  al,0DDH
-  out dx , al 
-
   call printForbiddenChar
   call commandCyle
 
@@ -4025,6 +4026,7 @@ printChatMessages proc
   lea dx,otherMessage
   int 21h
 
+  call clearOtherMessage
   ;set cursor
   mov ah,2
   mov dl,4
@@ -4033,6 +4035,14 @@ printChatMessages proc
   int 10h
   ret
 printChatMessages endp
+clearChat proc
+  call clearMyMessage
+  call clearOtherMessage
+  mov myMessagePostionY,1
+  mov otherMessagePostionY,13d
+  mov exitChat,0
+  ret
+clearChat endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -4302,10 +4312,6 @@ getCommandLvl2 endp
 
 Level2ChooseWhichRegister proc
 
-; mov al,flagTurn
-; mov dl,0
-; cmp al,dl
-; jnz otherChoice
 ;here this is my choice 
 mov al,myforbiddenChar
 mov forbiddenChar,al
@@ -4323,26 +4329,6 @@ mov whichRegisterToExecute,1
 jmp Level2ChooseWhichRegisterExit
 executeOnOtherFirstSelection:   ;he clicked 1 so execute on other registers
 mov whichRegisterToExecute,0
-; jmp Level2ChooseWhichRegisterExit
-
-; otherChoice:
-; ; here is the other choice
-; mov al,otherforbiddenChar
-; mov forbiddenChar,al
-; call clearOtherCommandSection
-; mov dx,offset choiceMessage
-; mov ah,9h
-; int 21h
-; mov ah,0
-; int 16h
-; mov ah,30h
-; cmp al,ah
-; jnz executeOnOtherSecondSelection  
-; ;here he clicked 0 so execute on his registers
-; mov whichRegisterToExecute,0
-; jmp Level2ChooseWhichRegisterExit
-; executeOnOtherSecondSelection:   ;he clicked 1 so execute on my registers
-; mov whichRegisterToExecute,1
 
 Level2ChooseWhichRegisterExit:
 ret
