@@ -139,16 +139,19 @@ newWantedValue db 6 dup('$')
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chating Section;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 myMessageL LABEL BYTE
-myMessageSize db 30
+myMessageSize db 100
 myMessageActualSize db ?
-myMessage db 30 dup('$')
+myMessage db 100 dup('$')
 
 otherMessageL LABEL BYTE
-otherMessageSize db 30
+otherMessageSize db 100
 otherMessageActualSize db ?
-otherMessage db 30 dup('$')
+otherMessage db 100 dup('$')
 
+;position for the messages
+myMessagePostionY db 1
 
+otherMessagePostionY db 13d
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Variables;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -318,9 +321,9 @@ bulletWidth EQU 5d
 bulletStartColumnPositionOther dw 200d
 bulletEndColumnPositionOther dw 200d
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;flag to know when to exit the game
+;flag to know when to exit the game and chat
 exitGame db 0
-
+exitChat db 0
 .code
 main proc
   mov ax,@data
@@ -352,6 +355,22 @@ main proc
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Chat Section;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   StartChat:
 
+  call clearScreen
+  call ChatScreen
+
+  chatingMainLoop:
+
+  call recieveChatKey
+  call getChatKey
+
+  ;check if the exit chat flag = 1
+  mov al,exitChat
+  mov dl,1
+  cmp al,dl
+  jz OutOfChat
+  jmp chatingMainLoop
+
+  OutOfChat:
   jmp MainScreenLoop
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1265,11 +1284,7 @@ receiveOtherMessage proc
   loop otherMessageReceiveLoop
   ret
 receiveOtherMessage endp
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Main Screen;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1337,10 +1352,10 @@ mainScreen proc
   in al , dx
   ;al = char
 
-  ; mov dl,3Bh    ;F1
-  ; cmp al,dl
-  ; mov selectedMode,1
-  ; jz EXITFORMAINSCREEN
+  mov dl,3Bh      ;F1
+  cmp al,dl
+  mov selectedMode,1
+  jz EXITFORMAINSCREEN
 
   mov dl,3Ch      ;F2
   cmp al,dl
@@ -1396,6 +1411,16 @@ mainScreen proc
       mov selectedMode,1
       mov ah,0        ;Clear the buffer
       int 16h
+      ;send F1 to the other
+      mov starterMainScreenFlag,1
+      mov dx , 3FDH		; Line Status Register
+      SENDF1AGAIN:  	
+      In al , dx 			;Read Line Status
+      AND al , 00100000b
+      JZ SENDF1AGAIN
+      mov dx,3F8H		; Transmit data register
+      mov al,3Bh
+      out dx,al 
       jmp EXITFORMAINSCREEN
       
   EXITFORMAINSCREEN:
@@ -1465,7 +1490,52 @@ mainScreen proc
 
   DrawChat:
   ;F1
+  ;check who started to print his message
+  mov al,starterMainScreenFlag
+  mov dl,1
+  cmp al,dl
+  jnz otherSentMeC
 
+  mov ah, 9
+  mov dx, offset secondModifiedMSG
+  int 21h
+  mov ah, 9
+  lea dx,otherName
+  int 21h
+  
+  ;loop to wait for the response of the other user
+  mov dx,3FDH		; Line Status Register
+	F1FromOtherCHK:	
+  in al,dx
+  AND al,1
+  JZ F1FromOtherCHK
+  mov dx , 03F8H
+  in al,dx 
+  mov ReadyFlag,al
+  jmp AfterDrawExit
+
+  otherSentMeC:
+  mov ah, 9
+  lea dx,otherName
+  int 21h
+  mov ah, 9
+  mov dx, offset fourthModifiedMSG
+  int 21h
+  ;loop to wait for F2 to continue
+  NotF1:
+  mov ah,0
+  int 16h
+  mov dl,3BH
+  cmp ah,dl
+  jnz NotF1
+  mov dx , 3FDH		; Line Status Register
+  SendF1AGAINChat:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SendF1AGAINChat
+  mov dx , 3F8H		; Transmit data register
+  mov al,3CH
+  out dx , al
   
   jmp AfterDrawExit
 
@@ -1702,6 +1772,54 @@ ESCWinnerScreen proc
   
   ret
 ESCWinnerScreen endp
+ChatScreen proc
+  ;set the cursor
+  mov ah,2
+  mov bh,0
+  mov dl,0
+  mov dh,11d
+  int 10h
+
+  mov cx,80d
+  printDashLineChat:
+  mov ah,2
+  mov dl,'-'
+  int 21h
+  loop printDashLineChat
+
+  ;print my name
+  ;set the cursor
+  mov ah,2
+  mov bh,0
+  mov dl,1
+  mov dh,0
+  int 10h
+  mov ah, 9
+  lea dx,myName
+  int 21h
+  mov ah,2
+  mov dl,':'
+  int 21h
+  ;set the cursor
+  mov ah,2
+  mov bh,0
+  mov dl,1
+  mov dh,12d
+  int 10h
+  mov ah, 9
+  lea dx,otherName
+  int 21h
+  mov ah,2
+  mov dl,':'
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,4
+  mov dh,myMessagePostionY
+  mov bh,0
+  int 10h
+  ret
+ChatScreen endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Level Window;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2328,7 +2446,7 @@ getKeyPressed proc
   int 16h
   jz keyPressedExit
 
-  ;ley pressed --> get that key ah=scan code
+  ;key pressed --> get that key ah=scan code
   mov ah,0
   int 16h
 
@@ -2339,10 +2457,6 @@ getKeyPressed proc
   mov dl,3Ch          ;F2
   cmp ah,dl
   jz GKPcommand       ;start the command cycle
-
-  ; mov dl,3Dh          ;F3
-  ; cmp ah,dl
-  ; jz GKPgunGame     ;start the gun game cycle
 
   mov dl,31h          ;1
   cmp al,dl
@@ -2693,7 +2807,6 @@ getKeyPressed proc
   ret
 getKeyPressed endp
 
-
 ;DF means i am ready to receive
 ;DD means F2
 ;DA means 1
@@ -2887,7 +3000,7 @@ receiveKeyPressed proc
   mov  al,0DFH
   out dx , al
   call receiveOtherMessage
-  
+
   call clearOtherChatSection
   call printTwoMessage
   jmp receiveKeyPressedExit
@@ -2899,24 +3012,118 @@ receiveKeyPressed proc
 receiveKeyPressed endp
 
 
+;for the chating
+getChatKey proc
+  ;first check if there is any key pressed
+  mov ah,1
+  int 16h
+  jz getChatKeyExit
 
+  ;key pressed --> get that key ah=scan code
+  mov ah,0
+  int 16h
 
+  mov dl,3Dh          ;F3 pressed
+  cmp ah,dl
+  jz GKPexitChat      ;exit the chat
 
+  mov dl,3Bh          ;F1
+  cmp ah,dl
+  jnz getChatKeyExit  ;start the chat cycle
 
+  ;send to the other (FC) to send a message
+  mov dx , 3FDH		; Line Status Register
+  SENDFCCHATINGAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDFCCHATINGAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0FCH
+  out dx , al
 
+  call chatingCycle
+  
+  ;receive (DF) as a sign that the other is ready to get the data from you
+  mov dx , 3FDH		; Line Status Register
+	WAITDFCHATINGCOMCHK:
+  in al , dx 
+  AND al , 1
+  JZ WAITDFCHATINGCOMCHK
+  mov dx , 03F8H
+  in al , dx
+  ;al = value
+  call sendMyMessage
+  call clearMyMessage
+  jmp getChatKeyExit
+
+  GKPexitChat:
+  ;send to the other (FF) to exit the game
+  mov dx , 3FDH		; Line Status Register
+  SENDFFCHATINGAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDFFCHATINGAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0FFH
+  out dx , al 
+
+  mov exitChat,1
+
+  getChatKeyExit:
+  ret
+getChatKey endp
+
+recieveChatKey proc
+  mov dx , 3FDH		; Line Status Register
+  in al , dx 
+  AND al , 1
+  JZ recieveChatKeyExit
+  mov dx , 03F8H
+  in al , dx
+  ;al = key
+
+  mov dl, 0FFH
+  cmp al,dl
+  jz ReceiveExitChat
+
+  mov dl, 0FCH
+  cmp al,dl
+  jnz recieveChatKeyExit
+  
+
+  call clearOtherMessage
+  ;send DF to tell him that i am ready
+  mov dx , 3FDH		; Line Status Register
+  SENDDFCHATINGAGAIN:  	
+  In al , dx 			;Read Line Status
+  AND al , 00100000b
+  JZ SENDDFCHATINGAGAIN
+  mov dx , 3F8H		; Transmit data register
+  mov  al,0DFH
+  out dx , al
+  call receiveOtherMessage
+  call printChatMessages
+  jmp recieveChatKeyExit
+
+  ReceiveExitChat:
+  mov exitChat,1
+
+  recieveChatKeyExit:
+  ret
+recieveChatKey endp
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Run Gun;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; generate random number between [0:50]
 RANDNUMBER proc
-   MOV AH, 00h  ; interrupts to get system time        
-   INT 1AH      ; CX:DX now hold number of clock ticks since midnight      
+  MOV AH, 00h  ; interrupts to get system time        
+  INT 1AH      ; CX:DX now hold number of clock ticks since midnight      
 
-   mov  ax, dx
-   xor  dx, dx
-   mov  cx, 10000d    
-   div  cx       ; here dx contains the remainder of the division - from 0 to 9
+  mov  ax, dx
+  xor  dx, dx
+  mov  cx, 10000d    
+  div  cx       ; here dx contains the remainder of the division - from 0 to 9
 
   ;  add  dl, '0'  ; to ascii from '0' to '9'
   ;  mov ah, 2h   ; call interrupt to display a value in DL
@@ -3756,6 +3963,7 @@ clearOtherMessage proc
   ret
 clearOtherMessage endp
 
+;inline chating function
 chatCycle proc
   call clearMyChatSection
   ;set cursor
@@ -3773,6 +3981,58 @@ chatCycle proc
   
   ret
 chatCycle endp
+
+;chating section function
+chatingCycle proc
+  ;set cursor
+  mov ah,2
+  mov dl,4
+  mov dh,myMessagePostionY
+  mov bh,0
+  int 10h
+  inc myMessagePostionY
+  mov ah,2
+  mov dl,'-'
+  int 21h
+
+  ;get the input from the user
+  mov ah,0AH
+  lea dx,myMessageL
+  int 21h
+  ;set cursor
+  mov ah,2
+  mov dl,4
+  mov dh,myMessagePostionY
+  mov bh,0
+  int 10h
+  ret
+chatingCycle endp
+
+printChatMessages proc
+  ;set cursor
+  mov ah,2
+  mov dl,4
+  mov dh,otherMessagePostionY
+  mov bh,0
+  int 10h
+  inc otherMessagePostionY
+  mov ah,2
+  mov dl,'-'
+  int 21h
+
+  ;print other message
+  mov ah, 9
+  lea dx,otherMessage
+  int 21h
+
+  ;set cursor
+  mov ah,2
+  mov dl,4
+  mov dh,myMessagePostionY
+  mov bh,0
+  int 10h
+  ret
+printChatMessages endp
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Command Functions;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
