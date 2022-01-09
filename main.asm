@@ -2789,6 +2789,7 @@ getKeyPressed proc
   in al , dx
   ;al = value
   call runGun
+  call printTwoPoints
   call drawMemoryLines
   jmp keyPressedExit
 
@@ -2987,6 +2988,7 @@ receiveKeyPressed proc
   mov  al,0DFH
   out dx , al
   call runGun
+  call printTwoPoints
   call drawMemoryLines
   jmp receiveKeyPressedExit
 
