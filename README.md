@@ -9,7 +9,7 @@
 [![GitHub contributors](https://img.shields.io/github/contributors/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/contributors)
 [![GitHub issues](https://img.shields.io/github/issues/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/issues)
 [![GitHub license](https://img.shields.io/github/license/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/blob/master/LICENSE)
-[![GitHub forks](https://img.shields.io/github/forks/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/network)
+[![GitHub forks](https://img.shields.io/github/forks/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/network/members)
 [![GitHub stars](https://img.shields.io/github/stars/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame/stargazers)
 [![GitHub Language](https://img.shields.io/github/languages/top/ZeyadTarekk/The86-Pgame)](https://github.com/ZeyadTarekk/The86-Pgame)
 
