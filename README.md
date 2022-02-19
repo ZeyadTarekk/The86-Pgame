@@ -15,9 +15,9 @@
 
 </div>
 
-# 📝 Tables of Contents
+# 📝 Tables of Contents <a name = "contents"></a>
 
-- [Tables of Contents](#tables-of-contents)
+- [Tables of Contents](#contents)
 - [The86-Pgame](#game)
 - [How to run?](#run)
 - [Game rules](#rules)
