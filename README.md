@@ -1,8 +1,7 @@
-<div align="center" width="100%;">
+<div align="center" >
   <a href="https://github.com/ZeyadTarekk/The86-Pgame" rel="noopener">
 
-![The86-Pgame Logo](screenshots/banner.png)
-
+<img  src="screenshots/banner.png" width="100%;" >
   </a>
 </div>
 <div align="center">
@@ -46,21 +45,22 @@ To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox
 2. Connect two PCs using a Serial COM port or use [Virtual Serial Port Driver](https://www.virtual-serial-port.org/) to simulate two PCs
    - You can find a tutorial on connecting virtual serial port to DOSBOX [here](https://www.youtube.com/watch?v=xIyldfZGNAQ)
 3. Start the game on each device
-    - ```sh
-      $ git clone https://github.com/ZeyadTarekk/The86-Pgame.git
-      ```
-    - ```sh
-      $ cd The86-Pgame
-      ```
-    - ```sh
-      $ masm MAIN.ASM
-      ```
-    - ```sh
-      $ link MAIN.OBJ
-      ```
-    - ```sh
-      $ MAIN.EXE
-      ```
+
+   - ```sh
+     $ git clone https://github.com/ZeyadTarekk/The86-Pgame.git
+     ```
+   - ```sh
+     $ cd The86-Pgame
+     ```
+   - ```sh
+     $ masm MAIN.ASM
+     ```
+   - ```sh
+     $ link MAIN.OBJ
+     ```
+   - ```sh
+     $ MAIN.EXE
+     ```
 
 4. Press F1 to send a chat invite or accept one, or F2 to send a game invite or accept one.
 
@@ -103,6 +103,7 @@ To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox
 ## Game start
 
 ![](screenshots/startGame.png)
+
 ## Midgame
 
 ![](screenshots/midGame.png)
@@ -113,9 +114,8 @@ To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox
 ![](screenshots/wantedValue.png)
 
 ## Game end
+
 ![](screenshots/endGame.png)
-
-
 
 # Single PC version
 
