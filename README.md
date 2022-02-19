@@ -18,9 +18,9 @@
 # 📝 Tables of Contents
 
 - [Tables of Contents](#tables-of-contents)
-- [The86-Pgame](#The86-Pgame)
-- [How to run?](#how-to-run)
-- [Game rules](#game-rules)
+- [The86-Pgame](#game)
+- [How to run?](#run)
+- [Game rules](#rules)
 - [Screenshots](#screenshots)
   - [Name screen](#name-screen)
   - [Main Menu](#main-menu)
@@ -33,11 +33,11 @@
 - [Contributors](#contributors)
 - [License](#license)
 
-# 📙 The86-Pgame
+# 📙 The86-Pgame <a name = "game"></a>
 
 The86-Pgame is a two-player competitive game coded in **X86 assembly** aimed for multiplayers via serial communication ports.
 
-# 🏁 How to run?
+# 🏁 How to run? <a name = "run"></a>
 
 To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox.com/)
 
@@ -64,7 +64,7 @@ To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox
 
 4. Press F1 to send a chat invite or accept one, or F2 to send a game invite or accept one.
 
-# 📱 Game rules
+# 📱 Game rules <a name = "rules"></a>
 
 - Start by entering the forbidden character for your opponent.
   - In level 1 your opponent can see the forbidden character you chose for him but in level 2 he can't see it.
@@ -86,7 +86,7 @@ To run the game you need a DOS emulator, you can use [DOSBOX](https://www.dosbox
     4. Clearing all registers at once. (only once for each player, Consumes 30 points)
     5. An extra power up is introduced, letting each player be able to change the target value to any value other than values currently existing in any register for the two players. (For Level 2, only once for each player)
 
-# 📷 Screenshots
+# 📷 Screenshots <a name = "screenshots"></a>
 
 ## Name screen
 
